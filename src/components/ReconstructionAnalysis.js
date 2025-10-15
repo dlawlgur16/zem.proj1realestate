@@ -8,6 +8,18 @@ export default function ReconstructionAnalysis() {
   const [statsData, setStatsData] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // CSV 데이터를 차트용 데이터로 변환
+  const processData = useCallback((data) => {
+    const processedData = {
+      '전체통계': processBuildingData(data, null),
+      '대교아파트 1동': processBuildingData(data, '1동'),
+      '대교아파트 2동': processBuildingData(data, '2동'),
+      '대교아파트 3동': processBuildingData(data, '3동'),
+      '대교아파트 4동': processBuildingData(data, '4동')
+    };
+    setStatsData(processedData);
+  }, []);
+
   // CSV 데이터 로드
   useEffect(() => {
     const loadCSVData = async () => {
@@ -31,18 +43,6 @@ export default function ReconstructionAnalysis() {
 
     loadCSVData();
   }, [processData]);
-
-  // CSV 데이터를 차트용 데이터로 변환
-  const processData = useCallback((data) => {
-    const processedData = {
-      '전체통계': processBuildingData(data, null),
-      '대교아파트 1동': processBuildingData(data, '1동'),
-      '대교아파트 2동': processBuildingData(data, '2동'),
-      '대교아파트 3동': processBuildingData(data, '3동'),
-      '대교아파트 4동': processBuildingData(data, '4동')
-    };
-    setStatsData(processedData);
-  }, []);
 
   // 건물별 데이터 처리
   const processBuildingData = (data, building) => {
