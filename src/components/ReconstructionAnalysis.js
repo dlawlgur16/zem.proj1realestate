@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import Papa from 'papaparse';
 import importedData from '../data.js';
 import FileUpload from './FileUpload';
 import './FileUpload.css';

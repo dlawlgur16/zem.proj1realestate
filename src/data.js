@@ -1,4 +1,4 @@
-export default [
+const data = [
   {
     "순번": "1",
     "소재지": "서울시 영등포구 여의도동 41",
@@ -19583,4 +19583,6 @@ export default [
     "압류접수번호": "",
     "압류권리자": ""
   }
-]
+];
+
+export default data;
