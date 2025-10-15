@@ -94,9 +94,9 @@ export default function ReconstructionAnalysis() {
     }).length;
     const investmentCount = total - residenceCount;
 
-    // 성별 분포 (주민번호 2번째 자리로 판단)
+    // 성별 분포 (주민번호 1번째 자리로 판단: 남자 1,3,5 / 여자 2,4,6)
     const male = filteredData.filter(row => 
-      row.주민번호 && (row.주민번호.charAt(1) === '1' || row.주민번호.charAt(1) === '3')
+      row.주민번호 && (row.주민번호.charAt(0) === '1' || row.주민번호.charAt(0) === '3' || row.주민번호.charAt(0) === '5')
     ).length;
     const female = total - male;
 
