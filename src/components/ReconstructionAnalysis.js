@@ -138,7 +138,6 @@ export default function ReconstructionAnalysis() {
 
     const regionData = Object.entries(regionGroups)
       .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
       .map(([region, count]) => ({ region, count }));
 
     // 면적별 분포
