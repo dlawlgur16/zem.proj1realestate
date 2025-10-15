@@ -94,10 +94,14 @@ export default function ReconstructionAnalysis() {
     }).length;
     const investmentCount = total - residenceCount;
 
-    // 성별 분포 (주민번호 1번째 자리로 판단: 남자 1,3,5 / 여자 2,4,6)
-    const male = filteredData.filter(row => 
-      row.주민번호 && (row.주민번호.charAt(0) === '1' || row.주민번호.charAt(0) === '3' || row.주민번호.charAt(0) === '5')
-    ).length;
+    // 성별 분포 (주민번호 성별 자리로 판단: 남자 1,3,5 / 여자 2,4,6)
+    const male = filteredData.filter(row => {
+      if (!row.주민번호) return false;
+      const genderDigit = row.주민번호.includes('-') ? 
+        row.주민번호.split('-')[1].charAt(0) : // 2000년대: - 뒤 첫 번째 자리
+        row.주민번호.charAt(0); // 1900년대: 첫 번째 자리
+      return genderDigit === '1' || genderDigit === '3' || genderDigit === '5';
+    }).length;
     const female = total - male;
 
     // 지역별 분포 (투자자만 - 소재지+건물명이 현주소와 다른 사람들)
