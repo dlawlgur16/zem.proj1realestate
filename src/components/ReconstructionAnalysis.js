@@ -2,12 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
 import importedData from '../data.js';
+import FileUpload from './FileUpload';
+import './FileUpload.css';
 
 export default function ReconstructionAnalysis() {
   const [activeTab, setActiveTab] = useState('전체통계');
   const [csvData, setCsvData] = useState([]);
   const [statsData, setStatsData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showUpload, setShowUpload] = useState(false);
 
   // CSV 데이터를 차트용 데이터로 변환
   const processData = useCallback((data) => {
@@ -20,6 +24,22 @@ export default function ReconstructionAnalysis() {
     };
     setStatsData(processedData);
   }, []);
+
+  // 파일 업로드 핸들러
+  const handleDataLoad = (data) => {
+    console.log('업로드된 데이터 개수:', data.length);
+    setCsvData(data);
+    processData(data);
+    setLoading(false);
+    setError('');
+    setShowUpload(false);
+  };
+
+  // 에러 핸들러
+  const handleError = (errorMessage) => {
+    setError(errorMessage);
+    setLoading(false);
+  };
 
   // CSV 데이터 로드
   useEffect(() => {
@@ -330,7 +350,32 @@ export default function ReconstructionAnalysis() {
       <div className="bg-white border-b px-8 py-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">대교아파트 조합원 분석 | PDF ⬇</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowUpload(!showUpload)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              📁 CSV 업로드
+            </button>
+          </div>
         </div>
+        
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        
+        {/* 파일 업로드 영역 */}
+        {showUpload && (
+          <div className="mt-4">
+            <FileUpload 
+              onDataLoad={handleDataLoad}
+              onError={handleError}
+            />
+          </div>
+        )}
       </div>
 
       {/* 탭 메뉴 */}
