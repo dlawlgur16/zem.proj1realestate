@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
+import importedData from '../data.js';
 
 export default function ReconstructionAnalysis() {
   const [activeTab, setActiveTab] = useState('전체통계');
@@ -22,39 +23,12 @@ export default function ReconstructionAnalysis() {
 
   // CSV 데이터 로드
   useEffect(() => {
-    const loadCSVData = async () => {
-      try {
-        console.log('CSV 로드 시작...');
-        const response = await fetch(`${process.env.PUBLIC_URL}/data/data.csv`);
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const csvText = await response.text();
-        console.log('CSV 텍스트 길이:', csvText.length);
-        
-        Papa.parse(csvText, {
-          header: true,
-          complete: (results) => {
-            console.log('파싱된 데이터 개수:', results.data.length);
-            setCsvData(results.data);
-            processData(results.data);
-            setLoading(false);
-          },
-          error: (error) => {
-            console.error('CSV 파싱 오류:', error);
-            setLoading(false);
-          }
-        });
-      } catch (error) {
-        console.error('CSV 로드 오류:', error);
-        setLoading(false);
-      }
-    };
-
-    loadCSVData();
+    console.log('CSV 데이터 로드 시작...');
+    console.log('로드된 데이터 개수:', importedData.length);
+    
+    setCsvData(importedData);
+    processData(importedData);
+    setLoading(false);
   }, [processData]);
 
   // 건물별 데이터 처리
