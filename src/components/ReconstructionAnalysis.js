@@ -24,14 +24,27 @@ export default function ReconstructionAnalysis() {
   useEffect(() => {
     const loadCSVData = async () => {
       try {
-        const response = await fetch('./data/data.csv');
+        console.log('CSV 로드 시작...');
+        const response = await fetch(`${process.env.PUBLIC_URL}/data/data.csv`);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const csvText = await response.text();
+        console.log('CSV 텍스트 길이:', csvText.length);
         
         Papa.parse(csvText, {
           header: true,
           complete: (results) => {
+            console.log('파싱된 데이터 개수:', results.data.length);
             setCsvData(results.data);
             processData(results.data);
+            setLoading(false);
+          },
+          error: (error) => {
+            console.error('CSV 파싱 오류:', error);
             setLoading(false);
           }
         });
