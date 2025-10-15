@@ -24,7 +24,7 @@ export default function ReconstructionAnalysis() {
   useEffect(() => {
     const loadCSVData = async () => {
       try {
-        const response = await fetch('/data/data.csv');
+        const response = await fetch('./data/data.csv');
         const csvText = await response.text();
         
         Papa.parse(csvText, {
