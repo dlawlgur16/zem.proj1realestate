@@ -161,16 +161,22 @@ export default function ReconstructionAnalysis() {
       color: range.includes('95.5') ? '#10b981' : range.includes('133.65') ? '#ec4899' : '#3b82f6'
     }));
 
-    // 대출금액대별 분포
+    // 대출금액대별 분포 (억대 단위로 그룹화)
     const loanAmountGroups = {};
     filteredData.forEach(row => {
       if (row.유효근저당총액 && parseFloat(row.유효근저당총액) > 0) {
         const amount = parseFloat(row.유효근저당총액);
         let amountRange;
         if (amount < 100000000) amountRange = '1억 미만';
-        else if (amount < 200000000) amountRange = '1-2억';
-        else if (amount < 500000000) amountRange = '2-5억';
-        else if (amount < 1000000000) amountRange = '5-10억';
+        else if (amount < 200000000) amountRange = '1억대';
+        else if (amount < 300000000) amountRange = '2억대';
+        else if (amount < 400000000) amountRange = '3억대';
+        else if (amount < 500000000) amountRange = '4억대';
+        else if (amount < 600000000) amountRange = '5억대';
+        else if (amount < 700000000) amountRange = '6억대';
+        else if (amount < 800000000) amountRange = '7억대';
+        else if (amount < 900000000) amountRange = '8억대';
+        else if (amount < 1000000000) amountRange = '9억대';
         else amountRange = '10억 이상';
         
         loanAmountGroups[amountRange] = (loanAmountGroups[amountRange] || 0) + 1;
@@ -179,16 +185,24 @@ export default function ReconstructionAnalysis() {
 
     const loanAmountData = Object.entries(loanAmountGroups)
       .sort(([a], [b]) => {
-        const order = ['1억 미만', '1-2억', '2-5억', '5-10억', '10억 이상'];
+        const order = ['1억 미만', '1억대', '2억대', '3억대', '4억대', '5억대', '6억대', '7억대', '8억대', '9억대', '10억 이상'];
         return order.indexOf(a) - order.indexOf(b);
       })
       .map(([range, count]) => ({ range, count }));
 
-    // 대출 여부 비율
-    const loanCount = filteredData.filter(row => 
-      row.유효근저당총액 && parseFloat(row.유효근저당총액) > 0
-    ).length;
+    // 대출 여부 비율 (개선된 로직)
+    const loanCount = filteredData.filter(row => {
+      if (!row.유효근저당총액) return false;
+      const amount = parseFloat(row.유효근저당총액);
+      return !isNaN(amount) && amount > 0;
+    }).length;
     const noLoanCount = total - loanCount;
+    
+    // 디버깅: 데이터 확인
+    console.log('총 인원수:', total);
+    console.log('대출 인원수:', loanCount);
+    console.log('무대출 인원수:', noLoanCount);
+    console.log('총합:', loanCount + noLoanCount);
 
     const loanStatusData = [
       { name: '대출', value: loanCount, percentage: total ? ((loanCount/total)*100).toFixed(1) : '0', color: '#ef4444' },
@@ -206,6 +220,61 @@ export default function ReconstructionAnalysis() {
     // 가구당 평균 근저당액
     const averageLoanAmount = loanCount > 0 ? totalLoanAmount / loanCount : 0;
 
+    // 부동산 평균보유 기간 계산 (1년 단위로 세분화)
+    const ownershipPeriods = {};
+    filteredData.forEach(row => {
+      if (row.소유권취득일) {
+        const acquisitionDate = new Date(row.소유권취득일);
+        const currentDate = new Date();
+        const yearsDiff = (currentDate - acquisitionDate) / (1000 * 60 * 60 * 24 * 365.25);
+        
+        if (yearsDiff >= 0 && yearsDiff <= 30) { // 0-30년 범위로 제한
+          const years = Math.floor(yearsDiff);
+          let periodRange;
+          if (years < 1) periodRange = '1년 미만';
+          else if (years <= 5) periodRange = `${years}년`;
+          else if (years <= 10) periodRange = `${years}년`;
+          else if (years <= 15) periodRange = `${years}년`;
+          else if (years <= 20) periodRange = `${years}년`;
+          else periodRange = '20년 이상';
+          
+          ownershipPeriods[periodRange] = (ownershipPeriods[periodRange] || 0) + 1;
+        }
+      }
+    });
+
+    const ownershipPeriodData = Object.entries(ownershipPeriods)
+      .sort(([a], [b]) => {
+        if (a === '1년 미만') return -1;
+        if (b === '1년 미만') return 1;
+        if (a === '20년 이상') return 1;
+        if (b === '20년 이상') return -1;
+        
+        const aYear = parseInt(a.replace('년', ''));
+        const bYear = parseInt(b.replace('년', ''));
+        return aYear - bYear;
+      })
+      .map(([period, count]) => ({ period, count }));
+
+    // 등기이전원인별 분포 (매매, 상속, 증여 등)
+    const transferReasons = {};
+    filteredData.forEach(row => {
+      if (row.이전사유) {
+        const reason = row.이전사유.trim();
+        if (reason) {
+          transferReasons[reason] = (transferReasons[reason] || 0) + 1;
+        }
+      }
+    });
+
+    const transferReasonData = Object.entries(transferReasons)
+      .sort(([,a], [,b]) => b - a) // 개수 기준 내림차순 정렬
+      .map(([reason, count]) => ({ 
+        reason, 
+        count,
+        percentage: total ? ((count/total)*100).toFixed(1) : '0'
+      }));
+
     return {
       total,
       ageData,
@@ -218,7 +287,9 @@ export default function ReconstructionAnalysis() {
       loanAmountData,
       loanStatusData,
       totalLoanAmount,
-      averageLoanAmount
+      averageLoanAmount,
+      ownershipPeriodData,
+      transferReasonData
     };
   };
 
@@ -426,6 +497,46 @@ export default function ReconstructionAnalysis() {
                   {(stats.areaData || []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* 부동산 평균보유 기간 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">부동산 평균보유 기간</h2>
+            <div className="text-center text-sm text-gray-600 mb-4">소유권취득일 기준</div>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={stats.ownershipPeriodData || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="period" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8b5cf6" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="text-xs text-gray-500 text-center mt-2">보유 기간</div>
+          </div>
+
+          {/* 등기이전원인별 분포 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">등기이전원인별 분포</h2>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}건</div>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={stats.transferReasonData || []}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  dataKey="count"
+                  label={({ reason, count, percentage }) => `${reason}\n${count}건\n(${percentage}%)`}
+                >
+                  {(stats.transferReasonData || []).map((entry, index) => {
+                    const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  })}
                 </Pie>
                 <Tooltip />
               </PieChart>
