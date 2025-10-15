@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
 
@@ -30,10 +30,10 @@ export default function ReconstructionAnalysis() {
     };
 
     loadCSVData();
-  }, []);
+  }, [processData]);
 
   // CSV 데이터를 차트용 데이터로 변환
-  const processData = (data) => {
+  const processData = useCallback((data) => {
     const processedData = {
       '전체통계': processBuildingData(data, null),
       '대교아파트 1동': processBuildingData(data, '1동'),
@@ -42,7 +42,7 @@ export default function ReconstructionAnalysis() {
       '대교아파트 4동': processBuildingData(data, '4동')
     };
     setStatsData(processedData);
-  };
+  }, []);
 
   // 건물별 데이터 처리
   const processBuildingData = (data, building) => {
