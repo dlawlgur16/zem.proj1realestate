@@ -1,184 +1,266 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import Papa from 'papaparse';
 
 export default function ReconstructionAnalysis() {
   const [activeTab, setActiveTab] = useState('전체통계');
+  const [csvData, setCsvData] = useState([]);
+  const [statsData, setStatsData] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // 실제 CSV 데이터 기반 통계 (하드코딩)
-  const statsData = {
-    '전체통계': {
-      total: 576,
-      ageData: [
-        { range: '20대', count: 327 },
-        { range: '30대', count: 47 },
-        { range: '40대', count: 59 },
-        { range: '50대', count: 46 },
-        { range: '60대', count: 60 },
-        { range: '70대', count: 37 }
-      ],
-      residenceCount: 429,
-      investmentCount: 147,
-      male: 302,
-      female: 273,
-      regionData: [
-        { region: '서울 기타', count: 86 },
-        { region: '서울 강북구', count: 10 },
-        { region: '서울 강동구', count: 8 },
-        { region: '서울 서초구', count: 8 },
-        { region: '서울 강서구', count: 8 }
-      ],
-      areaData: [
-        { range: '95.5㎡ (29평)', count: 288, percentage: 50.0, color: '#10b981' },
-        { range: '151.74㎡ (46평)', count: 144, percentage: 25.0, color: '#3b82f6' },
-        { range: '133.65㎡ (40평)', count: 144, percentage: 25.0, color: '#ec4899' }
-      ]
-    },
-    '대교아파트 1동': {
-      total: 144,
-      ageData: [
-        { range: '20대', count: 84 },
-        { range: '30대', count: 12 },
-        { range: '40대', count: 12 },
-        { range: '50대', count: 8 },
-        { range: '60대', count: 15 },
-        { range: '70대', count: 13 }
-      ],
-      residenceCount: 110,
-      investmentCount: 34,
-      male: 76,
-      female: 68,
-      regionData: [
-        { region: '서울 기타', count: 20 },
-        { region: '서울 강북구', count: 3 },
-        { region: '서울 서초구', count: 2 },
-        { region: '서울 강동구', count: 2 },
-        { region: '서울 강남구', count: 2 }
-      ],
-      areaData: [
-        { range: '95.5㎡ (29평)', count: 72, percentage: 50.0, color: '#10b981' },
-        { range: '151.74㎡ (46평)', count: 36, percentage: 25.0, color: '#3b82f6' },
-        { range: '133.65㎡ (40평)', count: 36, percentage: 25.0, color: '#ec4899' }
-      ]
-    },
-    '대교아파트 2동': {
-      total: 144,
-      ageData: [
-        { range: '20대', count: 82 },
-        { range: '30대', count: 11 },
-        { range: '40대', count: 15 },
-        { range: '50대', count: 12 },
-        { range: '60대', count: 14 },
-        { range: '70대', count: 10 }
-      ],
-      residenceCount: 108,
-      investmentCount: 36,
-      male: 75,
-      female: 69,
-      regionData: [
-        { region: '서울 기타', count: 22 },
-        { region: '서울 강북구', count: 3 },
-        { region: '서울 강동구', count: 2 },
-        { region: '서울 서초구', count: 2 },
-        { region: '서울 은평구', count: 2 }
-      ],
-      areaData: [
-        { range: '95.5㎡ (29평)', count: 72, percentage: 50.0, color: '#10b981' },
-        { range: '151.74㎡ (46평)', count: 36, percentage: 25.0, color: '#3b82f6' },
-        { range: '133.65㎡ (40평)', count: 36, percentage: 25.0, color: '#ec4899' }
-      ]
-    },
-    '대교아파트 3동': {
-      total: 144,
-      ageData: [
-        { range: '20대', count: 80 },
-        { range: '30대', count: 12 },
-        { range: '40대', count: 16 },
-        { range: '50대', count: 13 },
-        { range: '60대', count: 15 },
-        { range: '70대', count: 8 }
-      ],
-      residenceCount: 106,
-      investmentCount: 38,
-      male: 77,
-      female: 67,
-      regionData: [
-        { region: '서울 기타', count: 23 },
-        { region: '서울 강북구', count: 2 },
-        { region: '서울 서초구', count: 2 },
-        { region: '서울 강서구', count: 2 },
-        { region: '서울 용산구', count: 2 }
-      ],
-      areaData: [
-        { range: '95.5㎡ (29평)', count: 72, percentage: 50.0, color: '#10b981' },
-        { range: '151.74㎡ (46평)', count: 36, percentage: 25.0, color: '#3b82f6' },
-        { range: '133.65㎡ (40평)', count: 36, percentage: 25.0, color: '#ec4899' }
-      ]
-    },
-    '대교아파트 4동': {
-      total: 144,
-      ageData: [
-        { range: '20대', count: 81 },
-        { range: '30대', count: 12 },
-        { range: '40대', count: 16 },
-        { range: '50대', count: 13 },
-        { range: '60대', count: 16 },
-        { range: '70대', count: 6 }
-      ],
-      residenceCount: 105,
-      investmentCount: 39,
-      male: 74,
-      female: 69,
-      regionData: [
-        { region: '서울 기타', count: 21 },
-        { region: '서울 강북구', count: 2 },
-        { region: '서울 강동구', count: 2 },
-        { region: '서울 강서구', count: 2 },
-        { region: '서울 마포구', count: 2 }
-      ],
-      areaData: [
-        { range: '95.5㎡ (29평)', count: 72, percentage: 50.0, color: '#10b981' },
-        { range: '151.74㎡ (46평)', count: 36, percentage: 25.0, color: '#3b82f6' },
-        { range: '133.65㎡ (40평)', count: 36, percentage: 25.0, color: '#ec4899' }
-      ]
-    }
+  // CSV 데이터 로드
+  useEffect(() => {
+    const loadCSVData = async () => {
+      try {
+        const response = await fetch('/data/data.csv');
+        const csvText = await response.text();
+        
+        Papa.parse(csvText, {
+          header: true,
+          complete: (results) => {
+            setCsvData(results.data);
+            processData(results.data);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('CSV 로드 오류:', error);
+        setLoading(false);
+      }
+    };
+
+    loadCSVData();
+  }, []);
+
+  // CSV 데이터를 차트용 데이터로 변환
+  const processData = (data) => {
+    const processedData = {
+      '전체통계': processBuildingData(data, null),
+      '대교아파트 1동': processBuildingData(data, '1동'),
+      '대교아파트 2동': processBuildingData(data, '2동'),
+      '대교아파트 3동': processBuildingData(data, '3동'),
+      '대교아파트 4동': processBuildingData(data, '4동')
+    };
+    setStatsData(processedData);
   };
 
-  const stats = statsData[activeTab];
+  // 건물별 데이터 처리
+  const processBuildingData = (data, building) => {
+    let filteredData = data;
+    if (building) {
+      filteredData = data.filter(row => row.건물명 && row.건물명.includes(building));
+    }
+
+    const total = filteredData.length;
+    
+    // 나이대 분포 계산
+    const ageGroups = {};
+    filteredData.forEach(row => {
+      if (row.주민번호 && row.주민번호.length >= 7) {
+        const birthYear = parseInt(row.주민번호.substring(0, 2));
+        const currentYear = new Date().getFullYear();
+        let fullBirthYear;
+        
+        // 2000년 이후 출생자는 00-99, 2000년 이전 출생자는 00-99
+        if (birthYear <= 30) {
+          fullBirthYear = 2000 + birthYear;
+        } else {
+          fullBirthYear = 1900 + birthYear;
+        }
+        
+        const age = currentYear - fullBirthYear;
+        
+        // 나이가 유효한 범위인지 확인
+        if (age >= 0 && age <= 100) {
+          const ageGroup = Math.floor(age / 10) * 10;
+          const ageRange = `${ageGroup}대`;
+          ageGroups[ageRange] = (ageGroups[ageRange] || 0) + 1;
+        }
+      }
+    });
+
+    const ageData = Object.entries(ageGroups)
+      .map(([range, count]) => ({ range, count }))
+      .sort((a, b) => {
+        const ageOrder = ['20대', '30대', '40대', '50대', '60대', '70대'];
+        return ageOrder.indexOf(a.range) - ageOrder.indexOf(b.range);
+      });
+
+    // 거주/투자 분류 (소재지+건물명이 현주소와 같은지로 판단)
+    const residenceCount = filteredData.filter(row => {
+      if (!row.소재지 || !row.건물명 || !row.현주소) return false;
+      const buildingAddress = `${row.소재지} ${row.건물명}`;
+      return row.현주소.includes(buildingAddress) || row.현주소.includes('여의도동 41');
+    }).length;
+    const investmentCount = total - residenceCount;
+
+    // 성별 분포 (주민번호 2번째 자리로 판단)
+    const male = filteredData.filter(row => 
+      row.주민번호 && (row.주민번호.charAt(1) === '1' || row.주민번호.charAt(1) === '3')
+    ).length;
+    const female = total - male;
+
+    // 지역별 분포 (투자자만 - 소재지+건물명이 현주소와 다른 사람들)
+    const regionGroups = {};
+    const investors = filteredData.filter(row => {
+      if (!row.소재지 || !row.건물명 || !row.현주소) return false;
+      
+      // 소재지에서 건물명 추출 (예: "서울시 영등포구 여의도동 41" -> "여의도동 41")
+      const buildingName = row.건물명.split(' ').pop(); // "대교아파트 1동" -> "1동"
+      
+      // 현주소가 소재지+건물명과 다른 경우 (투자자)
+      const isResident = row.현주소.includes('여의도동 41') || 
+                        row.현주소.includes('영등포구 여의도동') ||
+                        row.현주소.includes(buildingName);
+      
+      return !isResident;
+    });
+    
+    investors.forEach(row => {
+      if (row.현주소) {
+        // 서울이 아닌 경우도 포함
+        let region = '기타';
+        if (row.현주소.includes('서울')) {
+          const parts = row.현주소.split(' ');
+          region = parts.length > 1 ? parts[1] : '서울 기타';
+        } else if (row.현주소.includes('경기')) {
+          region = '경기도';
+        } else if (row.현주소.includes('인천')) {
+          region = '인천';
+        }
+        regionGroups[region] = (regionGroups[region] || 0) + 1;
+      }
+    });
+
+    const regionData = Object.entries(regionGroups)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([region, count]) => ({ region, count }));
+
+    // 면적별 분포
+    const areaGroups = {};
+    filteredData.forEach(row => {
+      if (row.전용면적_제곱미터) {
+        const area = parseFloat(row.전용면적_제곱미터);
+        let areaRange;
+        if (area < 100) areaRange = '95.5㎡ (29평)';
+        else if (area < 140) areaRange = '133.65㎡ (40평)';
+        else areaRange = '151.74㎡ (46평)';
+        
+        areaGroups[areaRange] = (areaGroups[areaRange] || 0) + 1;
+      }
+    });
+
+    const areaData = Object.entries(areaGroups).map(([range, count]) => ({
+      range,
+      count,
+      percentage: ((count / total) * 100).toFixed(1),
+      color: range.includes('95.5') ? '#10b981' : range.includes('133.65') ? '#ec4899' : '#3b82f6'
+    }));
+
+    // 대출금액대별 분포
+    const loanAmountGroups = {};
+    filteredData.forEach(row => {
+      if (row.유효근저당총액 && parseFloat(row.유효근저당총액) > 0) {
+        const amount = parseFloat(row.유효근저당총액);
+        let amountRange;
+        if (amount < 100000000) amountRange = '1억 미만';
+        else if (amount < 200000000) amountRange = '1-2억';
+        else if (amount < 500000000) amountRange = '2-5억';
+        else if (amount < 1000000000) amountRange = '5-10억';
+        else amountRange = '10억 이상';
+        
+        loanAmountGroups[amountRange] = (loanAmountGroups[amountRange] || 0) + 1;
+      }
+    });
+
+    const loanAmountData = Object.entries(loanAmountGroups)
+      .sort(([a], [b]) => {
+        const order = ['1억 미만', '1-2억', '2-5억', '5-10억', '10억 이상'];
+        return order.indexOf(a) - order.indexOf(b);
+      })
+      .map(([range, count]) => ({ range, count }));
+
+    // 대출 여부 비율
+    const loanCount = filteredData.filter(row => 
+      row.유효근저당총액 && parseFloat(row.유효근저당총액) > 0
+    ).length;
+    const noLoanCount = total - loanCount;
+
+    const loanStatusData = [
+      { name: '대출', value: loanCount, percentage: total ? ((loanCount/total)*100).toFixed(1) : '0', color: '#ef4444' },
+      { name: '무대출', value: noLoanCount, percentage: total ? ((noLoanCount/total)*100).toFixed(1) : '0', color: '#10b981' }
+    ];
+
+    // 총 근저당액 계산
+    const totalLoanAmount = filteredData.reduce((sum, row) => {
+      if (row.유효근저당총액 && parseFloat(row.유효근저당총액) > 0) {
+        return sum + parseFloat(row.유효근저당총액);
+      }
+      return sum;
+    }, 0);
+
+    // 가구당 평균 근저당액
+    const averageLoanAmount = loanCount > 0 ? totalLoanAmount / loanCount : 0;
+
+    return {
+      total,
+      ageData,
+      residenceCount,
+      investmentCount,
+      male,
+      female,
+      regionData,
+      areaData,
+      loanAmountData,
+      loanStatusData,
+      totalLoanAmount,
+      averageLoanAmount
+    };
+  };
+
+  // 연도별 소유권 변동 데이터 처리
+  const getOwnershipData = () => {
+    const yearGroups = {};
+    csvData.forEach(row => {
+      if (row.소유권취득일) {
+        const year = row.소유권취득일.split('-')[0];
+        if (year && year >= '2000') {
+          yearGroups[year] = (yearGroups[year] || 0) + 1;
+        }
+      }
+    });
+
+    return Object.entries(yearGroups)
+      .sort(([a], [b]) => a - b)
+      .map(([year, count]) => ({ year, count }));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500 mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">데이터를 로딩 중입니다...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = statsData[activeTab] || {};
   const tabs = ['전체통계', '대교아파트 1동', '대교아파트 2동', '대교아파트 3동', '대교아파트 4동'];
 
-  // 연도별 소유권 변동 (전체 공통)
-  const ownershipData = [
-    { year: '2003', count: 1 },
-    { year: '2005', count: 10 },
-    { year: '2006', count: 26 },
-    { year: '2007', count: 27 },
-    { year: '2008', count: 30 },
-    { year: '2009', count: 32 },
-    { year: '2010', count: 29 },
-    { year: '2011', count: 29 },
-    { year: '2012', count: 29 },
-    { year: '2013', count: 29 },
-    { year: '2014', count: 29 },
-    { year: '2015', count: 36 },
-    { year: '2016', count: 26 },
-    { year: '2017', count: 34 },
-    { year: '2018', count: 26 },
-    { year: '2019', count: 30 },
-    { year: '2020', count: 30 },
-    { year: '2021', count: 32 },
-    { year: '2022', count: 29 },
-    { year: '2023', count: 36 },
-    { year: '2024', count: 26 }
-  ];
+  // 연도별 소유권 변동 데이터
+  const ownershipData = getOwnershipData();
 
   const residenceData = [
-    { name: '거주', value: stats.residenceCount, percentage: ((stats.residenceCount/stats.total)*100).toFixed(1), color: '#10b981' },
-    { name: '투자', value: stats.investmentCount, percentage: ((stats.investmentCount/stats.total)*100).toFixed(1), color: '#3b82f6' }
+    { name: '거주', value: stats.residenceCount || 0, percentage: stats.total ? ((stats.residenceCount/stats.total)*100).toFixed(1) : '0', color: '#10b981' },
+    { name: '투자', value: stats.investmentCount || 0, percentage: stats.total ? ((stats.investmentCount/stats.total)*100).toFixed(1) : '0', color: '#3b82f6' }
   ];
 
   const genderData = [
-    { name: '남', value: stats.male, color: '#3b82f6' },
-    { name: '여', value: stats.female, color: '#ec4899' }
+    { name: '남', value: stats.male || 0, color: '#3b82f6' },
+    { name: '여', value: stats.female || 0, color: '#ec4899' }
   ];
 
   return (
@@ -217,7 +299,7 @@ export default function ReconstructionAnalysis() {
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">나이대 분포</h2>
             <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.ageData}>
+              <BarChart data={stats.ageData || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="range" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
@@ -266,9 +348,9 @@ export default function ReconstructionAnalysis() {
           {/* 투자자 거주지역 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">투자자 거주지역</h2>
-            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.investmentCount}명</div>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.investmentCount}명 (투자자 현주소 기준)</div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.regionData} layout="vertical">
+              <BarChart data={stats.regionData || []} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis dataKey="region" type="category" width={85} tick={{ fontSize: 10 }} />
@@ -284,7 +366,7 @@ export default function ReconstructionAnalysis() {
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">연도별 소유권 변동</h2>
             <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}건</div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={ownershipData}>
+              <BarChart data={ownershipData || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
                   dataKey="year" 
@@ -331,14 +413,14 @@ export default function ReconstructionAnalysis() {
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
-                  data={stats.areaData}
+                  data={stats.areaData || []}
                   cx="50%"
                   cy="50%"
                   outerRadius={90}
                   dataKey="count"
                   label={({ range, count, percentage }) => `${range.split('㎡')[0]}\n${count}세대\n(${percentage}%)`}
                 >
-                  {stats.areaData.map((entry, index) => (
+                  {(stats.areaData || []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -346,10 +428,61 @@ export default function ReconstructionAnalysis() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+
+          {/* 대출금액대별 분포 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">대출금액대별 분포</h2>
+            <div className="text-center text-sm text-gray-600 mb-4">대출자 기준</div>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={stats.loanAmountData || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="range" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="text-xs text-gray-500 text-center mt-2">대출금액</div>
+          </div>
+
+          {/* 대출 여부 비율 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">대출 여부 비율</h2>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={stats.loanStatusData || []}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={({ name, percentage }) => `${name}\n${percentage}%`}
+                >
+                  {(stats.loanStatusData || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="mt-2 flex justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded"></div>
+                <span className="text-xs">대출</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+                <span className="text-xs">무대출</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 추가 통계 카드 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-6">
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">총 세대수</div>
             <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -366,6 +499,16 @@ export default function ReconstructionAnalysis() {
             <div className="text-xs text-gray-400 mt-1">{residenceData[1].percentage}%</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-sm text-gray-500 mb-2">총 근저당액</div>
+            <div className="text-2xl font-bold text-red-600">{stats.totalLoanAmount ? (stats.totalLoanAmount / 100000000).toFixed(1) : '0'}</div>
+            <div className="text-xs text-gray-400 mt-1">억원</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-sm text-gray-500 mb-2">가구당 평균</div>
+            <div className="text-2xl font-bold text-orange-600">{stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0'}</div>
+            <div className="text-xs text-gray-400 mt-1">억원</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">선택 탭</div>
             <div className="text-xl font-bold text-purple-600">{activeTab}</div>
             <div className="text-xs text-gray-400 mt-1">현재 보기</div>
@@ -375,4 +518,3 @@ export default function ReconstructionAnalysis() {
     </div>
   );
 }
-
