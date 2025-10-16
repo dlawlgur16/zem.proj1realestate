@@ -19,6 +19,20 @@ export default function ReconstructionAnalysis() {
 
   // CSV 파일 자동 로드
   const loadCsvFile = useCallback(async (fileName) => {
+    // CSV 데이터를 차트용 데이터로 변환하는 내부 함수
+    const processData = (data) => {
+      // 동별 탭 생성 (1동, 2동, 3동, 4동)
+      const processedData = {
+        '전체통계': processBuildingData(data, null),
+        '대교아파트 1동': processBuildingData(data, '1동'),
+        '대교아파트 2동': processBuildingData(data, '2동'),
+        '대교아파트 3동': processBuildingData(data, '3동'),
+        '대교아파트 4동': processBuildingData(data, '4동')
+      };
+
+      setStatsData(processedData);
+    };
+    
     try {
       setLoading(true);
       setError('');
@@ -136,8 +150,12 @@ export default function ReconstructionAnalysis() {
     };
   }, [filterDataByAge]);
 
-  // CSV 데이터를 차트용 데이터로 변환
-  const processData = useCallback((data) => {
+
+  // 파일 업로드 핸들러
+  const handleDataLoad = (data) => {
+    console.log('업로드된 데이터 개수:', data.length);
+    setCsvData(data);
+    
     // 동별 탭 생성 (1동, 2동, 3동, 4동)
     const processedData = {
       '전체통계': processBuildingData(data, null),
@@ -146,15 +164,8 @@ export default function ReconstructionAnalysis() {
       '대교아파트 3동': processBuildingData(data, '3동'),
       '대교아파트 4동': processBuildingData(data, '4동')
     };
-
     setStatsData(processedData);
-  }, []);
-
-  // 파일 업로드 핸들러
-  const handleDataLoad = (data) => {
-    console.log('업로드된 데이터 개수:', data.length);
-    setCsvData(data);
-    processData(data);
+    
     setLoading(false);
     setError('');
     setShowUpload(false);
@@ -1393,14 +1404,24 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
       // 기본 데이터로 초기화 (백업)
       if (importedData && importedData.length > 0) {
         console.log('기본 데이터 로드:', importedData.length);
-    setCsvData(importedData);
-    processData(importedData);
-    setLoading(false);
+        setCsvData(importedData);
+        
+        // 동별 탭 생성 (1동, 2동, 3동, 4동)
+        const processedData = {
+          '전체통계': processBuildingData(importedData, null),
+          '대교아파트 1동': processBuildingData(importedData, '1동'),
+          '대교아파트 2동': processBuildingData(importedData, '2동'),
+          '대교아파트 3동': processBuildingData(importedData, '3동'),
+          '대교아파트 4동': processBuildingData(importedData, '4동')
+        };
+        setStatsData(processedData);
+        
+        setLoading(false);
       }
     };
 
     initializeData();
-  }, [fetchAvailableFiles, processData]);
+  }, [fetchAvailableFiles]);
 
   // 파일 변경 감지 (주기적 체크)
   useEffect(() => {
