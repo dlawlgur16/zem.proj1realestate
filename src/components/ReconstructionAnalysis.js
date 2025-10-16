@@ -16,6 +16,10 @@ export default function ReconstructionAnalysis() {
   const [currentFileName, setCurrentFileName] = useState('');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('전체');
+  const [selectedAgeGroupOwnership, setSelectedAgeGroupOwnership] = useState('전체');
+  const [selectedAgeGroupReason, setSelectedAgeGroupReason] = useState('전체');
+  const [selectedAgeGroupArea, setSelectedAgeGroupArea] = useState('전체');
+  const [selectedAgeGroupLoan, setSelectedAgeGroupLoan] = useState('전체');
 
   // CSV 파일 자동 로드
   const loadCsvFile = useCallback(async (fileName) => {
@@ -2041,9 +2045,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 return (
                   <button
                     key={ageGroup}
-                    onClick={() => setSelectedAgeGroup(ageGroup)}
+                    onClick={() => setSelectedAgeGroupOwnership(ageGroup)}
                     className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      selectedAgeGroup === ageGroup
+                      selectedAgeGroupOwnership === ageGroup
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
@@ -2056,7 +2060,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 
             {/* 선택된 연령대의 데이터 표시 */}
             {(() => {
-              const ageData = getAgeGroupOwnershipChange(csvData, selectedAgeGroup);
+              // 현재 탭에 해당하는 데이터만 사용
+              const currentData = activeTab === '전체통계' ? csvData : 
+                csvData.filter(row => {
+                  const building = row['동'] || '';
+                  if (activeTab === '대교아파트 1동') return building.includes('1동');
+                  if (activeTab === '대교아파트 2동') return building.includes('2동');
+                  if (activeTab === '대교아파트 3동') return building.includes('3동');
+                  if (activeTab === '대교아파트 4동') return building.includes('4동');
+                  return false;
+                });
+              const ageData = getAgeGroupOwnershipChange(currentData, selectedAgeGroupOwnership);
               const ownershipData = Object.entries(ageData.changes || {})
                 .map(([period, count]) => ({ period, count }))
                 .sort((a, b) => a.period.localeCompare(b.period));
@@ -2120,9 +2134,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 return (
                   <button
                     key={ageGroup}
-                    onClick={() => setSelectedAgeGroup(ageGroup)}
+                    onClick={() => setSelectedAgeGroupArea(ageGroup)}
                     className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      selectedAgeGroup === ageGroup
+                      selectedAgeGroupArea === ageGroup
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
@@ -2135,7 +2149,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 
             {/* 선택된 연령대의 데이터 표시 */}
             {(() => {
-              const ageData = getAgeGroupAreaDistribution(csvData, selectedAgeGroup);
+              // 현재 탭에 해당하는 데이터만 사용
+              const currentData = activeTab === '전체통계' ? csvData : 
+                csvData.filter(row => {
+                  const building = row['동'] || '';
+                  if (activeTab === '대교아파트 1동') return building.includes('1동');
+                  if (activeTab === '대교아파트 2동') return building.includes('2동');
+                  if (activeTab === '대교아파트 3동') return building.includes('3동');
+                  if (activeTab === '대교아파트 4동') return building.includes('4동');
+                  return false;
+                });
+              const ageData = getAgeGroupAreaDistribution(currentData, selectedAgeGroupArea);
               const areaData = Object.entries(ageData.areas || {})
                 .map(([area, count]) => {
                   const total = ageData.total;
@@ -2198,9 +2222,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 return (
                   <button
                     key={ageGroup}
-                    onClick={() => setSelectedAgeGroup(ageGroup)}
+                    onClick={() => setSelectedAgeGroupReason(ageGroup)}
                     className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      selectedAgeGroup === ageGroup
+                      selectedAgeGroupReason === ageGroup
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
@@ -2213,7 +2237,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 
             {/* 선택된 연령대의 데이터 표시 */}
             {(() => {
-              const ageData = getAgeGroupRegistrationReason(csvData, selectedAgeGroup);
+              // 현재 탭에 해당하는 데이터만 사용
+              const currentData = activeTab === '전체통계' ? csvData : 
+                csvData.filter(row => {
+                  const building = row['동'] || '';
+                  if (activeTab === '대교아파트 1동') return building.includes('1동');
+                  if (activeTab === '대교아파트 2동') return building.includes('2동');
+                  if (activeTab === '대교아파트 3동') return building.includes('3동');
+                  if (activeTab === '대교아파트 4동') return building.includes('4동');
+                  return false;
+                });
+              const ageData = getAgeGroupRegistrationReason(currentData, selectedAgeGroupReason);
               const reasonData = Object.entries(ageData.reasons || {})
                 .map(([reason, count]) => {
                   const total = ageData.total;
@@ -2260,9 +2294,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 return (
                   <button
                     key={ageGroup}
-                    onClick={() => setSelectedAgeGroup(ageGroup)}
+                    onClick={() => setSelectedAgeGroupLoan(ageGroup)}
                     className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      selectedAgeGroup === ageGroup
+                      selectedAgeGroupLoan === ageGroup
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
@@ -2275,7 +2309,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 
             {/* 선택된 연령대의 데이터 표시 */}
             {(() => {
-              const ageData = getAgeGroupLoanDistribution(csvData, selectedAgeGroup);
+              // 현재 탭에 해당하는 데이터만 사용
+              const currentData = activeTab === '전체통계' ? csvData : 
+                csvData.filter(row => {
+                  const building = row['동'] || '';
+                  if (activeTab === '대교아파트 1동') return building.includes('1동');
+                  if (activeTab === '대교아파트 2동') return building.includes('2동');
+                  if (activeTab === '대교아파트 3동') return building.includes('3동');
+                  if (activeTab === '대교아파트 4동') return building.includes('4동');
+                  return false;
+                });
+              const ageData = getAgeGroupLoanDistribution(currentData, selectedAgeGroupLoan);
               const loanData = Object.entries(ageData.loanRanges || {})
                 .map(([range, count]) => ({ range, count }))
                 .sort((a, b) => {
