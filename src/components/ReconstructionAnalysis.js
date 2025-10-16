@@ -218,23 +218,44 @@ export default function ReconstructionAnalysis() {
   const getAgeGroupLoanDistribution = useCallback((data, ageGroup) => {
     const filteredData = filterDataByAge(data, ageGroup);
     const loanRanges = {
-      '5천만원 미만': 0,
-      '5천만~1억': 0,
+      '1억 미만': 0,
       '1억~2억': 0,
-      '2억 이상': 0
+      '2억~3억': 0,
+      '3억~4억': 0,
+      '4억~5억': 0,
+      '5억~6억': 0,
+      '6억~7억': 0,
+      '7억~8억': 0,
+      '8억~9억': 0,
+      '9억~10억': 0,
+      '10억 이상': 0
     };
     
     filteredData.forEach(row => {
       const loanAmount = parseFloat(row['근저당액']) || 0;
       if (loanAmount > 0) {
-        if (loanAmount < 50000000) {
-          loanRanges['5천만원 미만']++;
-        } else if (loanAmount < 100000000) {
-          loanRanges['5천만~1억']++;
+        if (loanAmount < 100000000) {
+          loanRanges['1억 미만']++;
         } else if (loanAmount < 200000000) {
           loanRanges['1억~2억']++;
+        } else if (loanAmount < 300000000) {
+          loanRanges['2억~3억']++;
+        } else if (loanAmount < 400000000) {
+          loanRanges['3억~4억']++;
+        } else if (loanAmount < 500000000) {
+          loanRanges['4억~5억']++;
+        } else if (loanAmount < 600000000) {
+          loanRanges['5억~6억']++;
+        } else if (loanAmount < 700000000) {
+          loanRanges['6억~7억']++;
+        } else if (loanAmount < 800000000) {
+          loanRanges['7억~8억']++;
+        } else if (loanAmount < 900000000) {
+          loanRanges['8억~9억']++;
+        } else if (loanAmount < 1000000000) {
+          loanRanges['9억~10억']++;
         } else {
-          loanRanges['2억 이상']++;
+          loanRanges['10억 이상']++;
         }
       }
     });
@@ -2075,6 +2096,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 .map(([period, count]) => ({ period, count }))
                 .sort((a, b) => a.period.localeCompare(b.period));
               
+              console.log('소유권 변동 데이터:', { currentData: currentData.length, ageData, ownershipData });
+              
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
@@ -2256,6 +2279,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 })
                 .sort((a, b) => b.count - a.count);
               
+              console.log('등기이전원인 데이터:', { currentData: currentData.length, ageData, reasonData });
+              
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
@@ -2323,9 +2348,11 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               const loanData = Object.entries(ageData.loanRanges || {})
                 .map(([range, count]) => ({ range, count }))
                 .sort((a, b) => {
-                  const order = ['5천만원 미만', '5천만~1억', '1억~2억', '2억 이상'];
+                  const order = ['1억 미만', '1억~2억', '2억~3억', '3억~4억', '4억~5억', '5억~6억', '6억~7억', '7억~8억', '8억~9억', '9억~10억', '10억 이상'];
                   return order.indexOf(a.range) - order.indexOf(b.range);
                 });
+              
+              console.log('대출금액 데이터:', { currentData: currentData.length, ageData, loanData });
               
               return (
                 <>
