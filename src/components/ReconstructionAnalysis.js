@@ -26,15 +26,15 @@ export default function ReconstructionAnalysis() {
     // CSV 데이터를 차트용 데이터로 변환하는 내부 함수
     const processData = (data) => {
       // 동별 탭 생성 (1동, 2동, 3동, 4동)
-      const processedData = {
-        '전체통계': processBuildingData(data, null),
-        '대교아파트 1동': processBuildingData(data, '1동'),
-        '대교아파트 2동': processBuildingData(data, '2동'),
-        '대교아파트 3동': processBuildingData(data, '3동'),
-        '대교아파트 4동': processBuildingData(data, '4동')
-      };
+    const processedData = {
+      '전체통계': processBuildingData(data, null),
+      '대교아파트 1동': processBuildingData(data, '1동'),
+      '대교아파트 2동': processBuildingData(data, '2동'),
+      '대교아파트 3동': processBuildingData(data, '3동'),
+      '대교아파트 4동': processBuildingData(data, '4동')
+    };
 
-      setStatsData(processedData);
+    setStatsData(processedData);
     };
     
     try {
@@ -154,117 +154,6 @@ export default function ReconstructionAnalysis() {
     };
   }, [filterDataByAge]);
 
-  // 연령대별 소유권 변동 분석
-  const getAgeGroupOwnershipChange = useCallback((data, ageGroup) => {
-    const filteredData = filterDataByAge(data, ageGroup);
-    const ownershipChanges = {};
-    
-    filteredData.forEach(row => {
-      const changeYear = row['소유권변동년도'];
-      if (changeYear && changeYear !== '') {
-        const year = parseInt(changeYear);
-        if (year >= 2000 && year <= 2025) {
-          const period = year < 2010 ? '2003-2010' : 
-                        year < 2019 ? '2011-2018' : '2019-2025';
-          ownershipChanges[period] = (ownershipChanges[period] || 0) + 1;
-        }
-      }
-    });
-    
-    return {
-      total: filteredData.length,
-      changes: ownershipChanges
-    };
-  }, [filterDataByAge]);
-
-  // 연령대별 등기이전원인 분석
-  const getAgeGroupRegistrationReason = useCallback((data, ageGroup) => {
-    const filteredData = filterDataByAge(data, ageGroup);
-    const reasons = {};
-    
-    filteredData.forEach(row => {
-      const reason = row['등기이전원인'];
-      if (reason && reason !== '') {
-        reasons[reason] = (reasons[reason] || 0) + 1;
-      }
-    });
-    
-    return {
-      total: filteredData.length,
-      reasons: reasons
-    };
-  }, [filterDataByAge]);
-
-  // 연령대별 면적별 분포 분석
-  const getAgeGroupAreaDistribution = useCallback((data, ageGroup) => {
-    const filteredData = filterDataByAge(data, ageGroup);
-    const areas = {};
-    
-    filteredData.forEach(row => {
-      const area = parseFloat(row['전용면적_제곱미터']) || 0;
-      if (area > 0) {
-        const areaKey = `${area}㎡`;
-        areas[areaKey] = (areas[areaKey] || 0) + 1;
-      }
-    });
-    
-    return {
-      total: filteredData.length,
-      areas: areas
-    };
-  }, [filterDataByAge]);
-
-  // 연령대별 대출금액대별 분포 분석
-  const getAgeGroupLoanDistribution = useCallback((data, ageGroup) => {
-    const filteredData = filterDataByAge(data, ageGroup);
-    const loanRanges = {
-      '1억 미만': 0,
-      '1억~2억': 0,
-      '2억~3억': 0,
-      '3억~4억': 0,
-      '4억~5억': 0,
-      '5억~6억': 0,
-      '6억~7억': 0,
-      '7억~8억': 0,
-      '8억~9억': 0,
-      '9억~10억': 0,
-      '10억 이상': 0
-    };
-    
-    filteredData.forEach(row => {
-      const loanAmount = parseFloat(row['근저당액']) || 0;
-      if (loanAmount > 0) {
-        if (loanAmount < 100000000) {
-          loanRanges['1억 미만']++;
-        } else if (loanAmount < 200000000) {
-          loanRanges['1억~2억']++;
-        } else if (loanAmount < 300000000) {
-          loanRanges['2억~3억']++;
-        } else if (loanAmount < 400000000) {
-          loanRanges['3억~4억']++;
-        } else if (loanAmount < 500000000) {
-          loanRanges['4억~5억']++;
-        } else if (loanAmount < 600000000) {
-          loanRanges['5억~6억']++;
-        } else if (loanAmount < 700000000) {
-          loanRanges['6억~7억']++;
-        } else if (loanAmount < 800000000) {
-          loanRanges['7억~8억']++;
-        } else if (loanAmount < 900000000) {
-          loanRanges['8억~9억']++;
-        } else if (loanAmount < 1000000000) {
-          loanRanges['9억~10억']++;
-        } else {
-          loanRanges['10억 이상']++;
-        }
-      }
-    });
-    
-    return {
-      total: filteredData.length,
-      loanRanges: loanRanges
-    };
-  }, [filterDataByAge]);
 
   // 파일 업로드 핸들러
   const handleDataLoad = (data) => {
@@ -1519,7 +1408,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
       // 기본 데이터로 초기화 (백업)
       if (importedData && importedData.length > 0) {
         console.log('기본 데이터 로드:', importedData.length);
-        setCsvData(importedData);
+    setCsvData(importedData);
         
         // 동별 탭 생성 (1동, 2동, 3동, 4동)
         const processedData = {
@@ -1531,7 +1420,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
         };
         setStatsData(processedData);
         
-        setLoading(false);
+    setLoading(false);
       }
     };
 
@@ -1985,7 +1874,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             
             {/* 선택된 연령대의 데이터 표시 */}
             {(() => {
-              const ageData = getAgeGroupResidenceData(csvData, selectedAgeGroup);
+              // 현재 탭에 해당하는 데이터만 사용
+              const currentData = activeTab === '전체통계' ? csvData : 
+                csvData.filter(row => {
+                  const building = row.건물명 || '';
+                  if (activeTab === '대교아파트 1동') return building.includes('1동');
+                  if (activeTab === '대교아파트 2동') return building.includes('2동');
+                  if (activeTab === '대교아파트 3동') return building.includes('3동');
+                  if (activeTab === '대교아파트 4동') return building.includes('4동');
+                  return false;
+                });
+              const ageData = getAgeGroupResidenceData(currentData, selectedAgeGroup);
               const ageResidenceData = [
                 { 
                   name: '거주', 
@@ -2006,33 +1905,34 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   <div className="text-center text-sm text-gray-600 mb-4">
                     총 {ageData.total}명 ({selectedAgeGroup})
                   </div>
-            <ResponsiveContainer width="100%" height={280}>
+            <div className="flex items-center justify-center gap-8">
+              <ResponsiveContainer width="60%" height={280}>
               <PieChart>
                 <Pie
-                        data={ageResidenceData}
+                          data={ageResidenceData}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
-                        label={({ name, value, percentage }) => `${name}\n${value}명\n(${percentage}%)`}
                 >
-                        {ageResidenceData.map((entry, index) => (
+                          {ageResidenceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div className="mt-2 flex justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-                <span className="text-xs">거주</span>
+              <div className="flex-1 space-y-2">
+                {ageResidenceData.map((entry, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: entry.color }}></div>
+                    <span className="text-sm font-medium">{entry.name}</span>
+                    <span className="text-sm text-gray-600">{entry.value}명</span>
+                    <span className="text-sm text-gray-500">({entry.percentage}%)</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                <span className="text-xs">투자</span>
+                ))}
               </div>
             </div>
                 </>
@@ -2084,40 +1984,86 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               // 현재 탭에 해당하는 데이터만 사용
               const currentData = activeTab === '전체통계' ? csvData : 
                 csvData.filter(row => {
-                  const building = row['동'] || '';
+                  const building = row.건물명 || '';
                   if (activeTab === '대교아파트 1동') return building.includes('1동');
                   if (activeTab === '대교아파트 2동') return building.includes('2동');
                   if (activeTab === '대교아파트 3동') return building.includes('3동');
                   if (activeTab === '대교아파트 4동') return building.includes('4동');
                   return false;
                 });
-              const ageData = getAgeGroupOwnershipChange(currentData, selectedAgeGroupOwnership);
-              const ownershipData = Object.entries(ageData.changes || {})
-                .map(([period, count]) => ({ period, count }))
-                .sort((a, b) => a.period.localeCompare(b.period));
               
-              console.log('소유권 변동 데이터:', { currentData: currentData.length, ageData, ownershipData });
+              // 연령대별 필터링 적용
+              const filteredData = selectedAgeGroupOwnership === '전체' ? currentData : 
+                currentData.filter(row => {
+                  if (!row.주민번호 || row.주민번호.length < 7) return false;
+                  const birthYear = parseInt(row.주민번호.substring(0, 2));
+                  const currentYear = new Date().getFullYear();
+                  let fullBirthYear;
+                  
+                  if (birthYear <= 30) {
+                    fullBirthYear = 2000 + birthYear;
+                  } else {
+                    fullBirthYear = 1900 + birthYear;
+                  }
+                  
+                  const age = currentYear - fullBirthYear;
+                  const ageGroup = selectedAgeGroupOwnership;
+                  
+                  if (ageGroup === '20대') return age >= 20 && age < 30;
+                  if (ageGroup === '30대') return age >= 30 && age < 40;
+                  if (ageGroup === '40대') return age >= 40 && age < 50;
+                  if (ageGroup === '50대') return age >= 50 && age < 60;
+                  if (ageGroup === '60대') return age >= 60 && age < 70;
+                  if (ageGroup === '70대') return age >= 70 && age < 80;
+                  if (ageGroup === '80대') return age >= 80 && age < 90;
+                  if (ageGroup === '90대') return age >= 90;
+                  
+                  return true;
+                });
+              
+              // 소유권 변동 데이터 처리 (소유권취득일 기준) - 2003년부터 2025년까지 1년 단위
+              const ownershipChanges = {};
+              filteredData.forEach(row => {
+                const acquisitionDate = row['소유권취득일'];
+                if (acquisitionDate && acquisitionDate !== '') {
+                  const year = parseInt(acquisitionDate.split('-')[0]);
+                  if (year >= 2003 && year <= 2025) {
+                    ownershipChanges[year] = (ownershipChanges[year] || 0) + 1;
+                  }
+                }
+              });
+              
+              // 2003년부터 2025년까지 모든 연도 초기화
+              const allYears = [];
+              for (let year = 2003; year <= 2025; year++) {
+                allYears.push({ year: year.toString(), count: ownershipChanges[year] || 0 });
+              }
+              
+              const ownershipData = allYears;
+              
+              console.log('소유권 변동 데이터:', { currentData: currentData.length, filteredData: filteredData.length, ownershipData });
               
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
-                    총 {ageData.total}건 ({selectedAgeGroup})
+                    총 {filteredData.length}건 ({selectedAgeGroupOwnership})
                   </div>
-                  <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={ownershipData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis 
-                        dataKey="period" 
-                        tick={{ fontSize: 9 }} 
-                        angle={-45}
-                        textAnchor="end"
-                        height={70}
-                      />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#10b981" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="year" 
+                        tick={{ fontSize: 8 }} 
+                  angle={-45}
+                  textAnchor="end"
+                  height={70}
+                        interval={0}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#10b981" />
+              </BarChart>
+            </ResponsiveContainer>
                   <div className="text-xs text-gray-500 text-center mt-2">기간</div>
                 </>
               );
@@ -2128,15 +2074,16 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">성별 분포</h2>
             <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
-            <ResponsiveContainer width="100%" height={280}>
+            <div className="flex items-center justify-center gap-8">
+              <ResponsiveContainer width="60%" height={280}>
               <PieChart>
-                <Pie
-                  data={genderData}
+                  <Pie
+                    data={genderData}
                   cx="50%"
                   cy="50%"
+                    innerRadius={50}
                   outerRadius={90}
                   dataKey="value"
-                  label={({ name, value }) => `${name}\n${value}명\n(${(value/stats.total*100).toFixed(1)}%)`}
                 >
                   {genderData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -2145,6 +2092,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+              <div className="flex-1 space-y-2">
+                {genderData.map((entry, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: entry.color }}></div>
+                    <span className="text-sm font-medium">{entry.name}</span>
+                    <span className="text-sm text-gray-600">{entry.value}명</span>
+                    <span className="text-sm text-gray-500">({((entry.value / stats.total) * 100).toFixed(1)}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* 면적별 분포 */}
@@ -2175,45 +2133,105 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               // 현재 탭에 해당하는 데이터만 사용
               const currentData = activeTab === '전체통계' ? csvData : 
                 csvData.filter(row => {
-                  const building = row['동'] || '';
+                  const building = row.건물명 || '';
                   if (activeTab === '대교아파트 1동') return building.includes('1동');
                   if (activeTab === '대교아파트 2동') return building.includes('2동');
                   if (activeTab === '대교아파트 3동') return building.includes('3동');
                   if (activeTab === '대교아파트 4동') return building.includes('4동');
                   return false;
                 });
-              const ageData = getAgeGroupAreaDistribution(currentData, selectedAgeGroupArea);
-              const areaData = Object.entries(ageData.areas || {})
+              
+              // 연령대별 필터링 적용
+              const filteredData = selectedAgeGroupArea === '전체' ? currentData : 
+                currentData.filter(row => {
+                  if (!row.주민번호 || row.주민번호.length < 7) return false;
+                  const birthYear = parseInt(row.주민번호.substring(0, 2));
+                  const currentYear = new Date().getFullYear();
+                  let fullBirthYear;
+                  
+                  if (birthYear <= 30) {
+                    fullBirthYear = 2000 + birthYear;
+                  } else {
+                    fullBirthYear = 1900 + birthYear;
+                  }
+                  
+                  const age = currentYear - fullBirthYear;
+                  const ageGroup = selectedAgeGroupArea;
+                  
+                  if (ageGroup === '20대') return age >= 20 && age < 30;
+                  if (ageGroup === '30대') return age >= 30 && age < 40;
+                  if (ageGroup === '40대') return age >= 40 && age < 50;
+                  if (ageGroup === '50대') return age >= 50 && age < 60;
+                  if (ageGroup === '60대') return age >= 60 && age < 70;
+                  if (ageGroup === '70대') return age >= 70 && age < 80;
+                  if (ageGroup === '80대') return age >= 80 && age < 90;
+                  if (ageGroup === '90대') return age >= 90;
+                  
+                  return true;
+                });
+              
+              // 면적별 데이터 처리
+              const areas = {};
+              filteredData.forEach(row => {
+                const area = parseFloat(row['전용면적_제곱미터']) || 0;
+                if (area > 0) {
+                  const areaKey = `${area}㎡`;
+                  areas[areaKey] = (areas[areaKey] || 0) + 1;
+                }
+              });
+              
+              const areaData = Object.entries(areas)
                 .map(([area, count]) => {
-                  const total = ageData.total;
+                  const total = filteredData.length;
                   const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
                   return { area, count, percentage };
                 })
                 .sort((a, b) => b.count - a.count);
               
+              console.log('면적별 데이터:', { currentData: currentData.length, filteredData: filteredData.length, areaData });
+              
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
-                    총 {ageData.total}세대 ({selectedAgeGroup})
+                    총 {filteredData.length}세대 ({selectedAgeGroupArea})
                   </div>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={areaData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={90}
-                        dataKey="count"
-                        label={({ area, count, percentage }) => `${area}\n${count}세대\n(${percentage}%)`}
-                      >
-                        {areaData.map((entry, index) => {
-                          const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444'];
-                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                        })}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="flex items-center justify-center gap-8">
+                    <ResponsiveContainer width="60%" height={280}>
+              <PieChart>
+                        <Pie
+                          data={areaData}
+                  cx="50%"
+                  cy="50%"
+                          innerRadius={50}
+                  outerRadius={90}
+                  dataKey="count"
+                        >
+                          {areaData.map((entry, index) => {
+                            const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444'];
+                            return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                          })}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+                    
+                    <div className="flex-1 space-y-2">
+                      {areaData.map((entry, index) => {
+                        const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444'];
+                        return (
+                          <div key={index} className="flex items-center gap-3">
+                            <div 
+                              className="w-4 h-4 rounded" 
+                              style={{ backgroundColor: colors[index % colors.length] }}
+                            ></div>
+                            <span className="text-sm text-gray-800 whitespace-nowrap">
+                              {entry.area} · {entry.count}세대 ({entry.percentage}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </>
               );
             })()}
@@ -2263,47 +2281,102 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               // 현재 탭에 해당하는 데이터만 사용
               const currentData = activeTab === '전체통계' ? csvData : 
                 csvData.filter(row => {
-                  const building = row['동'] || '';
+                  const building = row.건물명 || '';
                   if (activeTab === '대교아파트 1동') return building.includes('1동');
                   if (activeTab === '대교아파트 2동') return building.includes('2동');
                   if (activeTab === '대교아파트 3동') return building.includes('3동');
                   if (activeTab === '대교아파트 4동') return building.includes('4동');
                   return false;
                 });
-              const ageData = getAgeGroupRegistrationReason(currentData, selectedAgeGroupReason);
-              const reasonData = Object.entries(ageData.reasons || {})
+              
+              // 연령대별 필터링 적용
+              const filteredData = selectedAgeGroupReason === '전체' ? currentData : 
+                currentData.filter(row => {
+                  if (!row.주민번호 || row.주민번호.length < 7) return false;
+                  const birthYear = parseInt(row.주민번호.substring(0, 2));
+                  const currentYear = new Date().getFullYear();
+                  let fullBirthYear;
+                  
+                  if (birthYear <= 30) {
+                    fullBirthYear = 2000 + birthYear;
+                  } else {
+                    fullBirthYear = 1900 + birthYear;
+                  }
+                  
+                  const age = currentYear - fullBirthYear;
+                  const ageGroup = selectedAgeGroupReason;
+                  
+                  if (ageGroup === '20대') return age >= 20 && age < 30;
+                  if (ageGroup === '30대') return age >= 30 && age < 40;
+                  if (ageGroup === '40대') return age >= 40 && age < 50;
+                  if (ageGroup === '50대') return age >= 50 && age < 60;
+                  if (ageGroup === '60대') return age >= 60 && age < 70;
+                  if (ageGroup === '70대') return age >= 70 && age < 80;
+                  if (ageGroup === '80대') return age >= 80 && age < 90;
+                  if (ageGroup === '90대') return age >= 90;
+                  
+                  return true;
+                });
+              
+              // 등기이전원인 데이터 처리
+              const transferReasons = {};
+              filteredData.forEach(row => {
+                if (row.이전사유) {
+                  const reason = row.이전사유.trim();
+                  if (reason) {
+                    transferReasons[reason] = (transferReasons[reason] || 0) + 1;
+                  }
+                }
+              });
+              
+              const reasonData = Object.entries(transferReasons)
                 .map(([reason, count]) => {
-                  const total = ageData.total;
+                  const total = filteredData.length;
                   const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
                   return { reason, count, percentage };
                 })
                 .sort((a, b) => b.count - a.count);
               
-              console.log('등기이전원인 데이터:', { currentData: currentData.length, ageData, reasonData });
+              console.log('등기이전원인 데이터:', { currentData: currentData.length, filteredData: filteredData.length, reasonData });
               
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
-                    총 {ageData.total}건 ({selectedAgeGroup})
+                    총 {filteredData.length}건 ({selectedAgeGroupReason})
                   </div>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={reasonData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={90}
-                        dataKey="count"
-                        label={({ reason, count, percentage }) => `${reason}\n${count}건\n(${percentage}%)`}
-                      >
-                        {reasonData.map((entry, index) => {
-                          const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
-                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                        })}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="flex items-center justify-center gap-8">
+                    <ResponsiveContainer width="60%" height={280}>
+              <PieChart>
+                        <Pie
+                          data={reasonData}
+                  cx="50%"
+                  cy="50%"
+                          innerRadius={50}
+                  outerRadius={90}
+                  dataKey="count"
+                >
+                          {reasonData.map((entry, index) => {
+                    const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  })}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+                    <div className="flex-1 space-y-2">
+                      {reasonData.map((entry, index) => {
+                        const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+                        return (
+                          <div key={index} className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded" style={{ backgroundColor: colors[index % colors.length] }}></div>
+                            <span className="text-sm font-medium">{entry.reason}</span>
+                            <span className="text-sm text-gray-600">{entry.count}건</span>
+                            <span className="text-sm text-gray-500">({entry.percentage}%)</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </>
               );
             })()}
@@ -2337,38 +2410,113 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               // 현재 탭에 해당하는 데이터만 사용
               const currentData = activeTab === '전체통계' ? csvData : 
                 csvData.filter(row => {
-                  const building = row['동'] || '';
+                  const building = row.건물명 || '';
                   if (activeTab === '대교아파트 1동') return building.includes('1동');
                   if (activeTab === '대교아파트 2동') return building.includes('2동');
                   if (activeTab === '대교아파트 3동') return building.includes('3동');
                   if (activeTab === '대교아파트 4동') return building.includes('4동');
                   return false;
                 });
-              const ageData = getAgeGroupLoanDistribution(currentData, selectedAgeGroupLoan);
-              const loanData = Object.entries(ageData.loanRanges || {})
+              
+              // 연령대별 필터링 적용
+              const filteredData = selectedAgeGroupLoan === '전체' ? currentData : 
+                currentData.filter(row => {
+                  if (!row.주민번호 || row.주민번호.length < 7) return false;
+                  const birthYear = parseInt(row.주민번호.substring(0, 2));
+                  const currentYear = new Date().getFullYear();
+                  let fullBirthYear;
+                  
+                  if (birthYear <= 30) {
+                    fullBirthYear = 2000 + birthYear;
+                  } else {
+                    fullBirthYear = 1900 + birthYear;
+                  }
+                  
+                  const age = currentYear - fullBirthYear;
+                  const ageGroup = selectedAgeGroupLoan;
+                  
+                  if (ageGroup === '20대') return age >= 20 && age < 30;
+                  if (ageGroup === '30대') return age >= 30 && age < 40;
+                  if (ageGroup === '40대') return age >= 40 && age < 50;
+                  if (ageGroup === '50대') return age >= 50 && age < 60;
+                  if (ageGroup === '60대') return age >= 60 && age < 70;
+                  if (ageGroup === '70대') return age >= 70 && age < 80;
+                  if (ageGroup === '80대') return age >= 80 && age < 90;
+                  if (ageGroup === '90대') return age >= 90;
+                  
+                  return true;
+                });
+              
+              // 대출금액 데이터 처리
+              const loanRanges = {
+                '1억 미만': 0,
+                '1억대': 0,
+                '2억대': 0,
+                '3억대': 0,
+                '4억대': 0,
+                '5억대': 0,
+                '6억대': 0,
+                '7억대': 0,
+                '8억대': 0,
+                '9억대': 0,
+                '10억 이상': 0
+              };
+              
+              let loanCount = 0; // 실제 대출이 있는 건수
+              filteredData.forEach(row => {
+                const loanAmount = parseFloat(row['근저당액'] || row['유효근저당총액'] || row['근저당총액']) || 0;
+                if (loanAmount > 0) {
+                  loanCount++;
+                  if (loanAmount < 100000000) {
+                    loanRanges['1억 미만']++;
+                  } else if (loanAmount < 200000000) {
+                    loanRanges['1억대']++;
+                  } else if (loanAmount < 300000000) {
+                    loanRanges['2억대']++;
+                  } else if (loanAmount < 400000000) {
+                    loanRanges['3억대']++;
+                  } else if (loanAmount < 500000000) {
+                    loanRanges['4억대']++;
+                  } else if (loanAmount < 600000000) {
+                    loanRanges['5억대']++;
+                  } else if (loanAmount < 700000000) {
+                    loanRanges['6억대']++;
+                  } else if (loanAmount < 800000000) {
+                    loanRanges['7억대']++;
+                  } else if (loanAmount < 900000000) {
+                    loanRanges['8억대']++;
+                  } else if (loanAmount < 1000000000) {
+                    loanRanges['9억대']++;
+                  } else {
+                    loanRanges['10억 이상']++;
+                  }
+                }
+              });
+              
+              const loanData = Object.entries(loanRanges)
                 .map(([range, count]) => ({ range, count }))
                 .sort((a, b) => {
-                  const order = ['1억 미만', '1억~2억', '2억~3억', '3억~4억', '4억~5억', '5억~6억', '6억~7억', '7억~8억', '8억~9억', '9억~10억', '10억 이상'];
+                  const order = ['1억 미만', '1억대', '2억대', '3억대', '4억대', '5억대', '6억대', '7억대', '8억대', '9억대', '10억 이상'];
                   return order.indexOf(a.range) - order.indexOf(b.range);
                 });
               
-              console.log('대출금액 데이터:', { currentData: currentData.length, ageData, loanData });
+              console.log('대출금액 데이터:', { currentData: currentData.length, filteredData: filteredData.length, loanCount, loanData });
               
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
-                    총 {ageData.total}명 ({selectedAgeGroup})
+                    총 {loanCount}명 (대출자 기준, {selectedAgeGroupLoan})
                   </div>
-                  <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={loanData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="range" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#ef4444" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <div className="text-xs text-gray-500 text-center mt-2">대출금액</div>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="range" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="text-xs text-gray-500 text-center mt-2">대출금액</div>
                 </>
               );
             })()}
@@ -2378,17 +2526,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">대출 여부 비율</h2>
             <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
-            <ResponsiveContainer width="100%" height={280}>
+            <div className="flex items-center justify-center gap-8">
+              <ResponsiveContainer width="60%" height={280}>
               <PieChart>
-                <Pie
-                  data={stats.loanStatusData || []}
+                  <Pie
+                    data={stats.loanStatusData || []}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
-                  label={({ name, percentage }) => `${name}\n${percentage}%`}
                 >
                   {(stats.loanStatusData || []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -2397,6 +2545,17 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+              <div className="flex-1 space-y-2">
+                {(stats.loanStatusData || []).map((entry, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: entry.color }}></div>
+                    <span className="text-sm font-medium">{entry.name}</span>
+                    <span className="text-sm text-gray-600">{entry.value}명</span>
+                    <span className="text-sm text-gray-500">({entry.percentage}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="mt-2 flex justify-center gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded"></div>
