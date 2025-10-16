@@ -174,8 +174,8 @@ export default function ReconstructionAnalysis() {
 
     // AI 보고서 생성 핸들러
     const handleGenerateReport = async () => {
-      // API 키 설정 (하드코딩된 키 사용)
-      const apiKey = 'AIzaSyALDwki_PUBffzeYEMT4MnDZDm_tY5wp-8';
+      // API 키 설정 (환경변수에서 가져오기)
+      const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
       
       // API 키 유효성 검사
       if (!apiKey || apiKey.length < 30) {

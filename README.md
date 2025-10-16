@@ -24,6 +24,28 @@
 - 동적 건물명 탭 생성
 - 파일별 데이터 독립 분석
 
+## 설치 및 실행
+
+### 1. 의존성 설치
+```bash
+npm install
+```
+
+### 2. 환경변수 설정
+```bash
+# .env 파일 생성
+cp .env.example .env
+
+# .env 파일 편집하여 API 키 설정
+# REACT_APP_GEMINI_API_KEY=your_actual_api_key_here
+```
+
+**API 키 발급 방법:**
+1. [Google AI Studio](https://aistudio.google.com/app/apikey) 방문
+2. Google 계정으로 로그인
+3. "Create API Key" 클릭
+4. 생성된 API 키를 `.env` 파일에 설정
+
 ## 사용 방법
 
 ### 1. 기본 실행
