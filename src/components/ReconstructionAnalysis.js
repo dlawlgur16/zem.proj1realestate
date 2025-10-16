@@ -50,7 +50,7 @@ export default function ReconstructionAnalysis() {
       setError('파일을 로드할 수 없습니다.');
       setLoading(false);
     }
-  }, []);
+  }, [processData]);
 
   // 사용 가능한 CSV 파일 목록 가져오기
   const fetchAvailableFiles = useCallback(async () => {
