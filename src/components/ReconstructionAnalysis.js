@@ -2263,11 +2263,11 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               </PieChart>
             </ResponsiveContainer>
                     
-                    <div className="flex-1 space-y-2 w-full md:w-auto">
+                    <div className="flex-1 space-y-2 w-full md:w-auto min-w-0">
                       {areaData.map((entry, index) => {
                         const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444'];
                         return (
-                          <div key={index} className="flex items-center gap-3 text-xs md:text-sm">
+                          <div key={index} className="flex items-center gap-2 text-xs md:text-sm whitespace-nowrap">
                             <div 
                               className="w-4 h-4 rounded" 
                               style={{ backgroundColor: colors[index % colors.length] }}
@@ -2427,13 +2427,13 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                          />
               </PieChart>
             </ResponsiveContainer>
-                    <div className="flex-1 space-y-2 w-full md:w-auto">
+                    <div className="flex-1 space-y-2 w-full md:w-auto min-w-0">
                       {reasonData.map((entry, index) => {
                         const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
                         return (
-                          <div key={index} className="flex items-center gap-3 text-xs md:text-sm">
+                          <div key={index} className="flex items-center gap-2 text-xs md:text-sm whitespace-nowrap">
                             <div className="w-4 h-4 rounded" style={{ backgroundColor: colors[index % colors.length] }}></div>
-                            <span className="text-xs md:text-sm font-medium">{entry.reason}</span>
+                            <span className="text-xs md:text-sm font-medium truncate">{entry.reason}</span>
                             <span className="text-xs md:text-sm text-gray-600">{entry.count}건</span>
                             <span className="text-xs md:text-sm text-gray-500">({entry.percentage}%)</span>
                           </div>
