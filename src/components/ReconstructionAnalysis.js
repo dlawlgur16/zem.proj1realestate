@@ -1806,22 +1806,6 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
     };
   };
 
-  // 연도별 소유권 변동 데이터 처리
-  const getOwnershipData = () => {
-    const yearGroups = {};
-    csvData.forEach(row => {
-      if (row.소유권취득일) {
-        const year = row.소유권취득일.split('-')[0];
-        if (year && year >= '2000') {
-          yearGroups[year] = (yearGroups[year] || 0) + 1;
-        }
-      }
-    });
-
-    return Object.entries(yearGroups)
-      .sort(([a], [b]) => a - b)
-      .map(([year, count]) => ({ year, count }));
-  };
 
   if (loading) {
     return (
@@ -1837,8 +1821,6 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
   const stats = statsData[activeTab] || {};
   const tabs = ['전체통계', '대교아파트 1동', '대교아파트 2동', '대교아파트 3동', '대교아파트 4동'];
 
-  // 연도별 소유권 변동 데이터
-  const ownershipData = getOwnershipData();
 
   const residenceData = [
     { name: '거주', value: stats.residenceCount || 0, percentage: stats.total ? ((stats.residenceCount/stats.total)*100).toFixed(1) : '0', color: '#10b981' },
