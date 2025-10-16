@@ -1914,7 +1914,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                     총 {ageData.total}명 ({selectedAgeGroup})
                   </div>
             <div className="flex items-center justify-center gap-8">
-              <ResponsiveContainer width="60%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="md:w-3/5">
               <PieChart>
                 <Pie
                           data={ageResidenceData}
@@ -2107,7 +2107,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">성별 분포</h2>
             <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
             <div className="flex items-center justify-center gap-8">
-              <ResponsiveContainer width="60%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="md:w-3/5">
               <PieChart>
                 <Pie
                   data={genderData}
@@ -2235,8 +2235,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   <div className="text-center text-sm text-gray-600 mb-4">
                     총 {filteredData.length}세대 ({selectedAgeGroupArea})
                   </div>
-                  <div className="flex items-center justify-center gap-8">
-                    <ResponsiveContainer width="60%" height={280}>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                    <ResponsiveContainer width="100%" height={300} className="md:w-3/5">
               <PieChart>
                 <Pie
                           data={areaData}
@@ -2263,11 +2263,11 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               </PieChart>
             </ResponsiveContainer>
                     
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 w-full md:w-auto">
                       {areaData.map((entry, index) => {
                         const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444'];
                         return (
-                          <div key={index} className="flex items-center gap-3">
+                          <div key={index} className="flex items-center gap-3 text-xs md:text-sm">
                             <div 
                               className="w-4 h-4 rounded" 
                               style={{ backgroundColor: colors[index % colors.length] }}
@@ -2400,8 +2400,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   <div className="text-center text-sm text-gray-600 mb-4">
                     총 {filteredData.length}건 ({selectedAgeGroupReason})
                   </div>
-                  <div className="flex items-center justify-center gap-8">
-                    <ResponsiveContainer width="60%" height={280}>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                    <ResponsiveContainer width="100%" height={300} className="md:w-3/5">
               <PieChart>
                 <Pie
                           data={reasonData}
@@ -2427,15 +2427,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                          />
               </PieChart>
             </ResponsiveContainer>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 w-full md:w-auto">
                       {reasonData.map((entry, index) => {
                         const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
                         return (
-                          <div key={index} className="flex items-center gap-3">
+                          <div key={index} className="flex items-center gap-3 text-xs md:text-sm">
                             <div className="w-4 h-4 rounded" style={{ backgroundColor: colors[index % colors.length] }}></div>
-                            <span className="text-sm font-medium">{entry.reason}</span>
-                            <span className="text-sm text-gray-600">{entry.count}건</span>
-                            <span className="text-sm text-gray-500">({entry.percentage}%)</span>
+                            <span className="text-xs md:text-sm font-medium">{entry.reason}</span>
+                            <span className="text-xs md:text-sm text-gray-600">{entry.count}건</span>
+                            <span className="text-xs md:text-sm text-gray-500">({entry.percentage}%)</span>
                           </div>
                         );
                       })}
@@ -2599,7 +2599,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">대출 여부 비율</h2>
             <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
             <div className="flex items-center justify-center gap-8">
-              <ResponsiveContainer width="60%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="md:w-3/5">
               <PieChart>
                 <Pie
                   data={stats.loanStatusData || []}
