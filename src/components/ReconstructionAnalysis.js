@@ -50,7 +50,7 @@ export default function ReconstructionAnalysis() {
       setError('파일을 로드할 수 없습니다.');
       setLoading(false);
     }
-  }, [processData]);
+  }, []);
 
   // 사용 가능한 CSV 파일 목록 가져오기
   const fetchAvailableFiles = useCallback(async () => {
@@ -1375,28 +1375,6 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 - **보고서 끝 -**`;
         };
 
-  // AI 인사이트 생성 함수
-  const generateInsights = (stats) => {
-    if (!stats) return "데이터를 분석할 수 없습니다.";
-    
-    const residenceRate = stats.total ? (stats.residenceCount / stats.total) * 100 : 0;
-    
-    let insights = [];
-    
-    if (residenceRate > 70) {
-      insights.push("실거주율이 높아 안정적인 재건축이 예상됩니다.");
-    } else if (residenceRate < 30) {
-      insights.push("투자 비율이 높아 재건축 시 투자자들의 관심이 클 것으로 예상됩니다.");
-    } else {
-      insights.push("거주자와 투자자가 균형을 이루고 있어 재건축 시 다양한 관점에서 검토가 필요합니다.");
-    }
-    
-    if (stats.averageLoanAmount && stats.averageLoanAmount > 300000000) {
-      insights.push("평균 대출 규모가 크므로 재건축 시 자금 조달 계획이 중요합니다.");
-    }
-    
-    return insights.join(" ");
-  };
 
   // 컴포넌트 마운트 시 자동 감지 및 로드
   useEffect(() => {
@@ -1871,7 +1849,6 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             {/* 연령대별 탭 */}
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {['전체', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'].map((ageGroup) => {
-                const ageData = getAgeGroupResidenceData(csvData, ageGroup);
                 return (
                   <button
                     key={ageGroup}
@@ -1911,35 +1888,35 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   <div className="text-center text-sm text-gray-600 mb-4">
                     총 {ageData.total}명 ({selectedAgeGroup})
                   </div>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
                         data={ageResidenceData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        dataKey="value"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="value"
                         label={({ name, value, percentage }) => `${name}\n${value}명\n(${percentage}%)`}
-                      >
+                >
                         {ageResidenceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-2 flex justify-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-                      <span className="text-xs">거주</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                      <span className="text-xs">투자</span>
-                    </div>
-                  </div>
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="mt-2 flex justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+                <span className="text-xs">거주</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                <span className="text-xs">투자</span>
+              </div>
+            </div>
                 </>
               );
             })()}
