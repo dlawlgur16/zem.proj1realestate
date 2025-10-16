@@ -1842,7 +1842,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="range" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
                 <Bar dataKey="count" fill="#10b981" />
               </BarChart>
             </ResponsiveContainer>
@@ -1921,7 +1929,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
               </PieChart>
             </ResponsiveContainer>
               <div className="flex-1 space-y-2">
@@ -1949,7 +1965,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis dataKey="region" type="category" width={85} tick={{ fontSize: 10 }} />
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
                 <Bar dataKey="count" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
@@ -2060,7 +2084,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                         interval={0}
                 />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
                 <Bar dataKey="count" fill="#10b981" />
               </BarChart>
             </ResponsiveContainer>
@@ -2077,8 +2109,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             <div className="flex items-center justify-center gap-8">
               <ResponsiveContainer width="60%" height={280}>
               <PieChart>
-                  <Pie
-                    data={genderData}
+                <Pie
+                  data={genderData}
                   cx="50%"
                   cy="50%"
                     innerRadius={50}
@@ -2089,7 +2121,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
               </PieChart>
             </ResponsiveContainer>
               <div className="flex-1 space-y-2">
@@ -2198,7 +2238,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   <div className="flex items-center justify-center gap-8">
                     <ResponsiveContainer width="60%" height={280}>
               <PieChart>
-                        <Pie
+                <Pie
                           data={areaData}
                   cx="50%"
                   cy="50%"
@@ -2211,7 +2251,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                             return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
                           })}
                 </Pie>
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
               </PieChart>
             </ResponsiveContainer>
                     
@@ -2246,7 +2294,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="period" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
                 <Bar dataKey="count" fill="#8b5cf6" />
               </BarChart>
             </ResponsiveContainer>
@@ -2347,7 +2403,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   <div className="flex items-center justify-center gap-8">
                     <ResponsiveContainer width="60%" height={280}>
               <PieChart>
-                        <Pie
+                <Pie
                           data={reasonData}
                   cx="50%"
                   cy="50%"
@@ -2360,7 +2416,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                     return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
                   })}
                 </Pie>
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
               </PieChart>
             </ResponsiveContainer>
                     <div className="flex-1 space-y-2">
@@ -2512,7 +2576,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="range" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
                 <Bar dataKey="count" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
@@ -2529,8 +2601,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             <div className="flex items-center justify-center gap-8">
               <ResponsiveContainer width="60%" height={280}>
               <PieChart>
-                  <Pie
-                    data={stats.loanStatusData || []}
+                <Pie
+                  data={stats.loanStatusData || []}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -2542,7 +2614,15 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
               </PieChart>
             </ResponsiveContainer>
               <div className="flex-1 space-y-2">
