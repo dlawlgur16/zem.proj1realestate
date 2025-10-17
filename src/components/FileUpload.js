@@ -6,6 +6,8 @@ export default function FileUpload({ onDataLoad, onError }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFile = (file) => {
+    console.log('📂 [1] handleFile 호출됨');
+    console.log('받은 파일:', file);
     if (!file) return;
     
     // CSV 파일인지 확인
@@ -13,12 +15,16 @@ export default function FileUpload({ onDataLoad, onError }) {
       onError('CSV 파일만 업로드 가능합니다.');
       return;
     }
+    console.log('✅ [1-3] CSV 파일 확인 완료:', file.name);
 
     setIsLoading(true);
     
     Papa.parse(file, {
       header: true,
       complete: (results) => {
+        console.log('📊 [3] Papa.parse 완료');
+        console.log('rows 개수:', results.data.length);
+        console.log('파싱된 데이터 샘플:', results.data.slice(0, 3));
         console.log('업로드된 데이터 개수:', results.data.length);
         
         if (results.data.length === 0) {
@@ -29,6 +35,7 @@ export default function FileUpload({ onDataLoad, onError }) {
 
         // 데이터 로드 성공
         onDataLoad(results.data);
+        console.log('✅ [FileUpload] onDataLoad 존재 여부:', typeof onDataLoad);
         setIsLoading(false);
       },
       error: (error) => {

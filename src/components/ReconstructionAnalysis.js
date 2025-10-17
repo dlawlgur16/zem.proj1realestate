@@ -9,6 +9,7 @@ export default function ReconstructionAnalysis() {
   const [activeTab, setActiveTab] = useState('전체통계');
   const [csvData, setCsvData] = useState([]);
   const [statsData, setStatsData] = useState({});
+  const [currentStats, setCurrentStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showUpload, setShowUpload] = useState(false);
@@ -22,6 +23,15 @@ export default function ReconstructionAnalysis() {
   const [selectedAgeGroupLoan, setSelectedAgeGroupLoan] = useState('전체');
   const [selectedAgeGroupSeizure, setSelectedAgeGroupSeizure] = useState('전체');
   const [selectedAgeGroupLoanAmount, setSelectedAgeGroupLoanAmount] = useState('전체');
+
+  useEffect(() => {
+    console.log('📊 useEffect 감지: statsData 변경됨');
+    if (statsData && activeTab && statsData[activeTab]) {
+      console.log('📈 currentStats 업데이트 대상:', activeTab);
+      console.log('📊 전달될 데이터:', statsData[activeTab]);
+      setCurrentStats({ ...statsData[activeTab] });
+    }
+  }, [statsData, activeTab]);
 
   // CSV 파일 자동 로드
   const loadCsvFile = useCallback(async (fileName) => {
@@ -74,6 +84,12 @@ export default function ReconstructionAnalysis() {
 
   // 사용 가능한 CSV 파일 목록 가져오기
   const fetchAvailableFiles = useCallback(async () => {
+    // ✅ 업로드 직후라면 자동 초기화 방지
+    if (window.__uploadedRecently) {
+      console.log('⏸️ 업로드 직후 자동 fetch 방지됨');
+      return;
+    }
+
     try {
       // 파일 목록 JSON 가져오기
       const response = await fetch('/data/file-list.json');
@@ -99,6 +115,18 @@ export default function ReconstructionAnalysis() {
       setCurrentFileName('data.csv');
     }
   }, [currentFileName, loadCsvFile]);
+
+  // useEffect(() => {
+  //   const checkForNewFiles = () => {
+  //     fetchAvailableFiles();
+  //   };
+  
+  //   const interval = setInterval(checkForNewFiles, 5000);
+  //   return () => clearInterval(interval);
+  // }, [fetchAvailableFiles]);
+  
+
+
   // 연령대별 데이터 필터링 함수
   const filterDataByAge = useCallback((data, ageGroup) => {
     if (ageGroup === '전체') return data;
@@ -160,8 +188,12 @@ export default function ReconstructionAnalysis() {
   // 파일 업로드 핸들러
   const handleDataLoad = (data) => {
     console.log('업로드된 데이터 개수:', data.length);
-    setCsvData(data);
-    
+    console.log('📁 handleDataLoad 호출됨');
+    console.log('🧩 업로드된 데이터 개수:', data.length);
+    console.log('샘플 행:', data[0]);
+    //setCsvData(data);
+    setCsvData([...data]);
+
     // 동별 탭 생성 (1동, 2동, 3동, 4동)
     const processedData = {
       '전체통계': processBuildingData(data, null),
@@ -170,8 +202,12 @@ export default function ReconstructionAnalysis() {
       '대교아파트 3동': processBuildingData(data, '3동'),
       '대교아파트 4동': processBuildingData(data, '4동')
     };
-    setStatsData(processedData);
-    
+    //setStatsData(processedData);
+    console.log('✅ processBuildingData 결과(전체통계):', processedData['전체통계']);
+    console.log('📦 setStatsData 호출 직전:', statsData);
+    setStatsData({ ...processedData,  __forceRender: Math.random()});
+    console.log('📦 setStatsData 호출 직후 (직전 상태와 다르면 OK)');
+
     setLoading(false);
     setError('');
     setShowUpload(false);
@@ -181,6 +217,14 @@ export default function ReconstructionAnalysis() {
     const newFileName = `uploaded-${timestamp}.csv`;
     setAvailableFiles(prev => [...prev, newFileName]);
     setCurrentFileName(newFileName);
+
+    // ✅ 업로드 이후 일정 시간 동안 자동 초기화(fetchAvailableFiles) 방지
+    window.__uploadedRecently = true;
+    setTimeout(() => {
+      window.__uploadedRecently = false;
+    }, 10000); // 10초 후 다시 허용 (원하면 30000으로 늘려도 됨)
+
+    console.log('✅ 업로드 데이터 반영 완료 및 보호 모드 활성화 (10초)');
   };
 
   // 에러 핸들러
@@ -1400,22 +1444,12 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
   useEffect(() => {
     const initializeData = async () => {
       console.log('CSV 데이터 자동 감지 시작...');
-      
-      // API 키 디버깅
-      console.log('🔍 컴포넌트 마운트 시 API 키 확인:');
-      console.log('- process.env.REACT_APP_GEMINI_API_KEY:', process.env.REACT_APP_GEMINI_API_KEY);
-      console.log('- NODE_ENV:', process.env.NODE_ENV);
-      console.log('- 모든 환경변수:', Object.keys(process.env).filter(key => key.includes('GEMINI')));
-      
-      // 먼저 사용 가능한 파일 목록 가져오기
       await fetchAvailableFiles();
-      
-      // 기본 데이터로 초기화 (백업)
+  
+      // ✅ 기본 데이터는 첫 렌더 때만 불러오기
       if (importedData && importedData.length > 0) {
         console.log('기본 데이터 로드:', importedData.length);
-    setCsvData(importedData);
-        
-        // 동별 탭 생성 (1동, 2동, 3동, 4동)
+        setCsvData(importedData);
         const processedData = {
           '전체통계': processBuildingData(importedData, null),
           '대교아파트 1동': processBuildingData(importedData, '1동'),
@@ -1424,31 +1458,35 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           '대교아파트 4동': processBuildingData(importedData, '4동')
         };
         setStatsData(processedData);
-        
-    setLoading(false);
+        setLoading(false);
       }
     };
+  
 
-    initializeData();
-  }, [fetchAvailableFiles]);
+    initializeData(); // ← 함수 실행
+  }, []); // ✅ mount 시 한 번만 실행
+  
 
-  // 파일 변경 감지 (주기적 체크)
-  useEffect(() => {
-    const checkForNewFiles = () => {
-      // 5초마다 새로운 파일이 있는지 확인
-      fetchAvailableFiles();
-    };
+  // // 파일 변경 감지 (주기적 체크)
+  // useEffect(() => {
+  //   const checkForNewFiles = () => {
+  //     // 5초마다 새로운 파일이 있는지 확인
+  //     fetchAvailableFiles();
+  //   };
 
-    const interval = setInterval(checkForNewFiles, 5000);
-    return () => clearInterval(interval);
-  }, [fetchAvailableFiles]);
+  //   const interval = setInterval(checkForNewFiles, 5000);
+  //   return () => clearInterval(interval);
+  // }, [fetchAvailableFiles]);
 
   // 건물별 데이터 처리
   const processBuildingData = (data, building) => {
+    console.log('📊 processBuildingData 호출:', building || '전체통계', '데이터 수:', data.length);
+
     let filteredData = data;
     if (building) {
       filteredData = data.filter(row => row.건물명 && row.건물명.includes(building));
     }
+    console.log('필터링 후 데이터 수:', filteredData.length);
 
     const total = filteredData.length;
     
@@ -1477,6 +1515,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
         }
       }
     });
+    console.log('🧮 나이대 그룹 결과:', ageGroups);
 
     const ageData = Object.entries(ageGroups)
       .map(([range, count]) => ({ range, count }))
@@ -1492,6 +1531,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
       return row.현주소.includes(buildingAddress) || row.현주소.includes('여의도동 41');
     }).length;
     const investmentCount = total - residenceCount;
+    console.log('🏠 거주자 수:', residenceCount);
 
     // 성별 분포 (주민번호 성별 자리로 판단: 남자 1,3,5 / 여자 2,4,6)
     const male = filteredData.filter(row => {
@@ -1713,23 +1753,24 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 
     return {
       total,
-      ageData,
+      ageData: [...ageData],
       residenceCount,
       investmentCount,
       residenceRate,
       investmentRate,
       male,
       female,
-      regionData,
-      areaData,
-      loanAmountData,
-      loanStatusData,
+      regionData: [...regionData],
+      areaData: [...areaData],
+      loanAmountData: [...loanAmountData],
+      loanStatusData: [...loanStatusData],
       totalLoanAmount,
       averageLoanAmount,
-      ownershipPeriodData,
-      transferReasonData,
+      ownershipPeriodData: [...ownershipPeriodData],
+      transferReasonData: [...transferReasonData],
       seizureCount
     };
+
   };
 
 
@@ -1744,18 +1785,18 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
     );
   }
 
-  const stats = statsData[activeTab] || {};
+  //const stats = statsData[activeTab] || {};
   const tabs = ['전체통계', '대교아파트 1동', '대교아파트 2동', '대교아파트 3동', '대교아파트 4동'];
 
 
   const residenceData = [
-    { name: '거주', value: stats.residenceCount || 0, percentage: stats.total ? ((stats.residenceCount/stats.total)*100).toFixed(1) : '0', color: '#10b981' },
-    { name: '투자', value: stats.investmentCount || 0, percentage: stats.total ? ((stats.investmentCount/stats.total)*100).toFixed(1) : '0', color: '#3b82f6' }
+    { name: '거주', value: currentStats.residenceCount || 0, percentage: currentStats.total ? ((currentStats.residenceCount/currentStats.total)*100).toFixed(1) : '0', color: '#10b981' },
+    { name: '투자', value: currentStats.investmentCount || 0, percentage: currentStats.total ? ((currentStats.investmentCount/currentStats.total)*100).toFixed(1) : '0', color: '#3b82f6' }
   ];
 
   const genderData = [
-    { name: '남', value: stats.male || 0, color: '#3b82f6' },
-    { name: '여', value: stats.female || 0, color: '#ec4899' }
+    { name: '남', value: currentStats.male || 0, color: '#3b82f6' },
+    { name: '여', value: currentStats.female || 0, color: '#ec4899' }
   ];
 
   return (
@@ -1815,9 +1856,14 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
         {/* 파일 업로드 영역 */}
         {showUpload && (
           <div className="mt-4">
-            <FileUpload 
-              onDataLoad={handleDataLoad}
-              onError={handleError}
+            <FileUpload
+              onDataLoad={handleDataLoad} 
+            //   => {
+            //     console.log('📥 [4] 부모 컴포넌트에서 데이터 수신');
+            //     console.log('받은 데이터 샘플:', data.slice(0, 3));
+            //     setCsvData(data);
+            // }}
+              onError={(msg) => console.error('🚨 [4-Error]', msg)}
             />
           </div>
         )}
@@ -1848,9 +1894,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           {/* 나이대 분포 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">나이대 분포</h2>
-            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {currentStats.total}명</div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.ageData || []}>
+              <BarChart data={currentStats.ageData || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="range" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
@@ -1971,9 +2017,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           {/* 투자자 거주지역 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">투자자 거주지역</h2>
-            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.investmentCount}명 (투자자 현주소 기준)</div>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {currentStats.investmentCount}명 (투자자 현주소 기준)</div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.regionData || []} layout="vertical">
+              <BarChart data={currentStats.regionData || []} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis dataKey="region" type="category" width={85} tick={{ fontSize: 10 }} />
@@ -2117,7 +2163,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           {/* 성별 분포 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">성별 분포</h2>
-            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {currentStats.total}명</div>
             <div className="flex items-center justify-center gap-8">
                 <ResponsiveContainer width="60%" height={300}>
               <PieChart>
@@ -2150,7 +2196,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                     <div className="w-4 h-4 rounded" style={{ backgroundColor: entry.color }}></div>
                     <span className="text-sm font-medium">{entry.name}</span>
                     <span className="text-sm text-gray-600">{entry.value}명</span>
-                    <span className="text-sm text-gray-500">({((entry.value / stats.total) * 100).toFixed(1)}%)</span>
+                    <span className="text-sm text-gray-500">({((entry.value / currentStats.total) * 100).toFixed(1)}%)</span>
                   </div>
                 ))}
               </div>
@@ -2302,7 +2348,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">부동산 평균보유 기간</h2>
             <div className="text-center text-sm text-gray-600 mb-4">소유권취득일 기준</div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.ownershipPeriodData || []}>
+              <BarChart data={currentStats.ownershipPeriodData || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="period" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 12 }} />
@@ -2628,6 +2674,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 );
               })}
             </div>
+            </div>
             {(() => {
               // 현재 선택된 탭의 데이터 가져오기
               const currentData = activeTab === '전체통계' ? csvData : csvData.filter(row => {
@@ -2875,27 +2922,27 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
         <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-6">
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">총 세대수</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+            <div className="text-3xl font-bold text-gray-900">{currentStats.total}</div>
             <div className="text-xs text-gray-400 mt-1">세대</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">거주</div>
-            <div className="text-3xl font-bold text-emerald-600">{stats.residenceCount}</div>
+            <div className="text-3xl font-bold text-emerald-600">{currentStats.residenceCount}</div>
             <div className="text-xs text-gray-400 mt-1">{residenceData[0].percentage}%</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">투자</div>
-            <div className="text-3xl font-bold text-blue-600">{stats.investmentCount}</div>
+            <div className="text-3xl font-bold text-blue-600">{currentStats.investmentCount}</div>
             <div className="text-xs text-gray-400 mt-1">{residenceData[1].percentage}%</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">총 근저당액</div>
-            <div className="text-2xl font-bold text-red-600">{stats.totalLoanAmount ? (stats.totalLoanAmount / 100000000).toFixed(1) : '0'}</div>
+            <div className="text-2xl font-bold text-red-600">{currentStats.totalLoanAmount ? (currentStats.totalLoanAmount / 100000000).toFixed(1) : '0'}</div>
             <div className="text-xs text-gray-400 mt-1">억원</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <div className="text-sm text-gray-500 mb-2">가구당 평균</div>
-            <div className="text-2xl font-bold text-orange-600">{stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0'}</div>
+            <div className="text-2xl font-bold text-orange-600">{currentStats.averageLoanAmount ? (currentStats.averageLoanAmount / 100000000).toFixed(1) : '0'}</div>
             <div className="text-xs text-gray-400 mt-1">억원</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
@@ -2969,7 +3016,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   </div>
                   <div className="bg-white/20 px-4 py-2 rounded-lg">
                     <div className="text-emerald-100 text-xs mb-1">총 세대수</div>
-                    <div className="text-white text-xl font-bold">{stats.total || 0}세대</div>
+                    <div className="text-white text-xl font-bold">{currentStats.total || 0}세대</div>
                   </div>
                 </div>
                 
