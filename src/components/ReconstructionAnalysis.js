@@ -1696,6 +1696,12 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
         percentage: total ? ((count/total)*100).toFixed(1) : '0'
       }));
 
+    // 압류/가압류 현황 계산
+    const seizureCount = filteredData.filter(row => {
+      const seizure = row['압류가압류유무'] || 'N';
+      return seizure === 'Y' || seizure === '1' || seizure === 'true';
+    }).length;
+
     // 거주/투자 비율 계산
     const residenceRate = total > 0 ? (residenceCount / total * 100).toFixed(1) : 0;
     const investmentRate = total > 0 ? (investmentCount / total * 100).toFixed(1) : 0;
@@ -1716,7 +1722,8 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
       totalLoanAmount,
       averageLoanAmount,
       ownershipPeriodData,
-      transferReasonData
+      transferReasonData,
+      seizureCount
     };
   };
 
@@ -2644,6 +2651,69 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-emerald-500 rounded"></div>
                 <span className="text-xs">무대출</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 압류/가압류 현황 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">압류/가압류 현황</h2>
+            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
+            <div className="flex items-center justify-center gap-8">
+                <ResponsiveContainer width="60%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: '정상', value: stats.total - (stats.seizureCount || 0), color: '#10b981' },
+                    { name: '압류/가압류', value: stats.seizureCount || 0, color: '#ef4444' }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                  dataKey="value"
+                >
+                  {[
+                    { name: '정상', value: stats.total - (stats.seizureCount || 0), color: '#10b981' },
+                    { name: '압류/가압류', value: stats.seizureCount || 0, color: '#ef4444' }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                         <Tooltip 
+                           contentStyle={{
+                             backgroundColor: '#000000',
+                             color: '#ffffff',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontSize: '12px'
+                           }}
+                         />
+              </PieChart>
+            </ResponsiveContainer>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded bg-emerald-500"></div>
+                  <span className="text-sm font-medium">정상</span>
+                  <span className="text-sm text-gray-600">{stats.total - (stats.seizureCount || 0)}명</span>
+                  <span className="text-sm text-gray-500">({(((stats.total - (stats.seizureCount || 0))/stats.total)*100).toFixed(1)}%)</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded bg-red-500"></div>
+                  <span className="text-sm font-medium">압류/가압류</span>
+                  <span className="text-sm text-gray-600">{stats.seizureCount || 0}명</span>
+                  <span className="text-sm text-gray-500">({(((stats.seizureCount || 0)/stats.total)*100).toFixed(1)}%)</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 flex justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+                <span className="text-xs">정상</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded"></div>
+                <span className="text-xs">압류/가압류</span>
               </div>
             </div>
           </div>
