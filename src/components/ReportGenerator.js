@@ -13,28 +13,109 @@ import ReportPreview from './ReportPreview';
 // .env 파일에서 API 키 불러오기
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 
+// 더미 보고서 생성 함수
+const generateDummyReport = (statsData, activeTab) => {
+  const stats = statsData[activeTab];
+  if (!stats) return '통계 데이터가 없습니다.';
+  
+  return `# 재건축 분석 보고서 (${activeTab})
+
+## 📊 데이터 개요
+- **총 데이터 수**: ${stats.total || 0}건
+- **분석 일시**: ${new Date().toLocaleString('ko-KR')}
+
+## 📈 주요 통계
+
+### 나이대별 분포
+${Object.entries(stats.ageGroups || {}).map(([age, count]) => `- ${age}: ${count}명`).join('\n')}
+
+### 성별 분포
+${Object.entries(stats.genderGroups || {}).map(([gender, count]) => `- ${gender}: ${count}명`).join('\n')}
+
+### 거주/투자 비율
+- 거주: ${stats.residenceCount || 0}세대
+- 투자: ${stats.investmentCount || 0}세대
+
+### 면적별 분포
+${Object.entries(stats.areaGroups || {}).map(([area, count]) => `- ${area}: ${count}세대`).join('\n')}
+
+### 보유기간별 분포
+${Object.entries(stats.holdingGroups || {}).map(([period, count]) => `- ${period}: ${count}건`).join('\n')}
+
+### 등기이전원인별 분포
+${Object.entries(stats.transferReasons || {}).map(([reason, count]) => `- ${reason}: ${count}건`).join('\n')}
+
+### 대출 현황
+- 대출: ${stats.loanCount || 0}건
+- 무대출: ${stats.noLoanCount || 0}건
+
+### 압류/가압류 현황
+- 정상: ${stats.normalCount || 0}건
+- 압류/가압류: ${stats.seizureCount || 0}건
+
+## 📝 분석 요약
+이 보고서는 더미 데이터를 기반으로 생성되었습니다. 실제 AI 분석을 위해서는 유효한 Gemini API 키가 필요합니다.
+
+---
+*생성일시: ${new Date().toLocaleString('ko-KR')}*
+*주의: 이 보고서는 테스트용 더미 데이터입니다.*`;
+};
+
 export default function ReportGenerator({ statsData, activeTab, csvData }) {
   const [showReport, setShowReport] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 디버깅 로그
+  console.log('📊 ReportGenerator props:', { statsData, activeTab, csvData });
+  console.log('📊 statsData keys:', statsData ? Object.keys(statsData) : '없음');
+  if (statsData && statsData[activeTab]) {
+    console.log('📊 activeTab 데이터:', statsData[activeTab]);
+    console.log('📊 ageGroups:', statsData[activeTab].ageGroups);
+    console.log('📊 transferReasons:', statsData[activeTab].transferReasons);
+    console.log('📊 areaGroups:', statsData[activeTab].areaGroups);
+    console.log('📊 holdingGroups:', statsData[activeTab].holdingGroups);
+    console.log('📊 totalLoanAmount:', statsData[activeTab].totalLoanAmount);
+    console.log('📊 averageLoanAmount:', statsData[activeTab].averageLoanAmount);
+  } else {
+    console.log('❌ ReportGenerator에서 activeTab 데이터 없음');
+    console.log('❌ statsData:', statsData);
+    console.log('❌ activeTab:', activeTab);
+  }
+
   // 보고서 생성
   const handleGenerateReport = async () => {
+    console.log('=== 보고서 생성 시작 ===');
+    console.log('statsData:', statsData);
+    console.log('activeTab:', activeTab);
+    console.log('csvData 길이:', csvData ? csvData.length : '없음');
+    
+    // 통계 데이터 체크
+    if (!statsData || !statsData[activeTab]) {
+      alert('⚠️ 통계 데이터가 없습니다.\n먼저 데이터 분석을 완료해주세요.');
+      console.error('통계 데이터 없음:', statsData);
+      return;
+    }
+    
     // API 키 체크
     if (!GEMINI_API_KEY) {
       alert('⚠️ API 키가 설정되지 않았습니다.\n.env 파일에 REACT_APP_GEMINI_API_KEY를 설정해주세요.');
       console.error('환경변수 REACT_APP_GEMINI_API_KEY가 설정되지 않았습니다.');
       return;
     }
+    
+    // 실제 Gemini API 사용
+    console.log('✅ 유효한 API 키로 Gemini API 사용');
+
+    console.log('API 키 확인:', GEMINI_API_KEY ? '설정됨' : '설정되지 않음');
+    console.log('통계 데이터:', statsData);
 
     setIsGenerating(true);
     
     try {
       // AI 인사이트 포함하여 보고서 생성
       const report = await generateHybridReport(
-        statsData, 
-        activeTab, 
-        csvData,
+        statsData[activeTab], 
         GEMINI_API_KEY
       );
       
@@ -52,6 +133,8 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
         errorMessage = '❌ 일일 사용량(1,500회)을 초과했습니다.\n내일 다시 시도해주세요.';
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         errorMessage = '❌ 네트워크 오류가 발생했습니다.\n인터넷 연결을 확인해주세요.';
+      } else if (error.message.includes('HTML 응답') || error.message.includes('JSON')) {
+        errorMessage = '❌ API 키가 잘못되었거나 API 서비스에 문제가 있습니다.\n.env 파일의 API 키를 확인해주세요.';
       } else {
         errorMessage = `❌ ${error.message}`;
       }

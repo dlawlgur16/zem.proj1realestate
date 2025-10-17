@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import CsvLoader from './CsvLoader/CsvLoader';
 import DataAnalysis from './DataAnalysis/DataAnalysis';
-import ReportGenerator from './ReportGenerator/ReportGenerator';
+import ReportGenerator from './ReportGenerator';
 import './MainApp.css';
 
 const MainApp = () => {
@@ -9,11 +9,16 @@ const MainApp = () => {
   const [activeTab, setActiveTab] = useState('전체통계');
   const [currentStep, setCurrentStep] = useState('upload'); // upload, analysis, report
   const [error, setError] = useState(null);
+  const [statsData, setStatsData] = useState(null);
+
+  // 디버깅 로그 (필요시에만)
+  // console.log('MainApp statsData:', statsData);
 
   const handleDataLoad = (data) => {
     setCsvData(data);
     setError(null);
     setCurrentStep('analysis');
+    setStatsData(null); // 새로운 데이터 로드 시 통계 초기화
   };
 
   const handleError = (errorMessage) => {
@@ -64,6 +69,32 @@ const MainApp = () => {
             csvData={csvData}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            onStatsUpdate={(newStats) => {
+              console.log('📊 MainApp에서 통계 데이터 받음:', newStats);
+              console.log('📊 newStats keys:', Object.keys(newStats));
+              console.log('📊 activeTab:', activeTab);
+              if (newStats[activeTab]) {
+                console.log('📊 activeTab 데이터:', newStats[activeTab]);
+                console.log('📊 ageGroups:', newStats[activeTab].ageGroups);
+                console.log('📊 transferReasons:', newStats[activeTab].transferReasons);
+                console.log('📊 areaGroups:', newStats[activeTab].areaGroups);
+                console.log('📊 holdingGroups:', newStats[activeTab].holdingGroups);
+                console.log('📊 totalLoanAmount:', newStats[activeTab].totalLoanAmount);
+                console.log('📊 averageLoanAmount:', newStats[activeTab].averageLoanAmount);
+              } else {
+                console.log('❌ MainApp에서 activeTab 데이터 없음');
+                console.log('❌ newStats:', newStats);
+                console.log('❌ activeTab:', activeTab);
+              }
+              setStatsData(prevStats => {
+                const updatedStats = {
+                  ...prevStats,
+                  ...newStats
+                };
+                console.log('📊 MainApp statsData 업데이트:', updatedStats);
+                return updatedStats;
+              });
+            }}
           />
         )}
 
@@ -71,6 +102,7 @@ const MainApp = () => {
           <ReportGenerator
             csvData={csvData}
             activeTab={activeTab}
+            statsData={statsData}
             onReportGenerated={handleReportGenerated}
           />
         )}

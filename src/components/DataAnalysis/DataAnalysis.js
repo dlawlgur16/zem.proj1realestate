@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AgeDistribution from './Charts/AgeDistribution';
 import LoanStatus from './Charts/LoanStatus';
 import SeizureStatus from './Charts/SeizureStatus';
@@ -12,7 +12,7 @@ import YearlyOwnership from './Charts/YearlyOwnership';
 import './DataAnalysis.css';
 import './Charts/ChartCard.css';
 
-const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
+const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('전체');
   const [selectedAgeGroupLoan, setSelectedAgeGroupLoan] = useState('전체');
   const [selectedAgeGroupLoanAmount, setSelectedAgeGroupLoanAmount] = useState('전체');
@@ -34,7 +34,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
       if (residentNumber && residentNumber.length >= 7) {
         try {
           const birthYear = parseInt(residentNumber.substring(0, 2));
-          const birthMonth = parseInt(residentNumber.substring(2, 4));
+          // const birthMonth = parseInt(residentNumber.substring(2, 4));
           const currentYear = new Date().getFullYear();
           let fullBirthYear;
           
@@ -61,7 +61,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
           ageGroups[ageGroup] = (ageGroups[ageGroup] || 0) + 1;
           
           // 디버깅을 위한 로그
-          console.log(`주민번호: ${residentNumber}, 출생년도: ${fullBirthYear}, 나이: ${age}, 나이대: ${ageGroup}`);
+               // console.log(`주민번호: ${residentNumber}, 출생년도: ${fullBirthYear}, 나이: ${age}, 나이대: ${ageGroup}`);
         } catch (error) {
           console.error('주민번호 분석 오류:', error, residentNumber);
         }
@@ -79,7 +79,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
           genderGroups[gender] = (genderGroups[gender] || 0) + 1;
           
           // 디버깅을 위한 로그
-          console.log(`주민번호: ${residentNumber}, 성별코드: ${genderCode}, 성별: ${gender}`);
+               // console.log(`주민번호: ${residentNumber}, 성별코드: ${genderCode}, 성별: ${gender}`);
         } catch (error) {
           console.error('성별 분석 오류:', error, residentNumber);
         }
@@ -87,12 +87,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
     });
     
     // 성별 분석 결과 디버깅
-    console.log('성별 분석 결과:', genderGroups);
-    console.log('총 데이터 수:', data.length);
-    console.log('주민번호가 있는 데이터 수:', data.filter(row => {
-      const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
-      return residentNumber && residentNumber.length >= 7;
-    }).length);
+    // console.log('성별 분석 결과:', genderGroups);
+    // console.log('총 데이터 수:', data.length);
+    // console.log('주민번호가 있는 데이터 수:', data.filter(row => {
+    //   const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
+    //   return residentNumber && residentNumber.length >= 7;
+    // }).length);
 
     // 거주/투자 비율
     const residenceCount = data.filter(row => {
@@ -185,10 +185,19 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
 
     // 대출금액대별 분포
     const loanAmountGroups = {};
+    let loanDataCount = 0;
+    
+    // CSV 컬럼명 확인
+    console.log('💰 CSV 컬럼명 확인:', Object.keys(data[0] || {}));
+    
     data.forEach(row => {
-      if (row.유효근저당총액) {
-        const amount = parseFloat(row.유효근저당총액);
+      // 여러 가능한 컬럼명 확인
+      const loanAmount = row.유효근저당총액 || row['유효근저당총액'] || row.근저당총액 || row['근저당총액'] || row.대출금액 || row['대출금액'];
+      
+      if (loanAmount) {
+        const amount = parseFloat(loanAmount);
         if (!isNaN(amount) && amount > 0) {
+          loanDataCount++;
           let amountGroup;
           if (amount < 100000000) amountGroup = '1억 미만';
           else if (amount < 200000000) amountGroup = '1억대';
@@ -206,14 +215,45 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
         }
       }
     });
+    
+    console.log('💰 근저당 데이터 분석:');
+    console.log('💰 총 데이터 수:', data.length);
+    console.log('💰 근저당 데이터가 있는 행 수:', loanDataCount);
+    console.log('💰 근저당 금액대별 분포:', loanAmountGroups);
 
     // 대출 여부 비율
     const loanCount = data.filter(row => {
-      if (!row.유효근저당총액) return false;
-      const amount = parseFloat(row.유효근저당총액);
+      const loanAmount = row.유효근저당총액 || row['유효근저당총액'] || row.근저당총액 || row['근저당총액'] || row.대출금액 || row['대출금액'];
+      if (!loanAmount) return false;
+      const amount = parseFloat(loanAmount);
       return !isNaN(amount) && amount > 0;
     }).length;
     const noLoanCount = total - loanCount;
+    
+    console.log('💰 대출 여부 분석:');
+    console.log('💰 대출 있는 건수:', loanCount);
+    console.log('💰 대출 없는 건수:', noLoanCount);
+    console.log('💰 대출 비율:', ((loanCount / total) * 100).toFixed(1) + '%');
+
+    // 총 근저당액과 평균 근저당액 계산
+    let totalLoanAmount = 0;
+    let validLoanCount = 0;
+    
+    data.forEach(row => {
+      const loanAmount = row.유효근저당총액 || row['유효근저당총액'] || row.근저당총액 || row['근저당총액'] || row.대출금액 || row['대출금액'];
+      if (loanAmount) {
+        const amount = parseFloat(loanAmount);
+        if (!isNaN(amount) && amount > 0) {
+          totalLoanAmount += amount;
+          validLoanCount++;
+        }
+      }
+    });
+    
+    const averageLoanAmount = validLoanCount > 0 ? totalLoanAmount / validLoanCount : 0;
+    
+    console.log('💰 총 근저당액:', totalLoanAmount);
+    console.log('💰 평균 근저당액:', averageLoanAmount);
 
     // 압류/가압류 현황
     const seizureCount = data.filter(row => {
@@ -237,6 +277,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
       noLoanCount,
       seizureCount,
       normalCount,
+      totalLoanAmount,
+      averageLoanAmount,
       loanStatusData: [
         { name: '대출', value: loanCount, color: '#ef4444' },
         { name: '무대출', value: noLoanCount, color: '#10b981' }
@@ -316,14 +358,40 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab }) => {
       }
     });
     
-    console.log(`나이대 필터링: ${ageGroup}, 원본: ${data.length}, 필터링 후: ${filtered.length}`);
+    // console.log(`나이대 필터링: ${ageGroup}, 원본: ${data.length}, 필터링 후: ${filtered.length}`);
     return filtered;
   };
 
   // 통계 데이터 계산
   const currentStats = useMemo(() => {
     return calculateStats(baseFilteredData);
-  }, [baseFilteredData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseFilteredData]); // calculateStats는 함수이므로 의도적으로 제외
+
+  // 통계 데이터가 업데이트될 때마다 부모 컴포넌트에 전달
+  useEffect(() => {
+    if (onStatsUpdate && currentStats) {
+      console.log('📊 DataAnalysis에서 통계 데이터 전달:', currentStats);
+      console.log('📊 ageGroups:', currentStats.ageGroups);
+      console.log('📊 transferReasons:', currentStats.transferReasons);
+      console.log('📊 areaGroups:', currentStats.areaGroups);
+      console.log('📊 holdingGroups:', currentStats.holdingGroups);
+      console.log('📊 loanStatusData:', currentStats.loanStatusData);
+      console.log('📊 totalLoanAmount:', currentStats.totalLoanAmount);
+      console.log('📊 averageLoanAmount:', currentStats.averageLoanAmount);
+      console.log('📊 activeTab:', activeTab);
+      console.log('📊 onStatsUpdate 함수 존재:', !!onStatsUpdate);
+      
+      onStatsUpdate({
+        [activeTab]: currentStats
+      });
+    } else {
+      console.log('❌ DataAnalysis에서 통계 데이터 전달 실패');
+      console.log('❌ onStatsUpdate 존재:', !!onStatsUpdate);
+      console.log('❌ currentStats 존재:', !!currentStats);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStats, activeTab]); // onStatsUpdate는 의도적으로 제외
 
   if (!csvData || csvData.length === 0) {
     return (

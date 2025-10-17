@@ -1,21 +1,16 @@
 // ============================================
-// src/utils/geminiReportGenerator.js
+// src/utils/geminiReportGenerator.js (최종 버전)
 // ============================================
 
 /**
- * Gemini API를 사용한 하이브리드 보고서 생성 유틸리티
- * 규칙 기반(70%) + AI 인사이트(30%)
- */
-
-/**
- * Gemini로 AI 인사이트 생성
+ * Gemini API를 사용한 보고서 생성
  */
 export async function generateGeminiInsights(stats, apiKey) {
     const prompt = createAnalysisPrompt(stats);
     
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: {
@@ -38,19 +33,37 @@ export async function generateGeminiInsights(stats, apiKey) {
       );
   
       if (!response.ok) {
+      let errorMessage = `API Error: ${response.status}`;
+      try {
         const errorData = await response.json();
-        throw new Error(`API Error: ${response.status} - ${errorData.error?.message || '알 수 없는 오류'}`);
+        errorMessage += ` - ${errorData.error?.message || '알 수 없는 오류'}`;
+      } catch (jsonError) {
+        // JSON 파싱 실패 시 HTML 응답일 가능성
+        const htmlResponse = await response.text();
+        console.error('HTML 응답:', htmlResponse.substring(0, 200));
+        errorMessage += ` - HTML 응답을 받았습니다. API 키를 확인해주세요.`;
       }
-  
-      const data = await response.json();
-      
-      if (!data.candidates || data.candidates.length === 0) {
-        throw new Error('응답에 결과가 없습니다.');
-      }
-      
-      const generatedText = data.candidates[0].content.parts[0].text;
-      return generatedText;
-      
+      throw new Error(errorMessage);
+    }
+
+    const responseText = await response.text();
+    console.log('API 응답:', responseText.substring(0, 200));
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSON 파싱 오류:', parseError);
+      console.error('응답 내용:', responseText.substring(0, 500));
+      throw new Error('API가 유효하지 않은 JSON을 반환했습니다. API 키를 확인해주세요.');
+    }
+
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+      return data.candidates[0].content.parts[0].text;
+    } else {
+      console.error('API 응답 구조 오류:', data);
+      throw new Error('API 응답 구조가 올바르지 않습니다.');
+    }
     } catch (error) {
       console.error('Gemini API 오류:', error);
       throw error;
@@ -61,495 +74,290 @@ export async function generateGeminiInsights(stats, apiKey) {
    * 통계 데이터 기반 프롬프트 생성
    */
   function createAnalysisPrompt(stats) {
+  // 디버깅: 통계 데이터 구조 확인
+  console.log('📊 프롬프트 생성 - 통계 데이터:', stats);
+  console.log('📊 ageGroups:', stats.ageGroups);
+  console.log('📊 transferReasons:', stats.transferReasons);
+  console.log('📊 areaGroups:', stats.areaGroups);
+  console.log('📊 holdingGroups:', stats.holdingGroups);
+  console.log('📊 seizureStatusData:', stats.seizureStatusData);
+  console.log('📊 loanStatusData:', stats.loanStatusData);
+  console.log('📊 residenceInvestmentData:', stats.residenceInvestmentData);
+  
     const residenceRate = ((stats.residenceCount / stats.total) * 100).toFixed(1);
     const investmentRate = ((stats.investmentCount / stats.total) * 100).toFixed(1);
     const loanRate = stats.loanStatusData?.[0]?.percentage || '0';
-    const avgLoan = (stats.averageLoanAmount / 100000000).toFixed(1);
+  const avgLoan = stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0';
     
     const dominantAge = stats.ageData && stats.ageData.length > 0 
       ? stats.ageData.reduce((max, age) => age.count > max.count ? age : max, stats.ageData[0])
       : null;
   
-    return `
-  당신은 20년 경력의 재건축 전문 컨설턴트입니다. 아래 통계를 바탕으로 전략적 인사이트만 간결하게 작성해주세요.
-  
-  ## 📊 통계 요약
-  - 총 세대수: ${stats.total}세대
-  - 실거주율: ${residenceRate}%
-  - 투자 비율: ${investmentRate}%
-  - 대출 보유율: ${loanRate}%
-  - 평균 대출: ${avgLoan}억원
-  - 주요 연령대: ${dominantAge ? dominantAge.range : '정보없음'}
-  
-  ## 📝 작성 요청
-  
-  ### 1. 전략적 시사점 (2-3문장)
-  이 단지의 특성이 재건축 추진에 주는 핵심 시사점을 간결하게 서술하세요.
-  
-  ### 2. 주요 리스크 (3가지)
-  형식: **리스크명**: 설명 (1문장)
-  
-  ### 3. 성공 전략 (4가지)
-  형식: **전략명**: 실행 방안 (1문장)
-  
-  간결하고 실용적으로 작성해주세요. 한국어로 응답하세요.
-  `;
+  return `당신은 20년 경력의 부동산 재건축 전문가입니다. 다음 실제 데이터를 분석하여 시공사가 바로 활용할 수 있는 구체적이고 실무적인 분석 보고서를 작성해주세요.
+
+## 📊 실제 분석 데이터
+**분석 대상:** 전체통계
+**총 세대수:** ${stats.total}세대
+**실거주 세대:** ${stats.residenceCount}세대 (${residenceRate}%)
+**투자 세대:** ${stats.investmentCount}세대 (${investmentRate}%)
+**총 근저당액:** ${stats.totalLoanAmount ? (stats.totalLoanAmount / 100000000).toFixed(1) : '0'}억원
+**가구당 평균 근저당액:** ${avgLoan}억원
+
+## 📊 실제 CSV 데이터 통계 (가정 금지, 실제 데이터만 사용)
+**총 데이터 건수:** ${stats.total}건
+
+### 이전사유 분석 (실제 데이터):
+${stats.transferReasons ? Object.entries(stats.transferReasons).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 전용면적별 분포 (실제 데이터):
+${stats.areaGroups ? Object.entries(stats.areaGroups).map(([key, value]) => `- ${key}: ${value}세대 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 보유기간별 분포 (실제 데이터):
+${stats.holdingGroups ? Object.entries(stats.holdingGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 압류/가압류 현황 (실제 데이터):
+${stats.seizureStatusData ? stats.seizureStatusData.map(item => `- ${item.name}: ${item.value}건 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 연령대별 분포 (실제 데이터):
+${stats.ageGroups ? Object.entries(stats.ageGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 성별 분포 (실제 데이터):
+${stats.genderGroups ? Object.entries(stats.genderGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 대출 현황 (실제 데이터):
+${stats.loanStatusData ? stats.loanStatusData.map(item => `- ${item.name}: ${item.value}건 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 거주/투자 비율 (실제 데이터):
+${stats.residenceInvestmentData ? stats.residenceInvestmentData.map(item => `- ${item.name}: ${item.value}세대 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+### 대출금액대별 분포 (실제 데이터):
+${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+
+## 🎯 보고서 작성 요구사항
+위 실제 데이터를 바탕으로 다음 구조의 전문가 수준 보고서를 작성해주세요:
+
+**보고서 구조 (실제 데이터 기반):**
+1. **단지 개요** - 기본 정보와 해석 포인트
+2. **실거주 vs 투자자 비율 분석** - 조합 안정성과 사업 추진 동력
+3. **소유권 변동 분석** - 거래 패턴과 시장 동향 (실제 데이터만)
+4. **면적별 분포** - 평형별 특성과 투자 성향 (실제 데이터만)
+5. **보유기간 분석** - 장기/단기 보유자 특성 (실제 데이터만)
+6. **등기이전 원인 분석** - 매매/증여/상속/경매 비율 (실제 데이터만)
+7. **금융 현황 분석** - 근저당, 대출 현황, 리스크 분석 (실제 데이터만)
+8. **압류/가압류 현황 분석** - 법적 리스크와 조합 설립 시 주의사항 (실제 데이터만)
+9. **종합 요약** - 핵심 지표 요약표 (간결한 형태)
+10. **시공사 전략 제언** - 구체적이고 실행 가능한 방안
+11. **결론** - 긍정적 요인과 리스크 요인 구분
+
+**중요: 제공된 데이터에 없는 정보는 분석하지 마세요:**
+- 연령대별 분포 (주민번호로 추정 가능한 경우만)
+- 거주지별 분포 (현주소 데이터가 있는 경우만)
+- 기타 가정이나 추정 데이터 사용 금지
+
+**실제 데이터 기반 분석만 수행:**
+- 실거주 vs 투자자 비율 (실거주여부 컬럼 기반)
+- 소유권 변동 (이전사유 컬럼 기반) - 매매, 증여, 상속, 경매 비율 분석
+- 면적별 분포 (전용면적_제곱미터 컬럼 기반) - 151.74, 95.5 등 면적별 세대수 분석
+- 보유기간 (보유기간_년 컬럼 기반) - 22년, 2년, 10년 등 보유기간별 분포 분석
+- 금융 현황 (유효근저당총액 컬럼 기반) - 근저당 설정 세대수와 금액 분석
+- 압류/가압류 현황 (압류가압류유무 컬럼 기반) - N, Y 등 압류 현황 분석
+- 거주지별 분석 (현주소 컬럼 기반) - 서울시 강북구, 은평구 등 거주지 분포
+- 연령대별 분석 (주민번호 컬럼 기반) - 주민번호 앞자리로 연령대 추정
+
+**중요 지침:**
+- 위에 제공된 실제 CSV 데이터 통계만을 사용하여 분석
+- "(가정)" 또는 "추정"이라는 표현 절대 금지
+- "데이터 부족으로 인해 분석 불가"라고 하지 말고, 제공된 실제 데이터를 기반으로 분석
+- 각 섹션별로 구체적인 수치와 비율을 제시
+- 시공사 관점의 실무적 인사이트 제공
+- 모든 분석은 제공된 실제 통계 데이터를 기반으로만 작성
+
+**각 섹션별 분석 요구사항:**
+1. **소유권 변동 분석**: 이전사유 컬럼의 매매/증여/상속/경매 비율과 해석
+2. **면적별 분포**: 전용면적_제곱미터 컬럼의 면적별 세대수 분포와 해석
+3. **보유기간 분석**: 보유기간_년 컬럼의 보유기간별 분포와 해석
+4. **등기이전 원인 분석**: 이전사유 컬럼의 거래 유형별 비율과 해석
+5. **금융 현황 분석**: 유효근저당총액 컬럼의 근저당 현황과 해석
+6. **압류/가압류 현황 분석**: 압류가압류유무 컬럼의 압류/가압류 비율과 조합 설립 시 법적 리스크 분석
+
+**종합 요약 표 작성 지침:**
+- 각 지표별로 간결한 해석 (한 줄 이내)
+- 핵심 포인트만 포함
+- 시공사 관점의 실무적 인사이트
+- 표 형식: | 지표 | 수치/비율 | 핵심 해석 |
+
+**종합 요약 표 예시:**
+| 지표 | 수치/비율 | 핵심 해석 |
+| --- | --- | --- |
+| 실거주 비율 | 74.5% | 조합 안정성 확보 가능 |
+| 외지 투자자 | 25.5% | 사업 초기 동력 약함, 수익률 중심 설득 필요 |
+| 고연령층 | 50~60대 추정 | 보수적·신중형 |
+| 근저당 비율 | 69.3% | 높은 편, 금융 리스크 관리 필요 |
+| 장기보유세대 | 52.4% | 사업 지속성 높음 |
+| 거래 집중시기 | 2022~2025년 | 재건축 기대감 |
+| 압류/가압류 현황 | 3.1% | 법적 리스크 낮음, 조합 설립 시 개별 협의 필요 |
+| 핵심 리스크 | 높은 근저당 비율 | 높은 분담금 예상 |
+
+**중요 지침:**
+- 제공된 실제 데이터를 정확히 활용
+- 각 섹션마다 "💡 해석 포인트" 포함
+- 시공사 관점의 실무적 인사이트 제공
+- 구체적인 수치와 비율 활용
+- 실행 가능한 전략 제언
+
+**데이터 분석 정확성 요구사항:**
+- 제공된 수치를 정확히 반영 (예: 20대가 56.8%면 "20대가 압도적으로 높다"고 분석)
+- 일반적인 추정이나 가정 금지
+- 실제 데이터와 반대되는 해석 금지
+- 데이터 기반의 객관적 분석만 제공
+
+**보고서 퀄리티 기준:**
+- 전문가 수준의 분석 깊이
+- 시공사가 바로 활용할 수 있는 실무적 내용
+- 데이터 기반의 객관적 분석
+- 구체적이고 실행 가능한 전략 제언
+
+**중요**: 템플릿적인 내용이 아닌, 제공된 실제 데이터(${stats.total}세대, ${stats.residenceCount}세대 등)를 기반으로 한 맞춤형 분석을 작성해주세요. 
+
+**특히 연령대 분석 시:**
+- 20대가 56.8%로 압도적이면 "20대가 압도적으로 높다"고 분석
+- 실제 데이터와 반대되는 "고연령층이 많다"는 잘못된 해석 금지
+- 데이터를 정확히 반영한 분석만 제공
+
+**정확한 데이터 분석 예시:**
+- 연령대 분포: 20대 56.8% > 60대 이상 16.8% > 40대 10.2% > 30대 8.2% > 50대 8.0%
+- 해석: "20대 비율이 압도적으로 높은 것은 주민번호 기준 2000년대생으로 파악되는 층이며, 실제로는 부모 세대가 자녀 명의로 등기한 경우가 많을 것으로 추정된다."
+- 잘못된 해석 금지: "고연령층이 많다", "50~60대가 주류다" 등 실제 데이터와 반대되는 내용`;
+}
+
+/**
+ * 하이브리드 보고서 생성 (Gemini API + Fallback)
+ */
+export async function generateHybridReport(stats, apiKey) {
+  try {
+    console.log('🤖 Gemini API로 보고서 생성 시도...');
+    return await generateGeminiInsights(stats, apiKey);
+  } catch (error) {
+    console.error('❌ Gemini API 실패:', error);
+    console.log('🔄 Fallback 보고서로 전환...');
+    return generateFallbackReport(stats);
   }
-  
-  /**
-   * 하이브리드 보고서 생성 (규칙 70% + AI 30%)
-   */
-  export async function generateHybridReport(statsData, activeTab, csvData, apiKey) {
-    const stats = statsData[activeTab] || {};
-    const reportDate = new Date().toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  
-    // ========================================
-    // 1단계: 규칙 기반 보고서 (70%)
-    // ========================================
-    let report = `
-  # ${activeTab} 재건축 조합원 분석 보고서
-  
-  **작성일**: ${reportDate}
-  **분석 대상**: ${activeTab}
-  **총 세대수**: ${stats.total}세대
-  
-  ---
+}
+
+/**
+ * Fallback 보고서 생성
+ */
+function generateFallbackReport(stats) {
+  const residenceRate = ((stats.residenceCount / stats.total) * 100).toFixed(1);
+  const investmentRate = ((stats.investmentCount / stats.total) * 100).toFixed(1);
+  const totalLoanAmount = stats.totalLoanAmount ? (stats.totalLoanAmount / 100000000).toFixed(1) : '0';
+  const averageLoanAmount = stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0';
+
+  return `# 재건축 분석 보고서 (Fallback)
   
   ## 📊 핵심 지표 요약
   
-  - **실거주 비율**: ${stats.residenceCount}세대 (${((stats.residenceCount / stats.total) * 100).toFixed(1)}%)
-  - **투자 비율**: ${stats.investmentCount}세대 (${((stats.investmentCount / stats.total) * 100).toFixed(1)}%)
-  - **대출 보유율**: ${stats.loanStatusData?.[0]?.percentage || '0'}%
-  - **가구당 평균 대출**: ${(stats.averageLoanAmount / 100000000).toFixed(1)}억원
-  
-  ---
+- **실거주 비율**: ${stats.residenceCount}세대 (${residenceRate}%)
+- **투자 비율**: ${stats.investmentCount}세대 (${investmentRate}%)
+- **총 근저당액**: ${totalLoanAmount}억원
+- **가구당 평균 근저당액**: ${averageLoanAmount}억원
   
   ## 👥 인구통계 분석
   
   ### 연령대 분포
-  
-  ${generateAgeTable(stats)}
-  
-  **분석**: ${analyzeAge(stats)}
+${stats.ageGroups ? Object.entries(stats.ageGroups).map(([age, count]) => `- ${age}: ${count}명`).join('\n') : '데이터 없음'}
   
   ### 성별 분포
-  
-  - **남성**: ${stats.male}명 (${((stats.male / stats.total) * 100).toFixed(1)}%)
-  - **여성**: ${stats.female}명 (${((stats.female / stats.total) * 100).toFixed(1)}%)
-  
-  ---
+${stats.genderGroups ? Object.entries(stats.genderGroups).map(([gender, count]) => `- ${gender}: ${count}명`).join('\n') : '데이터 없음'}
   
   ## 🏠 거주 현황 분석
   
   ### 거주/투자 비율
-  
   | 구분 | 세대수 | 비율 |
   |------|--------|------|
-  | 실거주 | ${stats.residenceCount}세대 | ${((stats.residenceCount / stats.total) * 100).toFixed(1)}% |
-  | 투자목적 | ${stats.investmentCount}세대 | ${((stats.investmentCount / stats.total) * 100).toFixed(1)}% |
-  
-  **분석**: ${analyzeResidence(stats)}
-  
-  ### 투자자 거주지역 분포
-  
-  ${generateRegionTable(stats)}
-  
-  ---
+| 실거주 | ${stats.residenceCount}세대 | ${residenceRate}% |
+| 투자목적 | ${stats.investmentCount}세대 | ${investmentRate}% |
   
   ## 💰 대출 현황 분석
   
   ### 대출 보유 현황
-  
-  - **대출 보유**: ${stats.loanStatusData?.[0]?.value || 0}세대 (${stats.loanStatusData?.[0]?.percentage || 0}%)
-  - **무대출**: ${stats.loanStatusData?.[1]?.value || 0}세대 (${stats.loanStatusData?.[1]?.percentage || 0}%)
+- **대출 보유**: ${stats.loanCount || 0}세대
+- **무대출**: ${stats.noLoanCount || 0}세대
   
   ### 대출 규모
-  
-  - **총 근저당액**: ${(stats.totalLoanAmount / 100000000).toFixed(0)}억원
-  - **가구당 평균**: ${(stats.averageLoanAmount / 100000000).toFixed(1)}억원
-  
-  **분석**: ${analyzeLoan(stats)}
-  
-  ### 대출금액대별 분포
-  
-  ${generateLoanTable(stats)}
-  
-  ---
+- **총 근저당액**: ${totalLoanAmount}억원
+- **가구당 평균**: ${averageLoanAmount}억원
   
   ## 📐 부동산 보유 현황
   
   ### 면적별 분포
-  
-  ${generateAreaTable(stats)}
-  
-  **분석**: ${analyzeArea(stats)}
+${stats.areaGroups ? Object.entries(stats.areaGroups).map(([area, count]) => `- ${area}: ${count}세대`).join('\n') : '데이터 없음'}
   
   ### 보유 기간 분석
-  
-  ${generateOwnershipTable(stats)}
-  
-  **분석**: ${analyzeOwnership(stats)}
+${stats.holdingGroups ? Object.entries(stats.holdingGroups).map(([period, count]) => `- ${period}: ${count}건`).join('\n') : '데이터 없음'}
   
   ### 소유권 이전 원인
-  
-  ${generateTransferTable(stats)}
-  
-  ---
-  `;
-  
-    // ========================================
-    // 2단계: AI 인사이트 (30%)
-    // ========================================
-    if (apiKey) {
-      try {
-        report += `\n## 🤖 전문가 인사이트 (AI 분석)\n\n`;
-        report += `*위 통계를 바탕으로 AI가 생성한 전략적 인사이트입니다.*\n\n`;
-        
-        const aiInsights = await generateGeminiInsights(stats, apiKey);
-        report += aiInsights;
-        report += `\n\n---\n`;
-      } catch (error) {
-        console.error('AI 분석 실패:', error);
-        // AI 실패 시 규칙 기반 인사이트로 대체
-        report += `\n## 📈 종합 분석\n\n`;
-        report += generateRuleBasedInsights(stats);
-        report += `\n\n---\n`;
-      }
-    } else {
-      // API 키 없으면 규칙 기반 인사이트 제공
-      report += `\n## 📈 종합 분석\n\n`;
-      report += generateRuleBasedInsights(stats);
-      report += `\n\n---\n`;
-    }
-  
-    // 3단계: 데이터 출처
-    report += `
+${stats.transferReasons ? Object.entries(stats.transferReasons).map(([reason, count]) => `- ${reason}: ${count}건`).join('\n') : '데이터 없음'}
+
   ## 📋 데이터 출처
   
-  - **분석 기준일**: ${reportDate}
-  - **데이터 건수**: ${csvData.length}건
-  - **분석 범위**: ${activeTab}
-  
-  ---
-  
-  *본 보고서는 등기부등본 및 조합원 명부를 기반으로 생성되었습니다.*
-  ${apiKey ? '\n*AI 인사이트는 Google Gemini 1.5 Flash를 사용하여 생성되었습니다.*' : ''}
-  `;
-  
-    return report;
-  }
-  
-  // ========================================
-  // 규칙 기반 분석 함수들 (항상 동일한 결과)
-  // ========================================
-  
-  function analyzeAge(stats) {
-    if (!stats.ageData || stats.ageData.length === 0) return '연령 데이터가 부족합니다.';
-    
-    const dominant = stats.ageData.reduce((max, age) => 
-      age.count > max.count ? age : max
-    , stats.ageData[0]);
-    
-    const percentage = ((dominant.count / stats.total) * 100).toFixed(1);
-    
-    let analysis = `${dominant.range}가 ${percentage}%로 가장 많은 비중을 차지하고 있습니다. `;
-    
-    if (dominant.range === '50대' || dominant.range === '60대') {
-      analysis += '주요 연령층이 중장년층으로, 재건축에 대한 관심이 높으며 장기 거주 의향이 있을 것으로 예상됩니다. 임시 거주 시 편의성과 접근성을 중요하게 고려해야 합니다.';
-    } else if (dominant.range === '30대' || dominant.range === '40대') {
-      analysis += '주요 연령층이 경제활동이 활발한 세대로, 자녀 교육과 직장 접근성을 중시할 것으로 보입니다. 디지털 소통 채널을 적극 활용할 수 있습니다.';
-    } else {
-      analysis += '다양한 연령층이 고루 분포되어 있어, 세대별 맞춤형 소통 전략이 필요합니다.';
-    }
-    
-    return analysis;
-  }
-  
-  function analyzeResidence(stats) {
-    const residenceRate = (stats.residenceCount / stats.total) * 100;
-    
-    let analysis = '';
-    
-    if (residenceRate >= 70) {
-      analysis = `실거주 비율이 ${residenceRate.toFixed(1)}%로 매우 높습니다. 재건축 추진 시 조합원들의 주거 안정성을 최우선으로 고려해야 하며, 임시 거주 대책과 이주비 지원이 핵심 이슈가 될 것입니다. 분양가보다 거주 편의성이 더 중요한 의사결정 요소로 작용할 가능성이 높습니다.`;
-    } else if (residenceRate >= 50) {
-      analysis = `실거주 비율이 ${residenceRate.toFixed(1)}%로 과반을 차지하고 있습니다. 실거주자의 주거권 보호와 투자자의 재산권 보호를 균형있게 고려해야 합니다. 양측의 이해관계를 조정하는 세심한 의사소통 전략이 필요합니다.`;
-    } else {
-      analysis = `투자 목적 보유 비율이 ${(100 - residenceRate).toFixed(1)}%로 더 높습니다. 재건축 추진 시 투자 수익성이 중요한 의사결정 요소로 작용할 것입니다. 분양가 전망과 시세 차익에 대한 명확한 정보 제공이 필요합니다.`;
-    }
-    
-    return analysis;
-  }
-  
-  function analyzeLoan(stats) {
-    const loanRate = parseFloat(stats.loanStatusData?.[0]?.percentage || 0);
-    const avgLoan = stats.averageLoanAmount / 100000000;
-    
-    let analysis = '';
-    
-    if (loanRate >= 70) {
-      analysis = `대출 보유율이 ${loanRate.toFixed(1)}%로 매우 높습니다. `;
-      if (avgLoan >= 4) {
-        analysis += `가구당 평균 대출액이 ${avgLoan.toFixed(1)}억원으로 상당한 수준입니다. 재건축 시 추가 분담금 조달에 어려움을 겪을 수 있으므로, 금융기관과의 협약을 통한 금리 우대, 분할 납부 옵션 등 다양한 금융 지원 방안을 마련해야 합니다.`;
-      } else {
-        analysis += `가구당 평균 대출액은 ${avgLoan.toFixed(1)}억원으로 관리 가능한 수준입니다. 그러나 대출 보유자 비율이 높으므로 금융 부담 완화 방안을 고려해야 합니다.`;
-      }
-    } else if (loanRate >= 40) {
-      analysis = `대출 보유율이 ${loanRate.toFixed(1)}%로 적정 수준입니다. 가구당 평균 대출액은 ${avgLoan.toFixed(1)}억원으로, 추가 분담금 조달 시 일부 조합원에게는 부담이 될 수 있으나 전반적으로는 안정적인 편입니다.`;
-    } else {
-      analysis = `대출 보유율이 ${loanRate.toFixed(1)}%로 낮고, 가구당 평균 대출액도 ${avgLoan.toFixed(1)}억원으로 낮은 편입니다. 재정적 여유가 있는 조합원이 많아 추가 분담금 납부 여력이 충분할 것으로 보입니다.`;
-    }
-    
-    return analysis;
-  }
-  
-  function analyzeArea(stats) {
-    if (!stats.areaData || stats.areaData.length === 0) return '면적 데이터가 부족합니다.';
-    
-    const dominant = stats.areaData.reduce((max, area) => 
-      area.count > max.count ? area : max
-    );
-    
-    return `${dominant.range}가 ${dominant.percentage}%로 가장 많은 비중을 차지하고 있습니다. 재건축 설계 시 해당 평형대의 공급을 우선적으로 고려하고, 조합원 선호도 조사를 통해 평형 구성을 최적화해야 합니다.`;
-  }
-  
-  function analyzeOwnership(stats) {
-    if (!stats.ownershipPeriodData || stats.ownershipPeriodData.length === 0) {
-      return '보유 기간 데이터가 부족합니다.';
-    }
-    
-    // 10년 이상 장기 보유자 계산
-    const longTerm = stats.ownershipPeriodData
-      .filter(p => {
-        if (p.period === '20년 이상') return true;
-        const years = parseInt(p.period);
-        return !isNaN(years) && years >= 10;
-      })
-      .reduce((sum, p) => sum + p.count, 0);
-    
-    const longTermRate = ((longTerm / stats.total) * 100).toFixed(1);
-    
-    if (longTermRate >= 50) {
-      return `10년 이상 장기 보유자가 ${longTermRate}%로 과반을 차지합니다. 재건축에 대한 기대가 높고 사업 추진 의지가 강할 것으로 예상됩니다. 장기 거주자들의 의견을 적극 수렴하여 사업 추진 동력으로 활용할 수 있습니다.`;
-    } else if (longTermRate >= 30) {
-      return `10년 이상 장기 보유자가 ${longTermRate}%입니다. 장기 거주자와 최근 입주자의 기대가 다를 수 있으므로, 양측의 의견을 균형있게 반영해야 합니다.`;
-    } else {
-      return `10년 이상 장기 보유자가 ${longTermRate}%로 상대적으로 적습니다. 최근 취득자가 많아 단기 투자 수익에 대한 관심이 높을 수 있으며, 재건축 일정과 예상 수익률에 대한 명확한 정보 제공이 중요합니다.`;
-    }
-  }
-  
-  function generateRuleBasedInsights(stats) {
-    const residenceRate = (stats.residenceCount / stats.total) * 100;
-    const loanRate = parseFloat(stats.loanStatusData?.[0]?.percentage || 0);
-    
-    return `
-  ### 조합원 구성의 특징
-  
-  실거주율 ${residenceRate.toFixed(1)}%, 대출 보유율 ${loanRate}%로 ${residenceRate >= 50 ? '실거주 중심' : '투자 중심'} 단지입니다. ${loanRate >= 60 ? '금융 부담이 있는 편이며' : '재정 여력이 있는 편이며'}, 이는 재건축 추진 시 ${residenceRate >= 60 ? '주거 안정성' : '투자 수익성'}을 우선적으로 고려해야 함을 의미합니다.
-  
-  ### 재건축 추진 시 핵심 고려사항
-  
-  1. **의사결정 구조**: ${residenceRate >= 60 ? '실거주자 중심의 의견 수렴이 필요하며, 임시 거주 대책을 최우선으로 고려해야 합니다' : '실거주자와 투자자 간 이해관계를 조율하는 세심한 소통 전략이 필요합니다'}
-  
-  2. **금융 부담 관리**: ${loanRate >= 60 ? '분담금 조달 지원 방안이 필수적입니다. 금융기관 협약을 통한 금리 우대, 분할 납부 등 다양한 옵션을 제공해야 합니다' : '대부분의 조합원이 안정적인 추가 분담금 조달이 가능할 것으로 예상됩니다'}
-  
-  3. **임시 거주 대책**: ${residenceRate >= 60 ? '실거주자가 많아 임시 거주 대책이 핵심 이슈입니다. 인근 임대 주택 확보, 이주비 지원 등 구체적인 계획이 필요합니다' : '일부 조합원을 대상으로 선택적 지원을 제공하면 됩니다'}
-  
-  4. **소통 전략**: 정기적인 설명회 개최, 투명한 정보 공개, 단계별 진행 상황 보고를 통해 조합원 신뢰를 구축해야 합니다
-  
-  ### 실무 제언
-  
-  1. **단계적 추진**: 사전 타당성 검토 → 조합원 의견 수렴 → 조합 설립 → 정관 작성 → 사업 시행 순으로 체계적으로 진행
-  
-  2. **전문가 활용**: 법률, 회계, 건축, 금융 전문가로 구성된 자문단을 운영하여 전문성 확보
-  
-  3. **리스크 관리**: 분양가 변동, 공사 지연, 법적 분쟁 등에 대한 시나리오별 대응책을 사전에 마련
-  
-  4. **투명성 확보**: 모든 의사결정 과정과 재정 집행 내역을 투명하게 공개하여 조합원 신뢰 확보
-  
-  5. **지속적 소통**: 온라인 플랫폼, 정기 뉴스레터, 분기별 총회 등 다양한 채널을 통한 소통 강화
-  `;
-  }
-  
-  // ========================================
-  // 테이블 생성 함수들
-  // ========================================
-  
-  function generateAgeTable(stats) {
-    if (!stats.ageData || stats.ageData.length === 0) return '연령 데이터가 없습니다.';
-    
-    let table = '\n| 연령대 | 인원 | 비율 |\n|--------|------|------|\n';
-    stats.ageData.forEach(age => {
-      const ratio = ((age.count / stats.total) * 100).toFixed(1);
-      table += `| ${age.range} | ${age.count}명 | ${ratio}% |\n`;
-    });
-    return table;
-  }
-  
-  function generateRegionTable(stats) {
-    if (!stats.regionData || stats.regionData.length === 0) return '지역 데이터가 없습니다.';
-    
-    let table = '\n| 지역 | 인원 | 비율 |\n|------|------|------|\n';
-    stats.regionData.slice(0, 10).forEach(region => {
-      const ratio = ((region.count / stats.investmentCount) * 100).toFixed(1);
-      table += `| ${region.region} | ${region.count}명 | ${ratio}% |\n`;
-    });
-    return table;
-  }
-  
-  function generateLoanTable(stats) {
-    if (!stats.loanAmountData || stats.loanAmountData.length === 0) return '대출 데이터가 없습니다.';
-    
-    let table = '\n| 대출 구간 | 세대수 |\n|-----------|--------|\n';
-    stats.loanAmountData.forEach(loan => {
-      table += `| ${loan.range} | ${loan.count}세대 |\n`;
-    });
-    return table;
-  }
-  
-  function generateAreaTable(stats) {
-    if (!stats.areaData || stats.areaData.length === 0) return '면적 데이터가 없습니다.';
-    
-    let table = '\n| 면적 | 세대수 | 비율 |\n|------|--------|------|\n';
-    stats.areaData.forEach(area => {
-      table += `| ${area.range} | ${area.count}세대 | ${area.percentage}% |\n`;
-    });
-    return table;
-  }
-  
-  function generateOwnershipTable(stats) {
-    if (!stats.ownershipPeriodData || stats.ownershipPeriodData.length === 0) return '보유 기간 데이터가 없습니다.';
-    
-    let table = '\n| 보유 기간 | 세대수 |\n|-----------|--------|\n';
-    stats.ownershipPeriodData.slice(0, 10).forEach(period => {
-      table += `| ${period.period} | ${period.count}세대 |\n`;
-    });
-    return table;
-  }
-  
-  function generateTransferTable(stats) {
-    if (!stats.transferReasonData || stats.transferReasonData.length === 0) return '이전 원인 데이터가 없습니다.';
-    
-    let table = '\n| 이전 원인 | 건수 | 비율 |\n|-----------|------|------|\n';
-    stats.transferReasonData.forEach(reason => {
-      table += `| ${reason.reason} | ${reason.count}건 | ${reason.percentage}% |\n`;
-    });
-    return table;
-  }
-  
-  // ========================================
-  // 다운로드 함수들
-  // ========================================
-  
-  /**
-   * Markdown 다운로드
-   */
-  export function downloadAsMarkdown(content, filename = '재건축분석보고서') {
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+- **분석 기준일**: ${new Date().toLocaleDateString()}
+- **데이터 건수**: ${stats.total}건
+- **분석 범위**: 전체통계
+
+---
+
+*본 보고서는 등기부등본 및 조합원 명부를 기반으로 생성되었습니다.*`;
+}
+
+/**
+ * 마크다운 다운로드
+ */
+export function downloadAsMarkdown(content, filename = 'report.md') {
+  const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}_${new Date().toISOString().split('T')[0]}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
   
   /**
    * HTML 다운로드
    */
-  export function downloadAsHTML(content, filename = '재건축분석보고서') {
-    let html = content
-      .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n\n/g, '</p><p>');
-  
-    const fullHTML = `
+export function downloadAsHTML(content, filename = 'report.html') {
+  const htmlContent = `
   <!DOCTYPE html>
   <html lang="ko">
   <head>
     <meta charset="UTF-8">
-    <title>${filename}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재건축 분석 보고서</title>
     <style>
-      body { 
-        font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; 
-        max-width: 900px; 
-        margin: 40px auto; 
-        padding: 20px; 
-        line-height: 1.8; 
-        color: #333;
-      }
-      h1 { 
-        color: #1a202c; 
-        border-bottom: 3px solid #10b981; 
-        padding-bottom: 10px;
-        margin-top: 40px;
-      }
-      h2 { 
-        color: #2d3748; 
-        margin-top: 40px; 
-        border-bottom: 2px solid #e2e8f0; 
-        padding-bottom: 8px; 
-      }
-      h3 { 
-        color: #4a5568; 
-        margin-top: 30px; 
-      }
-      table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin: 20px 0; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      th, td { 
-        border: 1px solid #e2e8f0; 
-        padding: 12px; 
-        text-align: left; 
-      }
-      th { 
-        background-color: #10b981; 
-        color: white; 
-        font-weight: bold; 
-      }
-      tr:nth-child(even) { 
-        background-color: #f7fafc; 
-      }
-      tr:hover {
-        background-color: #edf2f7;
-      }
-      strong { 
-        color: #10b981;
-        font-weight: 600;
-      }
-      p {
-        margin: 10px 0;
-      }
-      @media print { 
-        body { margin: 0; }
-        h1 { page-break-before: always; }
-      }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1, h2, h3 { color: #2d3748; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background-color: #f7fafc; font-weight: 600; }
+        code { background-color: #f7fafc; padding: 2px 4px; border-radius: 3px; }
+        blockquote { border-left: 4px solid #4299e1; margin: 20px 0; padding-left: 20px; color: #4a5568; }
     </style>
   </head>
   <body>
-    ${html}
+    ${content.replace(/\n/g, '<br>')}
   </body>
-  </html>
-    `;
+</html>`;
   
-    const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+  const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}_${new Date().toISOString().split('T')[0]}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
