@@ -1,0 +1,134 @@
+.main-app {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.main-app__header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 2rem;
+  text-align: center;
+}
+
+.main-app__title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 2rem;
+}
+
+.main-app__steps {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.main-app__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.main-app__step--active {
+  opacity: 1;
+}
+
+.main-app__step-number {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.main-app__step--active .main-app__step-number {
+  background-color: #10b981;
+  color: white;
+}
+
+.main-app__step-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.main-app__content {
+  padding: 2rem;
+  max-width: none;
+  margin: 0 auto;
+}
+
+.main-app__error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.main-app__error p {
+  color: #dc2626;
+  margin: 0 0 1rem 0;
+}
+
+.main-app__reset-button {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.main-app__reset-button:hover {
+  background-color: #b91c1c;
+}
+
+.main-app__navigation {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.main-app__nav-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.main-app__nav-button--primary {
+  background-color: #10b981;
+  color: white;
+}
+
+.main-app__nav-button--primary:hover {
+  background-color: #059669;
+}
+
+.main-app__nav-button--secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.main-app__nav-button--secondary:hover {
+  background-color: #e5e7eb;
+}

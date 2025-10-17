@@ -1,11 +1,10 @@
-// try this version
 import React from 'react';
-import ReconstructionAnalysis from './components/ReconstructionAnalysis';
+import MainApp from './components/MainApp';
 
 function App() {
   return (
     <div className="App">
-      <ReconstructionAnalysis />
+      <MainApp />
     </div>
   );
 }
