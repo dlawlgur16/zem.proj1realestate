@@ -2674,7 +2674,6 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 );
               })}
             </div>
-            </div>
             {(() => {
               // 현재 선택된 탭의 데이터 가져오기
               const currentData = activeTab === '전체통계' ? csvData : csvData.filter(row => {
