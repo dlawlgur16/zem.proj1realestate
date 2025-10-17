@@ -20,6 +20,8 @@ export default function ReconstructionAnalysis() {
   const [selectedAgeGroupReason, setSelectedAgeGroupReason] = useState('전체');
   const [selectedAgeGroupArea, setSelectedAgeGroupArea] = useState('전체');
   const [selectedAgeGroupLoan, setSelectedAgeGroupLoan] = useState('전체');
+  const [selectedAgeGroupSeizure, setSelectedAgeGroupSeizure] = useState('전체');
+  const [selectedAgeGroupLoanAmount, setSelectedAgeGroupLoanAmount] = useState('전체');
 
   // CSV 파일 자동 로드
   const loadCsvFile = useCallback(async (fileName) => {
@@ -879,9 +881,10 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 5. **보유기간 분석** - 장기/단기 보유자 특성 (실제 데이터만)
 6. **등기이전 원인 분석** - 매매/증여/상속/경매 비율 (실제 데이터만)
 7. **금융 현황 분석** - 근저당, 대출 현황, 리스크 분석 (실제 데이터만)
-8. **종합 요약** - 핵심 지표 요약표 (간결한 형태)
-9. **시공사 전략 제언** - 구체적이고 실행 가능한 방안
-10. **결론** - 긍정적 요인과 리스크 요인 구분
+8. **압류/가압류 현황 분석** - 법적 리스크와 조합 설립 시 주의사항 (실제 데이터만)
+9. **종합 요약** - 핵심 지표 요약표 (간결한 형태)
+10. **시공사 전략 제언** - 구체적이고 실행 가능한 방안
+11. **결론** - 긍정적 요인과 리스크 요인 구분
 
 **중요: 제공된 데이터에 없는 정보는 분석하지 마세요:**
 - 연령대별 분포 (주민번호로 추정 가능한 경우만)
@@ -912,6 +915,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 3. **보유기간 분석**: 보유기간_년 컬럼의 보유기간별 분포와 해석
 4. **등기이전 원인 분석**: 이전사유 컬럼의 거래 유형별 비율과 해석
 5. **금융 현황 분석**: 유효근저당총액 컬럼의 근저당 현황과 해석
+6. **압류/가압류 현황 분석**: 압류가압류유무 컬럼의 압류/가압류 비율과 조합 설립 시 법적 리스크 분석
 
 **종합 요약 표 작성 지침:**
 - 각 지표별로 간결한 해석 (한 줄 이내)
@@ -928,6 +932,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
 | 근저당 비율 | 69.3% | 높은 편, 금융 리스크 관리 필요 |
 | 장기보유세대 | 52.4% | 사업 지속성 높음 |
 | 거래 집중시기 | 2022~2025년 | 재건축 기대감 |
+| 압류/가압류 현황 | 3.1% | 법적 리스크 낮음, 조합 설립 시 개별 협의 필요 |
 | 핵심 리스크 | 높은 근저당 비율 | 높은 분담금 예상 |
 
 **중요 지침:**
@@ -2280,7 +2285,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                               style={{ backgroundColor: colors[index % colors.length] }}
                             ></div>
                             <span className="text-sm text-gray-800 whitespace-nowrap">
-                              {entry.area} · {entry.count}세대 ({entry.percentage}%)
+                              <span className="font-bold">{entry.area}</span> · {entry.count}세대 ({entry.percentage}%)
                             </span>
                           </div>
                         );
@@ -2463,9 +2468,9 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 return (
                   <button
                     key={ageGroup}
-                    onClick={() => setSelectedAgeGroupLoan(ageGroup)}
+                    onClick={() => setSelectedAgeGroupLoanAmount(ageGroup)}
                     className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      selectedAgeGroupLoan === ageGroup
+                      selectedAgeGroupLoanAmount === ageGroup
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
@@ -2490,7 +2495,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                 });
               
               // 연령대별 필터링 적용
-              const filteredData = selectedAgeGroupLoan === '전체' ? currentData : 
+              const filteredData = selectedAgeGroupLoanAmount === '전체' ? currentData : 
                 currentData.filter(row => {
                   if (!row.주민번호 || row.주민번호.length < 7) return false;
                   const birthYear = parseInt(row.주민번호.substring(0, 2));
@@ -2504,7 +2509,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   }
                   
                   const age = currentYear - fullBirthYear;
-                  const ageGroup = selectedAgeGroupLoan;
+                  const ageGroup = selectedAgeGroupLoanAmount;
                   
                   if (ageGroup === '20대') return age >= 20 && age < 30;
                   if (ageGroup === '30대') return age >= 30 && age < 40;
@@ -2576,7 +2581,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
-                    총 {loanCount}명 (대출자 기준, {selectedAgeGroupLoan})
+                    총 {loanCount}명 (대출자 기준, {selectedAgeGroupLoanAmount})
                   </div>
             <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={loanData}>
@@ -2604,45 +2609,122 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           {/* 대출 여부 비율 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">대출 여부 비율</h2>
-            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
-            <div className="flex items-center justify-center gap-8">
-                <ResponsiveContainer width="60%" height={300}>
-              <PieChart>
-                <Pie
-                  data={stats.loanStatusData || []}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {(stats.loanStatusData || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                         <Tooltip 
-                           contentStyle={{
-                             backgroundColor: '#000000',
-                             color: '#ffffff',
-                             border: 'none',
-                             borderRadius: '8px',
-                             fontSize: '12px'
-                           }}
-                         />
-              </PieChart>
-            </ResponsiveContainer>
-              <div className="flex-1 space-y-2">
-                {(stats.loanStatusData || []).map((entry, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: entry.color }}></div>
-                    <span className="text-sm font-medium">{entry.name}</span>
-                    <span className="text-sm text-gray-600">{entry.value}명</span>
-                    <span className="text-sm text-gray-500">({entry.percentage}%)</span>
-                  </div>
-                ))}
-              </div>
+            
+            {/* 연령대별 탭 */}
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+              {['전체', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'].map((ageGroup) => {
+                return (
+                  <button
+                    key={ageGroup}
+                    onClick={() => setSelectedAgeGroupLoan(ageGroup)}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                      selectedAgeGroupLoan === ageGroup
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {ageGroup}
+                  </button>
+                );
+              })}
             </div>
+            {(() => {
+              // 현재 선택된 탭의 데이터 가져오기
+              const currentData = activeTab === '전체통계' ? csvData : csvData.filter(row => {
+                if (!row.건물명) return false;
+                const buildingName = activeTab.replace('대교아파트 ', '');
+                return row.건물명.includes(buildingName);
+              });
+
+              // 나이대별 필터링
+              const filteredData = selectedAgeGroupLoan === '전체' ? currentData : 
+                currentData.filter(row => {
+                  if (!row.주민번호 || row.주민번호.length < 7) return false;
+                  
+                  const birthYear = parseInt(row.주민번호.substring(0, 2));
+                  const currentYear = new Date().getFullYear();
+                  let fullBirthYear;
+                  
+                  if (birthYear <= 30) {
+                    fullBirthYear = 2000 + birthYear;
+                  } else {
+                    fullBirthYear = 1900 + birthYear;
+                  }
+                  
+                  const age = currentYear - fullBirthYear;
+                  const ageGroup = selectedAgeGroupLoan;
+                  
+                  if (ageGroup === '20대') return age >= 20 && age < 30;
+                  if (ageGroup === '30대') return age >= 30 && age < 40;
+                  if (ageGroup === '40대') return age >= 40 && age < 50;
+                  if (ageGroup === '50대') return age >= 50 && age < 60;
+                  if (ageGroup === '60대') return age >= 60 && age < 70;
+                  if (ageGroup === '70대') return age >= 70 && age < 80;
+                  if (ageGroup === '80대') return age >= 80 && age < 90;
+                  if (ageGroup === '90대') return age >= 90;
+                  
+                  return true;
+                });
+
+              // 대출 여부 데이터 처리
+              const loanCount = filteredData.filter(row => {
+                if (!row.유효근저당총액) return false;
+                const amount = parseFloat(row.유효근저당총액);
+                return !isNaN(amount) && amount > 0;
+              }).length;
+              const noLoanCount = filteredData.length - loanCount;
+              
+              const loanStatusData = [
+                { name: '대출', value: loanCount, percentage: filteredData.length ? ((loanCount/filteredData.length)*100).toFixed(1) : '0', color: '#ef4444' },
+                { name: '무대출', value: noLoanCount, percentage: filteredData.length ? ((noLoanCount/filteredData.length)*100).toFixed(1) : '0', color: '#10b981' }
+              ];
+
+              return (
+                <>
+                  <div className="text-center text-sm text-gray-600 mb-4">
+                    총 {filteredData.length}명 ({selectedAgeGroupLoan})
+                  </div>
+                  <div className="flex items-center justify-center gap-8">
+                    <ResponsiveContainer width="60%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={loanStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {loanStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                             <Tooltip 
+                               contentStyle={{
+                                 backgroundColor: '#000000',
+                                 color: '#ffffff',
+                                 border: 'none',
+                                 borderRadius: '8px',
+                                 fontSize: '12px'
+                               }}
+                             />
+                  </PieChart>
+                </ResponsiveContainer>
+                  <div className="flex-1 space-y-2">
+                    {loanStatusData.map((entry, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: entry.color }}></div>
+                        <span className="text-sm font-medium">{entry.name}</span>
+                        <span className="text-sm text-gray-600">{entry.value}명</span>
+                        <span className="text-sm text-gray-500">({entry.percentage}%)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+              );
+            })()}
             <div className="mt-2 flex justify-center gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded"></div>
@@ -2658,54 +2740,124 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
           {/* 압류/가압류 현황 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2 text-center">압류/가압류 현황</h2>
-            <div className="text-center text-sm text-gray-600 mb-4">총 {stats.total}명</div>
-            <div className="flex items-center justify-center gap-8">
-                <ResponsiveContainer width="60%" height={300}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: '정상', value: stats.total - (stats.seizureCount || 0), color: '#10b981' },
-                    { name: '압류/가압류', value: stats.seizureCount || 0, color: '#ef4444' }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  dataKey="value"
-                >
-                  {[
-                    { name: '정상', value: stats.total - (stats.seizureCount || 0), color: '#10b981' },
-                    { name: '압류/가압류', value: stats.seizureCount || 0, color: '#ef4444' }
-                  ].map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                         <Tooltip 
-                           contentStyle={{
-                             backgroundColor: '#000000',
-                             color: '#ffffff',
-                             border: 'none',
-                             borderRadius: '8px',
-                             fontSize: '12px'
-                           }}
-                         />
-              </PieChart>
-            </ResponsiveContainer>
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded bg-emerald-500"></div>
-                  <span className="text-sm font-medium">정상</span>
-                  <span className="text-sm text-gray-600">{stats.total - (stats.seizureCount || 0)}명</span>
-                  <span className="text-sm text-gray-500">({(((stats.total - (stats.seizureCount || 0))/stats.total)*100).toFixed(1)}%)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded bg-red-500"></div>
-                  <span className="text-sm font-medium">압류/가압류</span>
-                  <span className="text-sm text-gray-600">{stats.seizureCount || 0}명</span>
-                  <span className="text-sm text-gray-500">({(((stats.seizureCount || 0)/stats.total)*100).toFixed(1)}%)</span>
-                </div>
-              </div>
+            
+            {/* 연령대별 탭 */}
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+              {['전체', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'].map((ageGroup) => {
+                return (
+                  <button
+                    key={ageGroup}
+                    onClick={() => setSelectedAgeGroupSeizure(ageGroup)}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                      selectedAgeGroupSeizure === ageGroup
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {ageGroup}
+                  </button>
+                );
+              })}
             </div>
+            {(() => {
+              // 현재 선택된 탭의 데이터 가져오기
+              const currentData = activeTab === '전체통계' ? csvData : csvData.filter(row => {
+                if (!row.건물명) return false;
+                const buildingName = activeTab.replace('대교아파트 ', '');
+                return row.건물명.includes(buildingName);
+              });
+
+              // 나이대별 필터링
+              const filteredData = selectedAgeGroupSeizure === '전체' ? currentData : 
+                currentData.filter(row => {
+                  if (!row.주민번호 || row.주민번호.length < 7) return false;
+                  
+                  const birthYear = parseInt(row.주민번호.substring(0, 2));
+                  const currentYear = new Date().getFullYear();
+                  let fullBirthYear;
+                  
+                  if (birthYear <= 30) {
+                    fullBirthYear = 2000 + birthYear;
+                  } else {
+                    fullBirthYear = 1900 + birthYear;
+                  }
+                  
+                  const age = currentYear - fullBirthYear;
+                  const ageGroup = selectedAgeGroupSeizure;
+                  
+                  if (ageGroup === '20대') return age >= 20 && age < 30;
+                  if (ageGroup === '30대') return age >= 30 && age < 40;
+                  if (ageGroup === '40대') return age >= 40 && age < 50;
+                  if (ageGroup === '50대') return age >= 50 && age < 60;
+                  if (ageGroup === '60대') return age >= 60 && age < 70;
+                  if (ageGroup === '70대') return age >= 70 && age < 80;
+                  if (ageGroup === '80대') return age >= 80 && age < 90;
+                  if (ageGroup === '90대') return age >= 90;
+                  
+                  return true;
+                });
+
+              // 압류/가압류 데이터 처리
+              const seizureCount = filteredData.filter(row => {
+                const seizure = row['압류가압류유무'] || 'N';
+                return seizure === 'Y' || seizure === '1' || seizure === 'true';
+              }).length;
+              const normalCount = filteredData.length - seizureCount;
+
+              const seizureData = [
+                { name: '정상', value: normalCount, color: '#10b981' },
+                { name: '압류/가압류', value: seizureCount, color: '#ef4444' }
+              ];
+
+              return (
+                <>
+                  <div className="text-center text-sm text-gray-600 mb-4">
+                    총 {filteredData.length}명 ({selectedAgeGroupSeizure})
+                  </div>
+                  <div className="flex items-center justify-center gap-8">
+                    <ResponsiveContainer width="60%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={seizureData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={90}
+                      dataKey="value"
+                    >
+                      {seizureData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                             <Tooltip 
+                               contentStyle={{
+                                 backgroundColor: '#000000',
+                                 color: '#ffffff',
+                                 border: 'none',
+                                 borderRadius: '8px',
+                                 fontSize: '12px'
+                               }}
+                             />
+                  </PieChart>
+                </ResponsiveContainer>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-3 whitespace-nowrap">
+                      <div className="w-4 h-4 rounded bg-emerald-500 flex-shrink-0"></div>
+                      <span className="text-sm font-medium">정상</span>
+                      <span className="text-sm text-gray-600">{normalCount}명</span>
+                      <span className="text-sm text-gray-500">({filteredData.length > 0 ? ((normalCount/filteredData.length)*100).toFixed(1) : '0.0'}%)</span>
+                    </div>
+                    <div className="flex items-center gap-3 whitespace-nowrap">
+                      <div className="w-4 h-4 rounded bg-red-500 flex-shrink-0"></div>
+                      <span className="text-sm font-medium">압류/가압류</span>
+                      <span className="text-sm text-gray-600">{seizureCount}명</span>
+                      <span className="text-sm text-gray-500">({filteredData.length > 0 ? ((seizureCount/filteredData.length)*100).toFixed(1) : '0.0'}%)</span>
+                    </div>
+                  </div>
+                </div>
+                </>
+              );
+            })()}
             <div className="mt-2 flex justify-center gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-emerald-500 rounded"></div>
