@@ -1966,7 +1966,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                   percentage: ageData.investmentRate
                 }
               ];
-              
+            
               return (
                 <>
                   <div className="text-center text-sm text-gray-600 mb-4">
@@ -2469,6 +2469,7 @@ ${Object.entries(actualStats.거주지 || {}).map(([key, value]) => `- ${key}: $
                           innerRadius={50}
                   outerRadius={90}
                   dataKey="count"
+                  nameKey="reason"
                 >
                           {reasonData.map((entry, index) => {
                     const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
