@@ -56,13 +56,18 @@ const AreaDistribution = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }
               ))}
             </Pie>
             <Tooltip 
+              allowEscapeViewBox={{ x: true, y: true }}
+              wrapperStyle={{ zIndex: 9999 }}
               contentStyle={{
-                backgroundColor: '#000000',
+                backgroundColor: 'rgba(0,0,0,0.85)',
                 color: '#ffffff',
-                border: 'none',
+                border: '1px solid #333',
                 borderRadius: '8px',
                 fontSize: '12px'
               }}
+              itemStyle={{ color: '#ffffff' }}
+              labelStyle={{ color: '#ffffff' }}
+              formatter={(value, name) => [`${value}`, name]}
             />
           </PieChart>
         </ResponsiveContainer>

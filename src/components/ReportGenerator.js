@@ -10,6 +10,9 @@ import {
 } from '../utils/geminiReportGenerator';
 import ReportPreview from './ReportPreview';
 
+//디버깅
+console.log("🧩 process.env keys:", Object.keys(process.env));
+console.log("🔑 GEMINI:", process.env.REACT_APP_GEMINI_API_KEY);
 // .env 파일에서 API 키 불러오기
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 
