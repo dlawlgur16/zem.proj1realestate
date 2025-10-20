@@ -7,7 +7,7 @@ import ProjectIndex from './pages/ProjectIndex';
 
 function App() {
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <div className="App">
         <Routes>
           {/* 기존 라우트 보존 */}
