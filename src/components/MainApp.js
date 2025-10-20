@@ -50,10 +50,10 @@ const MainApp = () => {
     );
   }
 
-  // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
+  // 로그인하지 않은 경우에도 기본 기능 사용 가능
+  // if (!session) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   // 디버깅 로그 (필요시에만)
   // console.log('MainApp statsData:', statsData);
@@ -99,13 +99,17 @@ const MainApp = () => {
             )}
           </div>
           <div className="main-app__user-info">
-            <span className="main-app__user-name">{session.username} ({session.role})</span>
-            <button 
-              onClick={handleLogout}
-              className="main-app__logout-btn"
-            >
-              로그아웃
-            </button>
+            {session && (
+              <>
+                <span className="main-app__user-name">{session.username} ({session.role})</span>
+                <button 
+                  onClick={handleLogout}
+                  className="main-app__logout-btn"
+                >
+                  로그아웃
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div className="main-app__steps">
