@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import CsvLoader from './CsvLoader/CsvLoader';
 import DataAnalysis from './DataAnalysis/DataAnalysis';
 import ReportGenerator from './ReportGenerator';
@@ -7,6 +7,7 @@ import { getSession, clearSession } from '../utils/auth';
 import './MainApp.css';
 
 const MainApp = () => {
+  const location = useLocation();
   const [csvData, setCsvData] = useState(null);
   const [activeTab, setActiveTab] = useState('전체통계');
   const [currentStep, setCurrentStep] = useState('upload'); // upload, analysis, report
@@ -14,13 +15,23 @@ const MainApp = () => {
   const [statsData, setStatsData] = useState(null);
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [projectInfo, setProjectInfo] = useState(null);
 
-  // 인증 상태 확인
+  // 인증 상태 확인 및 프로젝트 데이터 처리
   useEffect(() => {
     const currentSession = getSession();
     setSession(currentSession);
+    
+    // 프로젝트 데이터가 전달되었는지 확인
+    if (location.state?.project && location.state?.projectData) {
+      console.log('📁 프로젝트 데이터 받음:', location.state.project.name);
+      setProjectInfo(location.state.project);
+      setCsvData(location.state.projectData);
+      setCurrentStep('analysis'); // 바로 분석 단계로
+    }
+    
     setIsLoading(false);
-  }, []);
+  }, [location.state]);
 
   // 로딩 중일 때는 로딩 화면 표시
   if (isLoading) {
@@ -78,7 +89,15 @@ const MainApp = () => {
     <div className="main-app">
       <div className="main-app__header">
         <div className="main-app__header-top">
-          <h1 className="main-app__title">재건축 데이터 분석 시스템</h1>
+          <div className="main-app__title-section">
+            <h1 className="main-app__title">재건축 데이터 분석 시스템</h1>
+            {projectInfo && (
+              <div className="main-app__project-info">
+                <h2 className="main-app__project-name">{projectInfo.name}</h2>
+                <p className="main-app__project-address">{projectInfo.address}</p>
+              </div>
+            )}
+          </div>
           <div className="main-app__user-info">
             <span className="main-app__user-name">{session.username} ({session.role})</span>
             <button 
@@ -130,6 +149,21 @@ const MainApp = () => {
                 console.log('📊 holdingGroups:', newStats[activeTab].holdingGroups);
                 console.log('📊 totalLoanAmount:', newStats[activeTab].totalLoanAmount);
                 console.log('📊 averageLoanAmount:', newStats[activeTab].averageLoanAmount);
+                console.log('📊 ageInsights:', newStats[activeTab].ageInsights);
+                
+                // ageInsights 상세 디버깅
+                if (newStats[activeTab].ageInsights) {
+                  console.log('📊 ageInsights 상세 분석:');
+                  Object.entries(newStats[activeTab].ageInsights).forEach(([age, insight]) => {
+                    console.log(`📊 ${age}:`, {
+                      loanRate: insight.loanRate,
+                      avgLoan: insight.avgLoan,
+                      residenceRate: insight.residenceRate
+                    });
+                  });
+                } else {
+                  console.log('❌ ageInsights 데이터가 없습니다!');
+                }
               } else {
                 console.log('❌ MainApp에서 activeTab 데이터 없음');
                 console.log('❌ newStats:', newStats);

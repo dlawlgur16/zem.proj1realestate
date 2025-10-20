@@ -31,8 +31,8 @@ const Login = () => {
           role: 'admin' 
         });
         
-        // 기존 재건축 분석 시스템으로 리다이렉트
-        window.location.href = '/';
+        // 프로젝트 선택 페이지로 리다이렉트
+        window.location.href = '/app';
       } catch (error) {
         setError('로그인 처리 중 오류가 발생했습니다.');
       }

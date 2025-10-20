@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainApp from './components/MainApp';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
-import AppHome from './pages/AppHome';
+import ProjectIndex from './pages/ProjectIndex';
 
 function App() {
   return (
@@ -17,7 +17,8 @@ function App() {
           {/* 새로운 인증 라우트 */}
           <Route path="/login" element={<Login />} />
           <Route path="/app" element={<ProtectedRoute />}>
-            <Route index element={<AppHome />} />
+            <Route index element={<ProjectIndex />} />
+            <Route path="analysis" element={<MainApp />} />
           </Route>
         </Routes>
       </div>

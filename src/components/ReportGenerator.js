@@ -34,6 +34,21 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
     console.log('📊 totalLoanAmount:', statsData[activeTab].totalLoanAmount);
     console.log('📊 averageLoanAmount:', statsData[activeTab].averageLoanAmount);
     console.log('📊 ageInsights:', statsData[activeTab].ageInsights);
+    
+    // ageInsights 상세 디버깅
+    if (statsData[activeTab].ageInsights) {
+      console.log('📊 ReportGenerator ageInsights 상세 분석:');
+      Object.entries(statsData[activeTab].ageInsights).forEach(([age, insight]) => {
+        console.log(`📊 ${age}:`, {
+          loanRate: insight.loanRate,
+          avgLoan: insight.avgLoan,
+          residenceRate: insight.residenceRate,
+          seizureRate: insight.seizureRate
+        });
+      });
+    } else {
+      console.log('❌ ReportGenerator에서 ageInsights 데이터가 없습니다!');
+    }
   } else {
     console.log('❌ ReportGenerator에서 activeTab 데이터 없음');
     console.log('❌ statsData:', statsData);

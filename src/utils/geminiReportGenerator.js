@@ -48,10 +48,10 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
               }]
             }],
             generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 5000,
-              topP: 0.8,
-              topK: 40
+              temperature: 0.2,
+              maxOutputTokens: 8000,
+              topP: 0.9,
+              topK: 1
             }
           })
         }
@@ -108,6 +108,22 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
   console.log('📊 seizureStatusData:', stats.seizureStatusData);
   console.log('📊 loanStatusData:', stats.loanStatusData);
   console.log('📊 residenceInvestmentData:', stats.residenceInvestmentData);
+  console.log('📊 ageInsights:', stats.ageInsights);
+  
+  // ageInsights 상세 디버깅
+  if (stats.ageInsights) {
+    console.log('📊 ageInsights 상세 분석:');
+    Object.entries(stats.ageInsights).forEach(([age, insight]) => {
+      console.log(`📊 ${age}:`, {
+        loanRate: insight.loanRate,
+        avgLoan: insight.avgLoan,
+        residenceRate: insight.residenceRate,
+        seizureRate: insight.seizureRate
+      });
+    });
+  } else {
+    console.log('❌ ageInsights 데이터가 없습니다!');
+  }
   
     const residenceRate = ((stats.residenceCount / stats.total) * 100).toFixed(1);
     const investmentRate = ((stats.investmentCount / stats.total) * 100).toFixed(1);
@@ -211,6 +227,9 @@ ${stats.ageInsights ? Object.entries(stats.ageInsights)
 - 대출 비율: ${insight.loanRate != null ? `${insight.loanRate}%` : '데이터 없음'}
 - 평균 근저당액: ${insight.avgLoan != null ? `${insight.avgLoan}억원` : '데이터 없음'}
 - 대출 현황의 특징과 투자 성향에 미치는 영향 분석
+
+<!-- 디버깅: ${age}층 insight 데이터 -->
+<!-- loanRate: ${insight.loanRate}, avgLoan: ${insight.avgLoan}, residenceRate: ${insight.residenceRate} -->
 
 **2. 실거주 비율 분석:**
 - 실거주 비율: ${insight.residenceRate != null ? `${insight.residenceRate}%` : '데이터 없음'}

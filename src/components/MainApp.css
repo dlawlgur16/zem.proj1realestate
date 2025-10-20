@@ -23,6 +23,23 @@
   margin: 0;
 }
 
+.main-app__project-info {
+  margin-top: 8px;
+}
+
+.main-app__project-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #667eea;
+  margin: 0 0 4px 0;
+}
+
+.main-app__project-address {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0;
+}
+
 .main-app__user-info {
   display: flex;
   align-items: center;
@@ -165,4 +182,22 @@
 
 .main-app__nav-button--secondary:hover {
   background-color: #e5e7eb;
+}
+
+/* 네비게이션 정보 스타일 */
+.main-app__nav-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.main-app__nav-text {
+  color: #4a5568;
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-align: center;
 }

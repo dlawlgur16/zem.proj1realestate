@@ -22,6 +22,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const [selectedAgeGroupResidence, setSelectedAgeGroupResidence] = useState('전체');
   const [selectedAgeGroupArea, setSelectedAgeGroupArea] = useState('전체');
   const [selectedAgeGroupYearly, setSelectedAgeGroupYearly] = useState('전체');
+ 
 
   const calculateStats = (data) => {
     const total = data.length;
@@ -93,12 +94,33 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     //   return residentNumber && residentNumber.length >= 7;
     // }).length);
 
-    // 거주/투자 비율
+    // 거주/투자 비율 (다양한 표기 허용)
+    const isResidence = (value) => {
+      const v = String(value ?? '').trim().toLowerCase();
+      if (!v) return false;
+      // 부분 일치 우선 처리 ("실거주 추정" 등)
+      if (v.includes('실거주')) return true;
+      if (v.includes('거주')) return true; // "거주", "거주자" 등
+      // 정확 일치 토큰
+      return ['y','yes','true','1','t','o','ㅇ','예','네','투자아님'].some(tok => v === tok);
+    };
+    
+    // 실거주여부 값들 확인을 위한 디버깅
+    const residenceValues = [...new Set(data.map(row => row['실거주여부'] || row['거주여부'] || '').filter(Boolean))];
+    console.log('🔍 DataAnalysis 실제 실거주여부 값들:', residenceValues);
+    
     const residenceCount = data.filter(row => {
       const residence = row['실거주여부'] || row['거주여부'] || '';
-      return residence === 'Y' || residence === '1' || residence === 'true' || residence.includes('거주');
+      return isResidence(residence);
     }).length;
     const investmentCount = total - residenceCount;
+    
+    console.log('🔍 DataAnalysis 실거주 비율:', {
+      total,
+      residenceCount,
+      investmentCount,
+      residenceRate: ((residenceCount / total) * 100).toFixed(1) + '%'
+    });
 
     // 면적별 분포 (소수점 2자리)
     const areaGroups = {};
@@ -262,8 +284,11 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     const normalCount = total - seizureCount;
 
     // 연령대별 인사이트 계산
+    console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
+    console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', data[0]);
     const ageInsights = calculateAgeInsights(data);
     console.log('📊 연령대별 인사이트:', ageInsights);
+    console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
     return {
       total,
@@ -397,6 +422,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStats, activeTab]); // onStatsUpdate는 의도적으로 제외
 
+ 
+
   if (!csvData || csvData.length === 0) {
     return (
       <div className="data-analysis">
@@ -491,6 +518,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupYearly}
         />
       </div>
+
+ 
     </div>
   );
 };
