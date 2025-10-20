@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import CsvLoader from './CsvLoader/CsvLoader';
 import DataAnalysis from './DataAnalysis/DataAnalysis';
 import ReportGenerator from './ReportGenerator';
