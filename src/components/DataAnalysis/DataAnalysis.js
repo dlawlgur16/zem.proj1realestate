@@ -4,11 +4,11 @@ import LoanStatus from './Charts/LoanStatus';
 import SeizureStatus from './Charts/SeizureStatus';
 import AreaDistribution from './Charts/AreaDistribution';
 import ResidenceInvestment from './Charts/ResidenceInvestment';
-import GenderDistribution from './Charts/GenderDistribution';
 import HoldingPeriod from './Charts/HoldingPeriod';
 import TransferReason from './Charts/TransferReason';
 import LoanAmount from './Charts/LoanAmount';
 import YearlyOwnership from './Charts/YearlyOwnership';
+import { calculateAgeInsights } from '../../utils/ageInsights';
 import './DataAnalysis.css';
 import './Charts/ChartCard.css';
 
@@ -19,7 +19,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const [selectedAgeGroupSeizure, setSelectedAgeGroupSeizure] = useState('전체');
   const [selectedAgeGroupHolding, setSelectedAgeGroupHolding] = useState('전체');
   const [selectedAgeGroupTransfer, setSelectedAgeGroupTransfer] = useState('전체');
-  const [selectedAgeGroupGender, setSelectedAgeGroupGender] = useState('전체');
   const [selectedAgeGroupResidence, setSelectedAgeGroupResidence] = useState('전체');
   const [selectedAgeGroupArea, setSelectedAgeGroupArea] = useState('전체');
   const [selectedAgeGroupYearly, setSelectedAgeGroupYearly] = useState('전체');
@@ -262,6 +261,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     }).length;
     const normalCount = total - seizureCount;
 
+    // 연령대별 인사이트 계산
+    const ageInsights = calculateAgeInsights(data);
+    console.log('📊 연령대별 인사이트:', ageInsights);
+
     return {
       total,
       ageGroups,
@@ -279,6 +282,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       normalCount,
       totalLoanAmount,
       averageLoanAmount,
+      ageInsights, // 연령대별 인사이트 추가
       loanStatusData: [
         { name: '대출', value: loanCount, color: '#ef4444' },
         { name: '무대출', value: noLoanCount, color: '#10b981' }
@@ -479,12 +483,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupSeizure}
         />
         
-        <GenderDistribution 
-          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupGender)).genderData}
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupGender)).total}
-          selectedAgeGroup={selectedAgeGroupGender}
-          setSelectedAgeGroup={setSelectedAgeGroupGender}
-        />
         
         <YearlyOwnership 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).yearlyOwnership} 

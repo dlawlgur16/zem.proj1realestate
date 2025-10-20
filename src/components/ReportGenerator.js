@@ -16,53 +16,6 @@ console.log("🔑 GEMINI:", process.env.REACT_APP_GEMINI_API_KEY);
 // .env 파일에서 API 키 불러오기
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 
-// 더미 보고서 생성 함수
-const generateDummyReport = (statsData, activeTab) => {
-  const stats = statsData[activeTab];
-  if (!stats) return '통계 데이터가 없습니다.';
-  
-  return `# 재건축 분석 보고서 (${activeTab})
-
-## 📊 데이터 개요
-- **총 데이터 수**: ${stats.total || 0}건
-- **분석 일시**: ${new Date().toLocaleString('ko-KR')}
-
-## 📈 주요 통계
-
-### 나이대별 분포
-${Object.entries(stats.ageGroups || {}).map(([age, count]) => `- ${age}: ${count}명`).join('\n')}
-
-### 성별 분포
-${Object.entries(stats.genderGroups || {}).map(([gender, count]) => `- ${gender}: ${count}명`).join('\n')}
-
-### 거주/투자 비율
-- 거주: ${stats.residenceCount || 0}세대
-- 투자: ${stats.investmentCount || 0}세대
-
-### 면적별 분포
-${Object.entries(stats.areaGroups || {}).map(([area, count]) => `- ${area}: ${count}세대`).join('\n')}
-
-### 보유기간별 분포
-${Object.entries(stats.holdingGroups || {}).map(([period, count]) => `- ${period}: ${count}건`).join('\n')}
-
-### 등기이전원인별 분포
-${Object.entries(stats.transferReasons || {}).map(([reason, count]) => `- ${reason}: ${count}건`).join('\n')}
-
-### 대출 현황
-- 대출: ${stats.loanCount || 0}건
-- 무대출: ${stats.noLoanCount || 0}건
-
-### 압류/가압류 현황
-- 정상: ${stats.normalCount || 0}건
-- 압류/가압류: ${stats.seizureCount || 0}건
-
-## 📝 분석 요약
-이 보고서는 더미 데이터를 기반으로 생성되었습니다. 실제 AI 분석을 위해서는 유효한 Gemini API 키가 필요합니다.
-
----
-*생성일시: ${new Date().toLocaleString('ko-KR')}*
-*주의: 이 보고서는 테스트용 더미 데이터입니다.*`;
-};
 
 export default function ReportGenerator({ statsData, activeTab, csvData }) {
   const [showReport, setShowReport] = useState(false);
@@ -80,6 +33,7 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
     console.log('📊 holdingGroups:', statsData[activeTab].holdingGroups);
     console.log('📊 totalLoanAmount:', statsData[activeTab].totalLoanAmount);
     console.log('📊 averageLoanAmount:', statsData[activeTab].averageLoanAmount);
+    console.log('📊 ageInsights:', statsData[activeTab].ageInsights);
   } else {
     console.log('❌ ReportGenerator에서 activeTab 데이터 없음');
     console.log('❌ statsData:', statsData);
@@ -119,7 +73,8 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
       // AI 인사이트 포함하여 보고서 생성
       const report = await generateHybridReport(
         statsData[activeTab], 
-        GEMINI_API_KEY
+        GEMINI_API_KEY,
+        csvData
       );
       
       setReportContent(report);

@@ -7,14 +7,48 @@
   background: white;
   border-bottom: 1px solid #e5e7eb;
   padding: 2rem;
-  text-align: center;
+}
+
+.main-app__header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
 .main-app__title {
   font-size: 2rem;
   font-weight: bold;
   color: #1f2937;
-  margin-bottom: 2rem;
+  margin: 0;
+}
+
+.main-app__user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.main-app__user-name {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.main-app__logout-btn {
+  padding: 0.5rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.main-app__logout-btn:hover {
+  background: #dc2626;
 }
 
 .main-app__steps {

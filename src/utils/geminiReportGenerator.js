@@ -2,10 +2,35 @@
 // src/utils/geminiReportGenerator.js (최종 버전)
 // ============================================
 
+import { calculateAgeInsights } from "./ageInsights.js"; // 경로는 프로젝트 구조에 맞게 수정
+
 /**
  * Gemini API를 사용한 보고서 생성
  */
-export async function generateGeminiInsights(stats, apiKey) {
+export async function generateGeminiInsights(stats, apiKey, csvData = null) {
+    // 연령대별 인사이트가 없으면 계산
+    if (!stats.ageInsights) {
+        if (csvData && Array.isArray(csvData)) {
+            console.log('📊 CSV 데이터로 연령대별 인사이트 계산 시작...');
+            console.log('📊 CSV 데이터 길이:', csvData.length);
+            stats.ageInsights = calculateAgeInsights(csvData);
+            console.log('📊 CSV 데이터로 연령대별 인사이트 계산됨:', stats.ageInsights);
+            console.log('📊 연령대별 인사이트 키들:', Object.keys(stats.ageInsights));
+        } else if (stats.rows && Array.isArray(stats.rows)) {
+            console.log('📊 rows 데이터로 연령대별 인사이트 계산 시작...');
+            console.log('📊 rows 데이터 길이:', stats.rows.length);
+            stats.ageInsights = calculateAgeInsights(stats.rows);
+            console.log('📊 rows 데이터로 연령대별 인사이트 계산됨:', stats.ageInsights);
+            console.log('📊 연령대별 인사이트 키들:', Object.keys(stats.ageInsights));
+        } else {
+            console.log('⚠️ 연령대별 인사이트 계산을 위한 데이터가 없습니다.');
+            console.log('⚠️ csvData:', csvData);
+            console.log('⚠️ stats.rows:', stats.rows);
+        }
+    } else {
+        console.log('📊 이미 계산된 연령대별 인사이트 사용:', stats.ageInsights);
+    }
+    
     const prompt = createAnalysisPrompt(stats);
     
     try {
@@ -24,7 +49,7 @@ export async function generateGeminiInsights(stats, apiKey) {
             }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 3000,
+              maxOutputTokens: 5000,
               topP: 0.8,
               topK: 40
             }
@@ -86,12 +111,7 @@ export async function generateGeminiInsights(stats, apiKey) {
   
     const residenceRate = ((stats.residenceCount / stats.total) * 100).toFixed(1);
     const investmentRate = ((stats.investmentCount / stats.total) * 100).toFixed(1);
-    const loanRate = stats.loanStatusData?.[0]?.percentage || '0';
-  const avgLoan = stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0';
-    
-    const dominantAge = stats.ageData && stats.ageData.length > 0 
-      ? stats.ageData.reduce((max, age) => age.count > max.count ? age : max, stats.ageData[0])
-      : null;
+    const avgLoan = stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0';
   
   return `당신은 20년 경력의 부동산 재건축 전문가입니다. 다음 실제 데이터를 분석하여 시공사가 바로 활용할 수 있는 구체적이고 실무적인 분석 보고서를 작성해주세요.
 
@@ -113,25 +133,141 @@ ${stats.transferReasons ? Object.entries(stats.transferReasons).map(([key, value
 ${stats.areaGroups ? Object.entries(stats.areaGroups).map(([key, value]) => `- ${key}: ${value}세대 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
 ### 보유기간별 분포 (실제 데이터):
-${stats.holdingGroups ? Object.entries(stats.holdingGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+${stats.holdingGroups ? Object.entries(stats.holdingGroups)
+  .sort((a, b) => {
+    // 기간 기준으로 정렬 (1년 미만부터 30년 이상까지)
+    const getPeriodOrder = (key) => {
+      if (key === '1년 미만') return 1;
+      if (key === '1년') return 2;
+      if (key === '2년') return 3;
+      if (key === '3년') return 4;
+      if (key === '4년') return 5;
+      if (key === '5년') return 6;
+      if (key === '6년') return 7;
+      if (key === '7년') return 8;
+      if (key === '8년') return 9;
+      if (key === '9년') return 10;
+      if (key === '10년') return 11;
+      if (key === '11년') return 12;
+      if (key === '12년') return 13;
+      if (key === '13년') return 14;
+      if (key === '14년') return 15;
+      if (key === '15년') return 16;
+      if (key === '16년') return 17;
+      if (key === '17년') return 18;
+      if (key === '18년') return 19;
+      if (key === '19년') return 20;
+      if (key === '20년') return 21;
+      if (key === '21년') return 22;
+      if (key === '22년') return 23;
+      if (key === '23년') return 24;
+      if (key === '24년') return 25;
+      if (key === '25년') return 26;
+      if (key === '26년') return 27;
+      if (key === '27년') return 28;
+      if (key === '28년') return 29;
+      if (key === '29년') return 30;
+      if (key === '30년 이상') return 31;
+      return 999;
+    };
+    return getPeriodOrder(a[0]) - getPeriodOrder(b[0]);
+  })
+  .map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
 ### 압류/가압류 현황 (실제 데이터):
 ${stats.seizureStatusData ? stats.seizureStatusData.map(item => `- ${item.name}: ${item.value}건 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
 ### 연령대별 분포 (실제 데이터):
-${stats.ageGroups ? Object.entries(stats.ageGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+${stats.ageGroups ? Object.entries(stats.ageGroups)
+  .sort((a, b) => {
+    // 나이 기준으로 정렬 (10대부터 90대까지)
+    const getAgeOrder = (key) => {
+      if (key === '10대') return 1;
+      if (key === '20대') return 2;
+      if (key === '30대') return 3;
+      if (key === '40대') return 4;
+      if (key === '50대') return 5;
+      if (key === '60대') return 6;
+      if (key === '70대') return 7;
+      if (key === '80대') return 8;
+      if (key === '90대') return 9;
+      return 999;
+    };
+    return getAgeOrder(a[0]) - getAgeOrder(b[0]);
+  })
+  .map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
-### 성별 분포 (실제 데이터):
-${stats.genderGroups ? Object.entries(stats.genderGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+### 💡 연령대별 인사이트 (확장형):
+${stats.ageInsights ? Object.entries(stats.ageInsights)
+  .sort((a, b) => {
+    // 연령대 순서: 20대, 30대, 40대, 50대, 60대, 70대
+    const ageOrder = ['20대', '30대', '40대', '50대', '60대', '70대'];
+    return ageOrder.indexOf(a[0]) - ageOrder.indexOf(b[0]);
+  })
+  .map(([age, insight]) => `
+#### 🔹 ${age}층 분석
+
+**1. 대출 현황 분석:**
+- 대출 비율: ${insight.loanRate != null ? `${insight.loanRate}%` : '데이터 없음'}
+- 평균 근저당액: ${insight.avgLoan != null ? `${insight.avgLoan}억원` : '데이터 없음'}
+- 대출 현황의 특징과 투자 성향에 미치는 영향 분석
+
+**2. 실거주 비율 분석:**
+- 실거주 비율: ${insight.residenceRate != null ? `${insight.residenceRate}%` : '데이터 없음'}
+- 거주 vs 투자 성향 분석 및 조합 안정성에 미치는 영향
+
+**3. 보유기간 요약:**
+- ${insight.holdingSummary || '데이터 없음'}
+- 장기/단기 보유 특성과 재개발 참여 의향 분석
+
+**4. 소유권 변동 패턴:**
+- ${insight.transferPattern || '데이터 없음'}
+- 거래 유형별 특성과 시장 동향 분석
+
+**5. 압류/가압류 현황:**
+- 압류/가압류 비율: ${insight.seizureRate != null ? `${insight.seizureRate}%` : '데이터 없음'}
+- 법적 리스크와 조합 설립 시 주의사항 분석
+
+**6. 면적 집중도:**
+- 주요 면적: ${Array.isArray(insight.topAreas) && insight.topAreas.length ? insight.topAreas.map(a => `${a.area}㎡(${a.rate}%)`).join(', ') : '데이터 없음'}
+- 평형별 투자 성향과 선호도 분석
+
+💡 **${age}의 종합적 해석 포인트:** 
+위 6가지 분석 사항(대출현황, 실거주비율, 보유기간, 소유권변동, 압류/가압류현황, 면적집중도)을 종합하여 ${age}층의 투자 성향, 조합 참여 가능성, 리스크 요인, 시공사 전략 수립에 필요한 핵심 인사이트를 제공해주세요.
+`).join('\n') : '연령대별 상세 데이터 부족으로 분석 불가'}
+
+**중요: 위 연령대별 인사이트 데이터를 보고서의 "연령대별 인사이트 분석" 섹션에 반드시 포함해주세요.**
+
 
 ### 대출 현황 (실제 데이터):
-${stats.loanStatusData ? stats.loanStatusData.map(item => `- ${item.name}: ${item.value}건 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+${stats.loanStatusData ? stats.loanStatusData
+  .sort((a, b) => a.value - b.value) // 적은 순으로 정렬
+  .map(item => `- ${item.name}: ${item.value}건 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
 ### 거주/투자 비율 (실제 데이터):
 ${stats.residenceInvestmentData ? stats.residenceInvestmentData.map(item => `- ${item.name}: ${item.value}세대 (${((item.value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
 ### 대출금액대별 분포 (실제 데이터):
-${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups).map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
+${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups)
+  .sort((a, b) => {
+    // 금액 기준으로 정렬 (1억 미만부터 10억 이상까지)
+    const getAmountOrder = (key) => {
+      if (key === '1억 미만') return 1;
+      if (key === '1억대') return 2;
+      if (key === '2억대') return 3;
+      if (key === '3억대') return 4;
+      if (key === '4억대') return 5;
+      if (key === '5억대') return 6;
+      if (key === '6억대') return 7;
+      if (key === '7억대') return 8;
+      if (key === '8억대') return 9;
+      if (key === '9억대') return 10;
+      if (key === '10억 이상') return 11;
+      return 999;
+    };
+    return getAmountOrder(a[0]) - getAmountOrder(b[0]);
+  })
+  .map(([key, value]) => `- ${key}: ${value}건 (${((value/stats.total)*100).toFixed(1)}%)`).join('\n') : '데이터 없음'}
 
 ## 🎯 보고서 작성 요구사항
 위 실제 데이터를 바탕으로 다음 구조의 전문가 수준 보고서를 작성해주세요:
@@ -146,8 +282,17 @@ ${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups).map(([key, val
 7. **금융 현황 분석** - 근저당, 대출 현황, 리스크 분석 (실제 데이터만)
 8. **압류/가압류 현황 분석** - 법적 리스크와 조합 설립 시 주의사항 (실제 데이터만)
 9. **종합 요약** - 핵심 지표 요약표 (간결한 형태)
-10. **시공사 전략 제언** - 구체적이고 실행 가능한 방안
-11. **결론** - 긍정적 요인과 리스크 요인 구분
+10. **종합 인사이트 분석** - 각 연령대별 상세 특성과 투자 성향 (실제 데이터만)
+    - 각 연령대별로 다음 6가지 항목을 상세 분석:
+      * 대출 현황 분석 (대출 비율, 평균 근저당액, 투자 성향에 미치는 영향)
+      * 실거주 비율 분석 (거주 vs 투자 성향, 조합 안정성에 미치는 영향)
+      * 보유기간 요약 (장기/단기 보유 특성, 재개발 참여 의향)
+      * 소유권 변동 패턴 (거래 유형별 특성, 시장 동향)
+      * 압류/가압류 현황 (법적 리스크, 조합 설립 시 주의사항)
+      * 면적 집중도 (평형별 투자 성향, 선호도)
+    - 각 연령대별 종합적 해석 포인트 제공 (위 6가지 분석을 종합한 핵심 인사이트)
+11. **시공사 전략 제언** - 구체적이고 실행 가능한 방안
+12. **결론** - 긍정적 요인과 리스크 요인 구분
 
 **중요: 제공된 데이터에 없는 정보는 분석하지 마세요:**
 - 연령대별 분포 (주민번호로 추정 가능한 경우만)
@@ -233,10 +378,10 @@ ${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups).map(([key, val
 /**
  * 하이브리드 보고서 생성 (Gemini API + Fallback)
  */
-export async function generateHybridReport(stats, apiKey) {
+export async function generateHybridReport(stats, apiKey, csvData = null) {
   try {
     console.log('🤖 Gemini API로 보고서 생성 시도...');
-    return await generateGeminiInsights(stats, apiKey);
+    return await generateGeminiInsights(stats, apiKey, csvData);
   } catch (error) {
     console.error('❌ Gemini API 실패:', error);
     console.log('🔄 Fallback 보고서로 전환...');
@@ -307,7 +452,7 @@ ${stats.transferReasons ? Object.entries(stats.transferReasons).map(([reason, co
 
 ---
 
-*본 보고서는 등기부등본 및 조합원 명부를 기반으로 생성되었습니다.*`;
+*본 보고서는 등기부등본 데이터를 기반으로 생성되었습니다.*`;
 }
 
 /**
