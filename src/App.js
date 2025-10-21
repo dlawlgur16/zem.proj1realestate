@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainApp from './components/MainApp';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -7,7 +7,7 @@ import ProjectIndex from './pages/ProjectIndex';
 
 function App() {
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <div className="App">
         <Routes>
           {/* 홈페이지는 로그인 페이지 */}
