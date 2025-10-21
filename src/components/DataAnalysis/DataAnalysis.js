@@ -178,10 +178,21 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
 
-    // 투자자 거주지역 분석
+    // 투자자 거주지역 분석 (실거주자 제외)
     const investorResidence = {};
     data.forEach(row => {
-      if (row.현주소) {
+      // 실거주자인지 확인
+      const residence = row.실거주여부 || row.거주여부 || '';
+      const isResidence = (value) => {
+        const v = String(value ?? '').trim().toLowerCase();
+        if (!v) return false;
+        return [
+          '실거주','거주','y','yes','true','1','t','o','ㅇ','예','네','투자아님','거주자','실거주자'
+        ].some(tok => v.includes(tok));
+      };
+      
+      // 실거주자가 아닌 경우만 투자자로 간주
+      if (!isResidence(residence) && row.현주소) {
         const address = row.현주소.trim();
         if (address) {
           // 주소에서 구/군 정보 추출

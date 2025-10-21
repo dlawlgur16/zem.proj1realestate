@@ -32,9 +32,10 @@ const InvestorResidence = ({ data, total }) => {
       <h3 className="chart-card__title">투자자 거주지역</h3>
       <p className="chart-card__subtitle">총 {total}명</p>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={320}>
         <BarChart 
           data={residenceData}
+          margin={{ top: 20, right: 20, left: 10, bottom: 0 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis 
@@ -42,7 +43,7 @@ const InvestorResidence = ({ data, total }) => {
             tick={{ fontSize: 8 }}
             angle={-45}
             textAnchor="end"
-            height={30}
+            tichMargin={12}
             interval={0}
           />
           <YAxis 
