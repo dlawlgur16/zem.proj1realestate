@@ -7,19 +7,20 @@ import ProjectIndex from './pages/ProjectIndex';
 
 function App() {
   return (
-    <Router basename={process.env.PUBLIC_URL}>
+    <Router basename={process.env.NODE_ENV === 'production' ? process.env.PUBLIC_URL : ''}>
       <div className="App">
         <Routes>
-          {/* 홈페이지는 로그인 페이지 */}
+          {/* 1. 로그인 페이지 */}
           <Route path="/" element={<Login />} />
           
-          {/* 데이터 분석 앱 */}
-          <Route path="/analysis" element={<MainApp />} />
-          
-          {/* 인증이 필요한 앱 라우트 */}
+          {/* 2. 프로젝트 선택 (인증 필요) */}
           <Route path="/app" element={<ProtectedRoute />}>
             <Route index element={<ProjectIndex />} />
-            <Route path="analysis" element={<MainApp />} />
+          </Route>
+          
+          {/* 3. 데이터 분석 (인증 필요) */}
+          <Route path="/app/analysis" element={<ProtectedRoute />}>
+            <Route index element={<MainApp />} />
           </Route>
         </Routes>
       </div>

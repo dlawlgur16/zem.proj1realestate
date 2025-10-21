@@ -106,7 +106,7 @@ const ProjectIndex = () => {
   const handleLogout = () => {
     // 로그아웃 처리 (auth.js의 clearSession 사용)
     localStorage.removeItem('session');
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -132,7 +132,6 @@ const ProjectIndex = () => {
           <h1>재건축 아파트 조합원 분석</h1>
           <div className="vertical-dash"></div>
           <button className="logout-btn" onClick={handleLogout}>
-            <span className="material-symbols-outlined">power_settings_new</span>
             로그아웃
           </button>
         </div>
