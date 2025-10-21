@@ -3,18 +3,28 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import './ChartCard.css';
 
 const HoldingPeriod = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
-  const holdingData = Object.entries(data || {})
+  // 보유기간을 4개 구간으로 재분류
+  const reclassifiedData = {};
+  
+  Object.entries(data || {}).forEach(([period, count]) => {
+    const years = parseFloat(period.replace('년', '').replace(' 미만', '').replace(' 이상', ''));
+    
+    if (years < 3) {
+      reclassifiedData['3년 미만'] = (reclassifiedData['3년 미만'] || 0) + count;
+    } else if (years >= 3 && years < 7) {
+      reclassifiedData['3~7년'] = (reclassifiedData['3~7년'] || 0) + count;
+    } else if (years >= 7 && years < 15) {
+      reclassifiedData['7~15년'] = (reclassifiedData['7~15년'] || 0) + count;
+    } else {
+      reclassifiedData['15년 이상'] = (reclassifiedData['15년 이상'] || 0) + count;
+    }
+  });
+
+  const holdingData = Object.entries(reclassifiedData)
     .map(([period, count]) => ({ period, count }))
     .sort((a, b) => {
-      // 1년 미만을 가장 앞으로, 30년 이상을 가장 뒤로
-      if (a.period === '1년 미만') return -1;
-      if (b.period === '1년 미만') return 1;
-      if (a.period === '30년 이상') return 1;
-      if (b.period === '30년 이상') return -1;
-      
-      const aYear = parseInt(a.period.replace('년', ''));
-      const bYear = parseInt(b.period.replace('년', ''));
-      return aYear - bYear;
+      const order = ['3년 미만', '3~7년', '7~15년', '15년 이상'];
+      return order.indexOf(a.period) - order.indexOf(b.period);
     });
 
   return (
@@ -23,7 +33,7 @@ const HoldingPeriod = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) =
       <p className="chart-card__subtitle">총 {total}세대</p>
       
       <div className="chart-card__tabs">
-        {['전체', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'].map((ageGroup) => (
+        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}

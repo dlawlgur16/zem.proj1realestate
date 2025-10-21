@@ -46,6 +46,22 @@
   gap: 1rem;
 }
 
+.main-app__home-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.main-app__home-btn:hover {
+  background-color: #2563eb;
+}
+
 .main-app__user-name {
   font-size: 0.9rem;
   color: #6b7280;

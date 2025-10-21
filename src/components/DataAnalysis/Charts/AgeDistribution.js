@@ -10,17 +10,17 @@ const AgeDistribution = ({ data, total, selectedAgeGroup, setSelectedAgeGroup })
       return item.range === selectedAgeGroup;
     })
     .sort((a, b) => {
-      const order = ['10대', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'];
+      const order = ['미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'];
       return order.indexOf(a.range) - order.indexOf(b.range);
     });
 
   return (
     <div className="chart-card">
-      <h3 className="chart-card__title">나이대 분포</h3>
+      <h3 className="chart-card__title">연령대</h3>
       <p className="chart-card__subtitle">총 {total}명</p>
       
       <div className="chart-card__tabs">
-        {['전체', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'].map((ageGroup) => (
+        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}

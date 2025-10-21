@@ -24,7 +24,7 @@ const AreaDistribution = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }
       <p className="chart-card__subtitle">총 {total}세대</p>
       
       <div className="chart-card__tabs">
-        {['전체', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'].map((ageGroup) => (
+        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}

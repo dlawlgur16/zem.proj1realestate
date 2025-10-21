@@ -7,6 +7,7 @@ import ResidenceInvestment from './Charts/ResidenceInvestment';
 import HoldingPeriod from './Charts/HoldingPeriod';
 import TransferReason from './Charts/TransferReason';
 import LoanAmount from './Charts/LoanAmount';
+import InvestorResidence from './Charts/InvestorResidence';
 import YearlyOwnership from './Charts/YearlyOwnership';
 import { calculateAgeInsights } from '../../utils/ageInsights';
 import './DataAnalysis.css';
@@ -137,44 +138,17 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
 
-    // 보유기간별 분포 (1년 단위)
+    // 보유기간별 분포 (4개 구간)
     const holdingGroups = {};
     data.forEach(row => {
       if (row.보유기간_년) {
         const years = parseInt(row.보유기간_년);
         if (!isNaN(years)) {
           let periodGroup;
-          if (years < 1) periodGroup = '1년 미만';
-          else if (years < 2) periodGroup = '1년';
-          else if (years < 3) periodGroup = '2년';
-          else if (years < 4) periodGroup = '3년';
-          else if (years < 5) periodGroup = '4년';
-          else if (years < 6) periodGroup = '5년';
-          else if (years < 7) periodGroup = '6년';
-          else if (years < 8) periodGroup = '7년';
-          else if (years < 9) periodGroup = '8년';
-          else if (years < 10) periodGroup = '9년';
-          else if (years < 11) periodGroup = '10년';
-          else if (years < 12) periodGroup = '11년';
-          else if (years < 13) periodGroup = '12년';
-          else if (years < 14) periodGroup = '13년';
-          else if (years < 15) periodGroup = '14년';
-          else if (years < 16) periodGroup = '15년';
-          else if (years < 17) periodGroup = '16년';
-          else if (years < 18) periodGroup = '17년';
-          else if (years < 19) periodGroup = '18년';
-          else if (years < 20) periodGroup = '19년';
-          else if (years < 21) periodGroup = '20년';
-          else if (years < 22) periodGroup = '21년';
-          else if (years < 23) periodGroup = '22년';
-          else if (years < 24) periodGroup = '23년';
-          else if (years < 25) periodGroup = '24년';
-          else if (years < 26) periodGroup = '25년';
-          else if (years < 27) periodGroup = '26년';
-          else if (years < 28) periodGroup = '27년';
-          else if (years < 29) periodGroup = '28년';
-          else if (years < 30) periodGroup = '29년';
-          else periodGroup = '30년 이상';
+          if (years < 3) periodGroup = '3년 미만';
+          else if (years >= 3 && years < 7) periodGroup = '3~7년';
+          else if (years >= 7 && years < 15) periodGroup = '7~15년';
+          else periodGroup = '15년 이상';
           
           holdingGroups[periodGroup] = (holdingGroups[periodGroup] || 0) + 1;
         }
@@ -200,6 +174,41 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         if (!isNaN(date.getTime())) {
           const year = date.getFullYear().toString();
           yearlyOwnership[year] = (yearlyOwnership[year] || 0) + 1;
+        }
+      }
+    });
+
+    // 투자자 거주지역 분석
+    const investorResidence = {};
+    data.forEach(row => {
+      if (row.현주소) {
+        const address = row.현주소.trim();
+        if (address) {
+          // 주소에서 구/군 정보 추출
+          let district = '';
+          if (address.includes('서울시')) {
+            const parts = address.split(' ');
+            if (parts.length >= 2) {
+              district = parts[1].replace('구', '').replace('군', '');
+            }
+          } else if (address.includes('경기도')) {
+            const parts = address.split(' ');
+            if (parts.length >= 2) {
+              district = parts[1].replace('시', '').replace('군', '');
+            }
+          } else {
+            // 기타 지역
+            const parts = address.split(' ');
+            if (parts.length >= 2) {
+              district = parts[1].replace('시', '').replace('구', '').replace('군', '');
+            }
+          }
+          
+          if (district) {
+            // '구'를 붙여서 표시
+            const districtWithGu = district + '구';
+            investorResidence[districtWithGu] = (investorResidence[districtWithGu] || 0) + 1;
+          }
         }
       }
     });
@@ -300,6 +309,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       holdingGroups,
       transferReasons,
       yearlyOwnership,
+      investorResidence,
       loanAmountGroups,
       loanCount,
       noLoanCount,
@@ -371,6 +381,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         const age = currentYear - fullBirthYear;
         
         switch (ageGroup) {
+          case '20대이하': return age >= 0 && age < 20;
           case '20대': return age >= 20 && age < 30;
           case '30대': return age >= 30 && age < 40;
           case '40대': return age >= 40 && age < 50;
@@ -378,7 +389,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           case '60대': return age >= 60 && age < 70;
           case '70대': return age >= 70 && age < 80;
           case '80대': return age >= 80 && age < 90;
-          case '90대': return age >= 90;
+          case '90대이상': return age >= 90;
           default: return true;
         }
       } catch (error) {
@@ -454,6 +465,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       </div>
 
       <div className="data-analysis__grid">
+        {/* 첫번째 줄: 나이, 거주/투자, 면적 */}
         <AgeDistribution 
           data={currentStats.ageGroups} 
           total={currentStats.total}
@@ -475,6 +487,14 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupArea}
         />
         
+        {/* 두번째 줄: 등기이전원인, 보유기간, 연도별 소유권 변동 */}
+        <TransferReason 
+          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).transferReasons} 
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).total}
+          selectedAgeGroup={selectedAgeGroupTransfer}
+          setSelectedAgeGroup={setSelectedAgeGroupTransfer}
+        />
+        
         <HoldingPeriod 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupHolding)).holdingGroups} 
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupHolding)).total}
@@ -482,11 +502,19 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupHolding}
         />
         
-        <TransferReason 
-          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).transferReasons} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).total}
-          selectedAgeGroup={selectedAgeGroupTransfer}
-          setSelectedAgeGroup={setSelectedAgeGroupTransfer}
+        <YearlyOwnership 
+          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).yearlyOwnership} 
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).total}
+          selectedAgeGroup={selectedAgeGroupYearly}
+          setSelectedAgeGroup={setSelectedAgeGroupYearly}
+        />
+        
+        {/* 세번째 줄: 대출 여부 비율, 대출금액대별, 압류/가압류 현황 */}
+        <LoanStatus 
+          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanStatusData}
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).total}
+          selectedAgeGroup={selectedAgeGroupLoan}
+          setSelectedAgeGroup={setSelectedAgeGroupLoan}
         />
         
         <LoanAmount 
@@ -496,13 +524,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupLoanAmount}
         />
         
-        <LoanStatus 
-          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanStatusData}
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).total}
-          selectedAgeGroup={selectedAgeGroupLoan}
-          setSelectedAgeGroup={setSelectedAgeGroupLoan}
-        />
-        
         <SeizureStatus 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureStatusData}
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).total}
@@ -510,13 +531,11 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupSeizure}
         />
         
-        
-        <YearlyOwnership 
-          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).yearlyOwnership} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).total}
-          selectedAgeGroup={selectedAgeGroupYearly}
-          setSelectedAgeGroup={setSelectedAgeGroupYearly}
+        <InvestorResidence 
+          data={calculateStats(baseFilteredData).investorResidence} 
+          total={calculateStats(baseFilteredData).total}
         />
+        {console.log('🏠 InvestorResidence 데이터:', calculateStats(baseFilteredData).investorResidence)}
       </div>
 
  
