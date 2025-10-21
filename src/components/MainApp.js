@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CsvLoader from './CsvLoader/CsvLoader';
 import DataAnalysis from './DataAnalysis/DataAnalysis';
 import ReportGenerator from './ReportGenerator';
@@ -8,6 +8,7 @@ import './MainApp.css';
 
 const MainApp = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [csvData, setCsvData] = useState(null);
   const [activeTab, setActiveTab] = useState('전체통계');
   const [currentStep, setCurrentStep] = useState('upload'); // upload, analysis, report
@@ -82,7 +83,11 @@ const MainApp = () => {
 
   const handleLogout = () => {
     clearSession();
-    window.location.href = '/login';
+    navigate('/');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
   };
 
   return (
@@ -99,6 +104,12 @@ const MainApp = () => {
             )}
           </div>
           <div className="main-app__user-info">
+            <button 
+              onClick={handleGoHome}
+              className="main-app__home-btn"
+            >
+              목록으로
+            </button>
             {session && (
               <>
                 <span className="main-app__user-name">{session.username} ({session.role})</span>
