@@ -480,11 +480,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupResidence}
         />
         
-        <AreaDistribution 
-          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).areaGroups} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).total}
-          selectedAgeGroup={selectedAgeGroupArea}
-          setSelectedAgeGroup={setSelectedAgeGroupArea}
+        <InvestorResidence 
+          data={calculateStats(baseFilteredData).investorResidence} 
+          total={calculateStats(baseFilteredData).total}
         />
         
         {/* 두번째 줄: 등기이전원인, 보유기간, 연도별 소유권 변동 */}
@@ -531,11 +529,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           setSelectedAgeGroup={setSelectedAgeGroupSeizure}
         />
         
-        <InvestorResidence 
-          data={calculateStats(baseFilteredData).investorResidence} 
-          total={calculateStats(baseFilteredData).total}
+        <AreaDistribution 
+          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).areaGroups} 
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).total}
+          selectedAgeGroup={selectedAgeGroupArea}
+          setSelectedAgeGroup={setSelectedAgeGroupArea}
         />
-        {console.log('🏠 InvestorResidence 데이터:', calculateStats(baseFilteredData).investorResidence)}
       </div>
 
  
