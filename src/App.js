@@ -5,14 +5,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import ProjectIndex from './pages/ProjectIndex';
 
-const basename =
-  process.env.NODE_ENV === 'production'
-    ? '/zem.proj1realestate'
-    : '/';
 
 function App() {
   return (
-    <Router basename={basename}>
+    <Router basename={process.env.NODE_ENV === 'production' ? process.env.PUBLIC_URL : ''}>
       <div className="App">
         <Routes>
           {/* 1. 로그인 페이지 */}
@@ -32,5 +28,6 @@ function App() {
     </Router>
   );
 }
+
 
 export default App;
