@@ -16,10 +16,10 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/zem.proj1realestate/app" element={<ProtectedRoute />}>
+          <Route path="/app" element={<ProtectedRoute />}>
             <Route index element={<ProjectIndex />} />
           </Route>
-          <Route path="/zem.proj1realestate/app/analysis" element={<ProtectedRoute />}>
+          <Route path="/app/analysis" element={<ProtectedRoute />}>
             <Route index element={<MainApp />} />
           </Route>
         </Routes>
