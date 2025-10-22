@@ -2,7 +2,7 @@
   "name": "reconstruction-analysis",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://dlawlgur16.github.io/zem.proj1realestate/",
+  "_comment": "https://dlawlgur16.github.io/zem.proj1realestate/",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@testing-library/jest-dom": "^5.16.4",
