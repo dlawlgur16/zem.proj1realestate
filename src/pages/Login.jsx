@@ -33,7 +33,7 @@ const Login = () => {
         });
         
         // 프로젝트 선택 페이지로 리다이렉트
-        navigate('/app');
+        navigate('app');
       } catch (error) {
         setError('로그인 처리 중 오류가 발생했습니다.');
       }
