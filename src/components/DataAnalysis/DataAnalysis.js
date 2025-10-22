@@ -180,6 +180,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 투자자 거주지역 분석 (실거주자 제외)
     const investorResidence = {};
+    let investorCount = 0; // 투자자 수 카운트
+    
     data.forEach(row => {
       // 실거주자인지 확인
       const residence = row.실거주여부 || row.거주여부 || '';
@@ -193,6 +195,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       
       // 실거주자가 아닌 경우만 투자자로 간주
       if (!isResidence(residence) && row.현주소) {
+        investorCount++; // 투자자 수 증가
         const address = row.현주소.trim();
         if (address) {
           // 주소에서 구/군 정보 추출
@@ -321,6 +324,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       transferReasons,
       yearlyOwnership,
       investorResidence,
+      investorCount, // 투자자 수 추가
       loanAmountGroups,
       loanCount,
       noLoanCount,
@@ -492,8 +496,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         />
         
         <InvestorResidence 
-          data={calculateStats(baseFilteredData).investorResidence} 
-          total={calculateStats(baseFilteredData).total}
+          data={calculateStats(baseFilteredData).investorResidence}
+          total={calculateStats(baseFilteredData).investorCount}
         />
         
         {/* 두번째 줄: 등기이전원인, 보유기간, 연도별 소유권 변동 */}
