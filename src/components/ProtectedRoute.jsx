@@ -9,7 +9,7 @@ import { isAuthenticated } from '../utils/auth';
 const ProtectedRoute = () => {
   // 인증 상태 확인
   if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   
   return <Outlet />;

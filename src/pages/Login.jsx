@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { getSession, setSession } from '../utils/auth';
 
 /**
@@ -11,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   // 이미 로그인된 경우 /app으로 리다이렉트
   const session = getSession();
@@ -32,7 +33,7 @@ const Login = () => {
         });
         
         // 프로젝트 선택 페이지로 리다이렉트
-        window.location.href = '/app';
+        navigate('/app');
       } catch (error) {
         setError('로그인 처리 중 오류가 발생했습니다.');
       }
