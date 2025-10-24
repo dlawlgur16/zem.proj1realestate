@@ -4,7 +4,7 @@ import './ChartCard.css';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-const AreaDistribution = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
+const AreaDistribution = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availableAgeGroups }) => {
   const areaData = Object.entries(data || {})
     .map(([range, count], index) => ({ 
       name: range, 
@@ -24,7 +24,7 @@ const AreaDistribution = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }
       <p className="chart-card__subtitle">총 {total}세대</p>
       
       <div className="chart-card__tabs">
-        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
+        {(availableAgeGroups || []).map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}

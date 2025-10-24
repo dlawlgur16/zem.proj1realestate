@@ -24,6 +24,47 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const [selectedAgeGroupArea, setSelectedAgeGroupArea] = useState('전체');
   const [selectedAgeGroupYearly, setSelectedAgeGroupYearly] = useState('전체');
  
+  // 동별 탭을 동적으로 생성하는 함수
+  const generateDongTabs = (data) => {
+    const dongSet = new Set();
+    
+    data.forEach(row => {
+      // 건물명에서 동 정보 추출 (예: "대교아파트 1동 101호" -> "대교아파트 1동")
+      const buildingName = row.건물명 || '';
+      if (buildingName) {
+        const dongMatch = buildingName.match(/(대교아파트\s*\d+동)/);
+        if (dongMatch) {
+          dongSet.add(dongMatch[1]);
+        }
+      }
+    });
+    
+    // 동을 번호 순으로 정렬
+    const sortedDongs = Array.from(dongSet).sort((a, b) => {
+      const aNum = parseInt(a.match(/\d+/)?.[0] || '0');
+      const bNum = parseInt(b.match(/\d+/)?.[0] || '0');
+      return aNum - bNum;
+    });
+    
+    return ['전체통계', ...sortedDongs];
+  };
+
+  // 동별 필터링 함수
+  const filterByDong = (data, selectedDong) => {
+    if (selectedDong === '전체통계') {
+      return data;
+    }
+    
+    return data.filter(row => {
+      const buildingName = row.건물명 || '';
+      if (buildingName) {
+        // 건물명에서 동 정보 추출하여 선택된 동과 비교
+        const dongMatch = buildingName.match(/(대교아파트\s*\d+동)/);
+        return dongMatch && dongMatch[1] === selectedDong;
+      }
+      return false;
+    });
+  };
 
   const calculateStats = (data) => {
     const total = data.length;
@@ -178,7 +219,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
 
-    // 투자자 거주지역 분석 (실거주자 제외)
+    // 투자자 거주지역 분석 (실거주자 제외) - 시/도 단위
     const investorResidence = {};
     let investorCount = 0; // 투자자 수 카운트
     
@@ -198,30 +239,136 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         investorCount++; // 투자자 수 증가
         const address = row.현주소.trim();
         if (address) {
-          // 주소에서 구/군 정보 추출
-          let district = '';
-          if (address.includes('서울시')) {
-            const parts = address.split(' ');
-            if (parts.length >= 2) {
-              district = parts[1].replace('구', '').replace('군', '');
-            }
-          } else if (address.includes('경기도')) {
-            const parts = address.split(' ');
-            if (parts.length >= 2) {
-              district = parts[1].replace('시', '').replace('군', '');
-            }
-          } else {
-            // 기타 지역
-            const parts = address.split(' ');
-            if (parts.length >= 2) {
-              district = parts[1].replace('시', '').replace('구', '').replace('군', '');
-            }
+          // 시/도 단위로 지역 분류
+          let region = '';
+          
+          // 서울시
+          if (address.includes('서울시') || address.includes('서울특별시')) {
+            region = '서울시';
+          }
+          // 경기도
+          else if (address.includes('경기도')) {
+            region = '경기도';
+          }
+          // 인천시
+          else if (address.includes('인천시') || address.includes('인천광역시')) {
+            region = '인천시';
+          }
+          // 부산시
+          else if (address.includes('부산시') || address.includes('부산광역시')) {
+            region = '부산시';
+          }
+          // 대구시
+          else if (address.includes('대구시') || address.includes('대구광역시')) {
+            region = '대구시';
+          }
+          // 광주시
+          else if (address.includes('광주시') || address.includes('광주광역시')) {
+            region = '광주시';
+          }
+          // 대전시
+          else if (address.includes('대전시') || address.includes('대전광역시')) {
+            region = '대전시';
+          }
+          // 울산시
+          else if (address.includes('울산시') || address.includes('울산광역시')) {
+            region = '울산시';
+          }
+          // 세종시
+          else if (address.includes('세종시') || address.includes('세종특별자치시')) {
+            region = '세종시';
+          }
+          // 강원도
+          else if (address.includes('강원도')) {
+            region = '강원도';
+          }
+          // 충청북도
+          else if (address.includes('충청북도') || address.includes('충북')) {
+            region = '충청북도';
+          }
+          // 충청남도
+          else if (address.includes('충청남도') || address.includes('충남')) {
+            region = '충청남도';
+          }
+          // 전라북도
+          else if (address.includes('전라북도') || address.includes('전북')) {
+            region = '전라북도';
+          }
+          // 전라남도
+          else if (address.includes('전라남도') || address.includes('전남')) {
+            region = '전라남도';
+          }
+          // 경상북도
+          else if (address.includes('경상북도') || address.includes('경북')) {
+            region = '경상북도';
+          }
+          // 경상남도
+          else if (address.includes('경상남도') || address.includes('경남')) {
+            region = '경상남도';
+          }
+          // 제주도
+          else if (address.includes('제주도') || address.includes('제주특별자치도')) {
+            region = '제주도';
+          }
+          // 해외 지역
+          else if (address.includes('미국') || address.includes('USA') || address.includes('United States')) {
+            region = '미국';
+          }
+          else if (address.includes('호주') || address.includes('Australia')) {
+            region = '호주';
+          }
+          else if (address.includes('일본') || address.includes('Japan')) {
+            region = '일본';
+          }
+          else if (address.includes('중국') || address.includes('China')) {
+            region = '중국';
+          }
+          else if (address.includes('캐나다') || address.includes('Canada')) {
+            region = '캐나다';
+          }
+          else if (address.includes('영국') || address.includes('UK') || address.includes('United Kingdom')) {
+            region = '영국';
+          }
+          else if (address.includes('독일') || address.includes('Germany')) {
+            region = '독일';
+          }
+          else if (address.includes('프랑스') || address.includes('France')) {
+            region = '프랑스';
+          }
+          else if (address.includes('이탈리아') || address.includes('Italy')) {
+            region = '이탈리아';
+          }
+          else if (address.includes('스페인') || address.includes('Spain')) {
+            region = '스페인';
+          }
+          else if (address.includes('네덜란드') || address.includes('Netherlands')) {
+            region = '네덜란드';
+          }
+          else if (address.includes('스위스') || address.includes('Switzerland')) {
+            region = '스위스';
+          }
+          else if (address.includes('스웨덴') || address.includes('Sweden')) {
+            region = '스웨덴';
+          }
+          else if (address.includes('노르웨이') || address.includes('Norway')) {
+            region = '노르웨이';
+          }
+          else if (address.includes('덴마크') || address.includes('Denmark')) {
+            region = '덴마크';
+          }
+          else if (address.includes('핀란드') || address.includes('Finland')) {
+            region = '핀란드';
+          }
+          else if (address.includes('해외') || address.includes('외국')) {
+            region = '기타 해외';
+          }
+          // 기타 국내 지역
+          else {
+            region = '기타 국내';
           }
           
-          if (district) {
-            // '구'를 붙여서 표시
-            const districtWithGu = district + '구';
-            investorResidence[districtWithGu] = (investorResidence[districtWithGu] || 0) + 1;
+          if (region) {
+            investorResidence[region] = (investorResidence[region] || 0) + 1;
           }
         }
       }
@@ -313,6 +460,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     console.log('📊 연령대별 인사이트:', ageInsights);
     console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
+    // 사용 가능한 나이대 목록 생성
+    const availableAgeGroups = ['전체', ...Object.keys(ageGroups).sort()];
+
     return {
       total,
       ageGroups,
@@ -333,6 +483,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       totalLoanAmount,
       averageLoanAmount,
       ageInsights, // 연령대별 인사이트 추가
+      availableAgeGroups, // 사용 가능한 나이대 목록 추가
       loanStatusData: [
         { name: '대출', value: loanCount, color: '#ef4444' },
         { name: '무대출', value: noLoanCount, color: '#10b981' }
@@ -352,16 +503,11 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     };
   };
 
-  // 기본 필터링 (건물별)
+  // 기본 필터링 (동별)
   const baseFilteredData = useMemo(() => {
     if (!csvData || csvData.length === 0) return [];
     
-    return activeTab === '전체통계' ? csvData : 
-      csvData.filter(row => {
-        if (!row.건물명) return false;
-        const buildingName = activeTab.replace('대교아파트 ', '');
-        return row.건물명.includes(buildingName);
-      });
+    return filterByDong(csvData, activeTab);
   }, [csvData, activeTab]);
 
   // CSV 컬럼명 매핑 함수 (전역 사용)
@@ -465,7 +611,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       <div className="data-analysis__header">
         <h2 className="data-analysis__title">데이터 분석</h2>
         <div className="data-analysis__tabs">
-          {['전체통계', '대교아파트 1동', '대교아파트 2동', '대교아파트 3동', '대교아파트 4동'].map((tab) => (
+          {generateDongTabs(csvData).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -489,10 +635,11 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         />
         
         <ResidenceInvestment 
-          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupResidence)).residenceInvestmentData}
+          data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupResidence)).residenceInvestmentData} 
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupResidence)).total}
           selectedAgeGroup={selectedAgeGroupResidence}
           setSelectedAgeGroup={setSelectedAgeGroupResidence}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         <InvestorResidence 
@@ -506,6 +653,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).total}
           selectedAgeGroup={selectedAgeGroupTransfer}
           setSelectedAgeGroup={setSelectedAgeGroupTransfer}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         <HoldingPeriod 
@@ -513,6 +661,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupHolding)).total}
           selectedAgeGroup={selectedAgeGroupHolding}
           setSelectedAgeGroup={setSelectedAgeGroupHolding}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         <YearlyOwnership 
@@ -520,6 +669,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).total}
           selectedAgeGroup={selectedAgeGroupYearly}
           setSelectedAgeGroup={setSelectedAgeGroupYearly}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         {/* 세번째 줄: 대출 여부 비율, 대출금액대별, 압류/가압류 현황 */}
@@ -528,6 +678,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).total}
           selectedAgeGroup={selectedAgeGroupLoan}
           setSelectedAgeGroup={setSelectedAgeGroupLoan}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         <LoanAmount 
@@ -535,6 +686,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoanAmount)).loanCount}
           selectedAgeGroup={selectedAgeGroupLoanAmount}
           setSelectedAgeGroup={setSelectedAgeGroupLoanAmount}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         <SeizureStatus 
@@ -542,6 +694,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).total}
           selectedAgeGroup={selectedAgeGroupSeizure}
           setSelectedAgeGroup={setSelectedAgeGroupSeizure}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
         
         <AreaDistribution 
@@ -549,6 +702,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).total}
           selectedAgeGroup={selectedAgeGroupArea}
           setSelectedAgeGroup={setSelectedAgeGroupArea}
+          availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
         />
       </div>
 

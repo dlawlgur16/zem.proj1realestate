@@ -32,7 +32,7 @@ const InvestorResidence = ({ data, total }) => {
       <h3 className="chart-card__title">투자자 거주지역</h3>
       <p className="chart-card__subtitle">총 {total}명</p>
 
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer width="100%" height={300}>
         <BarChart 
           data={residenceData}
           margin={{ top: 20, right: 20, left: 10, bottom: 0 }}

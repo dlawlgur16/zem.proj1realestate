@@ -2,14 +2,14 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import './ChartCard.css';
 
-const ResidenceInvestment = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
+const ResidenceInvestment = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availableAgeGroups }) => {
   return (
     <div className="chart-card">
       <h3 className="chart-card__title">거주/투자 비율</h3>
       <p className="chart-card__subtitle">총 {total}세대</p>
       
       <div className="chart-card__tabs">
-        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
+        {(availableAgeGroups || []).map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}
@@ -23,7 +23,7 @@ const ResidenceInvestment = ({ data, total, selectedAgeGroup, setSelectedAgeGrou
       </div>
 
       <div className="chart-card__content">
-        <ResponsiveContainer width="60%" height={300}>
+        <ResponsiveContainer width="60%" height={250}>
           <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
             <Pie
               data={data || []}

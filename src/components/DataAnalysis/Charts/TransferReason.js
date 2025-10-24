@@ -4,7 +4,7 @@ import './ChartCard.css';
 
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
 
-const TransferReason = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
+const TransferReason = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availableAgeGroups }) => {
   const reasonData = Object.entries(data || {})
     .map(([reason, count], index) => ({ 
       name: reason, 
@@ -19,7 +19,7 @@ const TransferReason = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) 
       <p className="chart-card__subtitle">총 {total}건</p>
       
       <div className="chart-card__tabs">
-        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
+        {(availableAgeGroups || []).map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}
@@ -33,7 +33,7 @@ const TransferReason = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) 
       </div>
 
       <div className="chart-card__content">
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={250}>
           <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
             <Pie
               data={reasonData}

@@ -2,7 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './ChartCard.css';
 
-const YearlyOwnership = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
+const YearlyOwnership = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availableAgeGroups }) => {
   const yearlyData = Object.entries(data || {})
     .map(([year, count]) => ({ year, count }))
     .sort((a, b) => parseInt(a.year) - parseInt(b.year));
@@ -13,7 +13,7 @@ const YearlyOwnership = ({ data, total, selectedAgeGroup, setSelectedAgeGroup })
       <p className="chart-card__subtitle">총 {total}건</p>
       
       <div className="chart-card__tabs">
-        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
+        {(availableAgeGroups || []).map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}
@@ -26,7 +26,7 @@ const YearlyOwnership = ({ data, total, selectedAgeGroup, setSelectedAgeGroup })
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={250}>
         <BarChart data={yearlyData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="year" tick={{ fontSize: 12 }} />

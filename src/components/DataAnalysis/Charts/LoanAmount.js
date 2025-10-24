@@ -2,7 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './ChartCard.css';
 
-const LoanAmount = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
+const LoanAmount = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availableAgeGroups }) => {
   const loanData = Object.entries(data || {})
     .map(([range, count]) => ({ range, count }))
     .sort((a, b) => {
@@ -16,7 +16,7 @@ const LoanAmount = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
       <p className="chart-card__subtitle">총 {total}명 (대출자 기준)</p>
       
       <div className="chart-card__tabs">
-        {['전체', '미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대 이상'].map((ageGroup) => (
+        {(availableAgeGroups || []).map((ageGroup) => (
           <button
             key={ageGroup}
             onClick={() => setSelectedAgeGroup(ageGroup)}
@@ -29,7 +29,7 @@ const LoanAmount = ({ data, total, selectedAgeGroup, setSelectedAgeGroup }) => {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={250}>
         <BarChart data={loanData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="range" tick={{ fontSize: 10 }} />

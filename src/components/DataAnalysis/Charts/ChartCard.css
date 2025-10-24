@@ -305,3 +305,78 @@
 .chart-card__legend--left .chart-card__legend-value {
   margin-left: 0;
 }
+
+/* 통계 데이터 표시 스타일 */
+.chart-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.chart-card__stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 120px;
+}
+
+.chart-card__stat-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.chart-card__stat-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (max-width: 768px) {
+  .chart-card__stats {
+    gap: 0.3rem;
+    padding: 0.5rem;
+  }
+  
+  .chart-card__stat-item {
+    min-width: 100px;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .chart-card__stat-label,
+  .chart-card__stat-value {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-card__stats {
+    gap: 0.2rem;
+    padding: 0.4rem;
+  }
+  
+  .chart-card__stat-item {
+    min-width: 80px;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .chart-card__stat-label,
+  .chart-card__stat-value {
+    font-size: 0.65rem;
+  }
+}
