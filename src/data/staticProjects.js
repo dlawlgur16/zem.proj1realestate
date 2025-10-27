@@ -5,49 +5,40 @@
 
 export const staticProjects = [
   {
-    id: 'banpo',
-    name: '반포 미도1차아파트',
-    address: '서울특별시 서초구 반포동 60-4',
+    id: 'data-csv',
+    name: '여의도 대교아파트',
+    address: '서울특별시 영등포구 여의도동',
     type: 'static',
-    dataFile: '/data/banpo-data.csv',
+    dataFile: '/data/data.csv',
     image: process.env.PUBLIC_URL + '/image/img_chart-02.jpg',
-    description: '반포동 재개발 아파트 조합원 분석'
+    description: '여의도 대교아파트 조합원 분석'
   },
   {
-    id: 'seobinggo',
-    name: '서빙고 신동아아파트',
-    address: '서울특별시 용산구 이촌로 347',
+    id: 'sample-csv',
+    name: '샘플 데이터',
+    address: '서울특별시',
     type: 'static',
-    dataFile: '/data/seobinggo-data.csv',
+    dataFile: '/data/sample.csv',
     image: process.env.PUBLIC_URL + '/image/img_chart-03.jpg',
-    description: '서빙고동 재개발 아파트 조합원 분석'
+    description: '샘플 데이터 분석'
   },
   {
-    id: 'hannamheights',
-    name: '한남 하이츠',
-    address: '서울특별시 성동구 독서당로 156',
+    id: 'cheongha-apartment',
+    name: '청하아파트 578세대',
+    address: '서울시 중랑구 면목동 110-1',
     type: 'static',
-    dataFile: '/data/hannamheights-data.csv',
-    image: process.env.PUBLIC_URL + '/image/img_chart-04.jpg',
-    description: '한남동 재개발 아파트 조합원 분석'
-  },
-  {
-    id: 'mokdong12',
-    name: '목동신시가지아파트 12단지',
-    address: '서울특별시 양천구 목동동로 50',
-    type: 'static',
-    dataFile: '/data/mokdong12-data.csv',
-    image: process.env.PUBLIC_URL + '/image/img_chart-05.jpg',
-    description: '목동 재개발 아파트 조합원 분석'
-  },
-  {
-    id: 'cheonghwa',
-    name: '이태원동 청화아파트',
-    address: '서울특별시 용산구 장문로 27',
-    type: 'static',
-    dataFile: '/data/cheonghwa-data.csv',
+    dataFile: '/data/청하아파트_578세대_실제데이터100퍼센트반영.csv',
     image: process.env.PUBLIC_URL + '/image/img_chart-02.jpg',
-    description: '이태원동 재개발 아파트 조합원 분석'
+    description: '청하아파트 578세대 재건축 조합원 분석'
+  },
+  {
+    id: 'processed-data',
+    name: '전처리된 데이터',
+    address: '자동 전처리 시스템',
+    type: 'processed',
+    dataFile: 'http://localhost:5001/api/processed',
+    image: process.env.PUBLIC_URL + '/image/img_chart-02.jpg',
+    description: '백엔드에서 자동으로 전처리된 데이터'
   }
 ];
 

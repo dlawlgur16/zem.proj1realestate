@@ -186,10 +186,11 @@ const MainApp = () => {
               }
               setStatsData(prevStats => {
                 const updatedStats = {
-                  ...prevStats,
+                  ...(prevStats || {}),
                   ...newStats
                 };
                 console.log('📊 MainApp statsData 업데이트:', updatedStats);
+                console.log('📊 MainApp statsData keys:', Object.keys(updatedStats));
                 return updatedStats;
               });
             }}
@@ -197,12 +198,20 @@ const MainApp = () => {
         )}
 
         {currentStep === 'report' && csvData && (
-          <ReportGenerator
-            csvData={csvData}
-            activeTab={activeTab}
-            statsData={statsData}
-            onReportGenerated={handleReportGenerated}
-          />
+          <>
+            {console.log('📊 ReportGenerator에 전달되는 데이터:', {
+              csvDataLength: csvData?.length,
+              activeTab,
+              statsDataKeys: statsData ? Object.keys(statsData) : '없음',
+              statsDataValue: statsData
+            })}
+            <ReportGenerator
+              csvData={csvData}
+              activeTab={activeTab}
+              statsData={statsData}
+              onReportGenerated={handleReportGenerated}
+            />
+          </>
         )}
 
         {error && (

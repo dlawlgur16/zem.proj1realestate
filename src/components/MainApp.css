@@ -217,3 +217,54 @@
   font-size: 0.95rem;
   text-align: center;
 }
+
+/* 전처리된 프로젝트 목록 스타일 */
+.processed-projects-section {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.processed-projects-section h3 {
+  color: #374151;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.processed-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.processed-project-card {
+  padding: 1.5rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.processed-project-card:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.processed-project-card h4 {
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.processed-project-card p {
+  color: #6b7280;
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+}

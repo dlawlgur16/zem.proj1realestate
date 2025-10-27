@@ -86,14 +86,22 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
     
     try {
       // AI 인사이트 포함하여 보고서 생성
+      console.log('📊 generateHybridReport 호출 전 데이터 확인:');
+      console.log('📊 statsData[activeTab]:', statsData[activeTab]);
+      console.log('📊 ageGroups:', statsData[activeTab]?.ageGroups);
+      console.log('📊 ageGroups 비어있나?', !statsData[activeTab]?.ageGroups || Object.keys(statsData[activeTab]?.ageGroups || {}).length === 0);
+      
       const report = await generateHybridReport(
         statsData[activeTab], 
         GEMINI_API_KEY,
         csvData
       );
       
+      console.log('📄 생성된 보고서:', report);
+      console.log('📄 보고서 길이:', report ? report.length : 0);
       setReportContent(report);
       setShowReport(true);
+      console.log('📄 showReport 상태 변경:', true);
     } catch (error) {
       console.error('보고서 생성 실패:', error);
       

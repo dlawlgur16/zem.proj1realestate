@@ -69,18 +69,17 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const calculateStats = (data) => {
     const total = data.length;
     
-    // 나이대별 분포 (주민번호 분석)
+    // 나이대별 분포 (생년월일 분석)
     const ageGroups = {};
     data.forEach(row => {
-      const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
-      if (residentNumber && residentNumber.length >= 7) {
+      const birthDate = row['생년월일'];
+      if (birthDate && birthDate.length >= 6) {
         try {
-          const birthYear = parseInt(residentNumber.substring(0, 2));
-          // const birthMonth = parseInt(residentNumber.substring(2, 4));
+          const birthYear = parseInt(birthDate.substring(0, 2));
           const currentYear = new Date().getFullYear();
           let fullBirthYear;
           
-          // 2000년대 출생자 구분 (더 정확한 로직)
+          // 2000년대 출생자 구분
           if (birthYear <= 30) {
             fullBirthYear = 2000 + birthYear;
           } else {
@@ -101,11 +100,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           else ageGroup = '90대';
           
           ageGroups[ageGroup] = (ageGroups[ageGroup] || 0) + 1;
-          
-          // 디버깅을 위한 로그
-               // console.log(`주민번호: ${residentNumber}, 출생년도: ${fullBirthYear}, 나이: ${age}, 나이대: ${ageGroup}`);
         } catch (error) {
-          console.error('주민번호 분석 오류:', error, residentNumber);
+          console.error('생년월일 분석 오류:', error, birthDate);
         }
       }
     });
@@ -136,26 +132,15 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     //   return residentNumber && residentNumber.length >= 7;
     // }).length);
 
-    // 거주/투자 비율 (다양한 표기 허용)
-    const isResidence = (value) => {
-      const v = String(value ?? '').trim().toLowerCase();
-      if (!v) return false;
-      // 부분 일치 우선 처리 ("실거주 추정" 등)
-      if (v.includes('실거주')) return true;
-      if (v.includes('거주')) return true; // "거주", "거주자" 등
-      // 정확 일치 토큰
-      return ['y','yes','true','1','t','o','ㅇ','예','네','투자아님'].some(tok => v === tok);
-    };
-    
-    // 실거주여부 값들 확인을 위한 디버깅
-    const residenceValues = [...new Set(data.map(row => row['실거주여부'] || row['거주여부'] || '').filter(Boolean))];
-    console.log('🔍 DataAnalysis 실제 실거주여부 값들:', residenceValues);
-    
+    // 거주/투자 비율 (거주형태 컬럼 사용)
     const residenceCount = data.filter(row => {
-      const residence = row['실거주여부'] || row['거주여부'] || '';
-      return isResidence(residence);
+      const residenceType = row['거주형태'];
+      return residenceType === '실거주';
     }).length;
-    const investmentCount = total - residenceCount;
+    const investmentCount = data.filter(row => {
+      const residenceType = row['거주형태'];
+      return residenceType === '투자';
+    }).length;
     
     console.log('🔍 DataAnalysis 실거주 비율:', {
       total,
@@ -164,211 +149,79 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       residenceRate: ((residenceCount / total) * 100).toFixed(1) + '%'
     });
 
-    // 면적별 분포 (소수점 2자리)
+    // 면적별 분포 (건축물_연면적 컬럼 사용)
     const areaGroups = {};
     data.forEach(row => {
-      if (row.전용면적_제곱미터) {
-        const area = parseFloat(row.전용면적_제곱미터);
-        if (!isNaN(area)) {
-          // 면적을 소수점 2자리까지 표시
-          const roundedArea = parseFloat(area.toFixed(2));
+      const area = row['건축물_연면적'];
+      if (area) {
+        const areaNum = parseFloat(area);
+        if (!isNaN(areaNum) && areaNum > 0) {
+          const roundedArea = Math.round(areaNum * 100) / 100; // 소수점 2자리
           const areaKey = `${roundedArea}㎡`;
-          
           areaGroups[areaKey] = (areaGroups[areaKey] || 0) + 1;
         }
       }
     });
 
-    // 보유기간별 분포 (4개 구간)
+    // 보유기간별 분포 (보유기간 컬럼 사용)
     const holdingGroups = {};
     data.forEach(row => {
-      if (row.보유기간_년) {
-        const years = parseInt(row.보유기간_년);
-        if (!isNaN(years)) {
-          let periodGroup;
-          if (years < 3) periodGroup = '3년 미만';
-          else if (years >= 3 && years < 7) periodGroup = '3~7년';
-          else if (years >= 7 && years < 15) periodGroup = '7~15년';
-          else periodGroup = '15년 이상';
-          
-          holdingGroups[periodGroup] = (holdingGroups[periodGroup] || 0) + 1;
+      const holdingPeriod = row['보유기간'];
+      if (holdingPeriod) {
+        // "4년 11개월" 형태의 문자열에서 년수 추출
+        const yearMatch = holdingPeriod.match(/(\d+)년/);
+        if (yearMatch) {
+          const years = parseInt(yearMatch[1]);
+          if (!isNaN(years)) {
+            let periodGroup;
+            if (years < 3) periodGroup = '3년 미만';
+            else if (years >= 3 && years < 7) periodGroup = '3~7년';
+            else if (years >= 7 && years < 15) periodGroup = '7~15년';
+            else periodGroup = '15년 이상';
+            
+            holdingGroups[periodGroup] = (holdingGroups[periodGroup] || 0) + 1;
+          }
         }
       }
     });
 
-    // 등기이전원인별 분포
+    // 등기이전원인별 분포 (등기목적_분류 컬럼 사용)
     const transferReasons = {};
     data.forEach(row => {
-      if (row.이전사유) {
-        const reason = row.이전사유.trim();
-        if (reason) {
-          transferReasons[reason] = (transferReasons[reason] || 0) + 1;
-        }
+      const reason = row['등기목적_분류'];
+      if (reason) {
+        transferReasons[reason] = (transferReasons[reason] || 0) + 1;
       }
     });
 
-    // 연도별 소유권 변동
+    // 연도별 소유권 변동 (등기원인_년월일 컬럼 사용)
     const yearlyOwnership = {};
     data.forEach(row => {
-      if (row.소유권취득일) {
-        const date = new Date(row.소유권취득일);
-        if (!isNaN(date.getTime())) {
-          const year = date.getFullYear().toString();
+      const date = row['등기원인_년월일'];
+      if (date) {
+        // "2016-07-27" 형태에서 연도 추출
+        const yearMatch = date.match(/(\d{4})/);
+        if (yearMatch) {
+          const year = yearMatch[1];
           yearlyOwnership[year] = (yearlyOwnership[year] || 0) + 1;
         }
       }
     });
 
-    // 투자자 거주지역 분석 (실거주자 제외) - 시/도 단위
+    // 투자자 거주지역 분석 (거주형태가 '투자'인 경우만) - 시/도 단위
     const investorResidence = {};
     let investorCount = 0; // 투자자 수 카운트
     
     data.forEach(row => {
-      // 실거주자인지 확인
-      const residence = row.실거주여부 || row.거주여부 || '';
-      const isResidence = (value) => {
-        const v = String(value ?? '').trim().toLowerCase();
-        if (!v) return false;
-        return [
-          '실거주','거주','y','yes','true','1','t','o','ㅇ','예','네','투자아님','거주자','실거주자'
-        ].some(tok => v.includes(tok));
-      };
-      
-      // 실거주자가 아닌 경우만 투자자로 간주
-      if (!isResidence(residence) && row.현주소) {
-        investorCount++; // 투자자 수 증가
-        const address = row.현주소.trim();
+      if (row['거주형태'] === '투자') {
+        investorCount++;
+        const address = row['소유자_주소'];
         if (address) {
-          // 시/도 단위로 지역 분류
-          let region = '';
-          
-          // 서울시
-          if (address.includes('서울시') || address.includes('서울특별시')) {
-            region = '서울시';
-          }
-          // 경기도
-          else if (address.includes('경기도')) {
-            region = '경기도';
-          }
-          // 인천시
-          else if (address.includes('인천시') || address.includes('인천광역시')) {
-            region = '인천시';
-          }
-          // 부산시
-          else if (address.includes('부산시') || address.includes('부산광역시')) {
-            region = '부산시';
-          }
-          // 대구시
-          else if (address.includes('대구시') || address.includes('대구광역시')) {
-            region = '대구시';
-          }
-          // 광주시
-          else if (address.includes('광주시') || address.includes('광주광역시')) {
-            region = '광주시';
-          }
-          // 대전시
-          else if (address.includes('대전시') || address.includes('대전광역시')) {
-            region = '대전시';
-          }
-          // 울산시
-          else if (address.includes('울산시') || address.includes('울산광역시')) {
-            region = '울산시';
-          }
-          // 세종시
-          else if (address.includes('세종시') || address.includes('세종특별자치시')) {
-            region = '세종시';
-          }
-          // 강원도
-          else if (address.includes('강원도')) {
-            region = '강원도';
-          }
-          // 충청북도
-          else if (address.includes('충청북도') || address.includes('충북')) {
-            region = '충청북도';
-          }
-          // 충청남도
-          else if (address.includes('충청남도') || address.includes('충남')) {
-            region = '충청남도';
-          }
-          // 전라북도
-          else if (address.includes('전라북도') || address.includes('전북')) {
-            region = '전라북도';
-          }
-          // 전라남도
-          else if (address.includes('전라남도') || address.includes('전남')) {
-            region = '전라남도';
-          }
-          // 경상북도
-          else if (address.includes('경상북도') || address.includes('경북')) {
-            region = '경상북도';
-          }
-          // 경상남도
-          else if (address.includes('경상남도') || address.includes('경남')) {
-            region = '경상남도';
-          }
-          // 제주도
-          else if (address.includes('제주도') || address.includes('제주특별자치도')) {
-            region = '제주도';
-          }
-          // 해외 지역
-          else if (address.includes('미국') || address.includes('USA') || address.includes('United States')) {
-            region = '미국';
-          }
-          else if (address.includes('호주') || address.includes('Australia')) {
-            region = '호주';
-          }
-          else if (address.includes('일본') || address.includes('Japan')) {
-            region = '일본';
-          }
-          else if (address.includes('중국') || address.includes('China')) {
-            region = '중국';
-          }
-          else if (address.includes('캐나다') || address.includes('Canada')) {
-            region = '캐나다';
-          }
-          else if (address.includes('영국') || address.includes('UK') || address.includes('United Kingdom')) {
-            region = '영국';
-          }
-          else if (address.includes('독일') || address.includes('Germany')) {
-            region = '독일';
-          }
-          else if (address.includes('프랑스') || address.includes('France')) {
-            region = '프랑스';
-          }
-          else if (address.includes('이탈리아') || address.includes('Italy')) {
-            region = '이탈리아';
-          }
-          else if (address.includes('스페인') || address.includes('Spain')) {
-            region = '스페인';
-          }
-          else if (address.includes('네덜란드') || address.includes('Netherlands')) {
-            region = '네덜란드';
-          }
-          else if (address.includes('스위스') || address.includes('Switzerland')) {
-            region = '스위스';
-          }
-          else if (address.includes('스웨덴') || address.includes('Sweden')) {
-            region = '스웨덴';
-          }
-          else if (address.includes('노르웨이') || address.includes('Norway')) {
-            region = '노르웨이';
-          }
-          else if (address.includes('덴마크') || address.includes('Denmark')) {
-            region = '덴마크';
-          }
-          else if (address.includes('핀란드') || address.includes('Finland')) {
-            region = '핀란드';
-          }
-          else if (address.includes('해외') || address.includes('외국')) {
-            region = '기타 해외';
-          }
-          // 기타 국내 지역
-          else {
-            region = '기타 국내';
-          }
-          
-          if (region) {
-            investorResidence[region] = (investorResidence[region] || 0) + 1;
+          // 주소에서 시/도 추출
+          const cityMatch = address.match(/(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원도|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|제주특별자치도)/);
+          if (cityMatch) {
+            const city = cityMatch[1];
+            investorResidence[city] = (investorResidence[city] || 0) + 1;
           }
         }
       }
@@ -382,8 +235,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     console.log('💰 CSV 컬럼명 확인:', Object.keys(data[0] || {}));
     
     data.forEach(row => {
-      // 여러 가능한 컬럼명 확인
-      const loanAmount = row.유효근저당총액 || row['유효근저당총액'] || row.근저당총액 || row['근저당총액'] || row.대출금액 || row['대출금액'];
+      // 근저당금액 컬럼 사용
+      const loanAmount = row['근저당금액'];
       
       if (loanAmount) {
         const amount = parseFloat(loanAmount);
@@ -412,9 +265,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     console.log('💰 근저당 데이터가 있는 행 수:', loanDataCount);
     console.log('💰 근저당 금액대별 분포:', loanAmountGroups);
 
-    // 대출 여부 비율
+    // 대출 여부 비율 (근저당금액 컬럼 사용)
     const loanCount = data.filter(row => {
-      const loanAmount = row.유효근저당총액 || row['유효근저당총액'] || row.근저당총액 || row['근저당총액'] || row.대출금액 || row['대출금액'];
+      const loanAmount = row['근저당금액'];
       if (!loanAmount) return false;
       const amount = parseFloat(loanAmount);
       return !isNaN(amount) && amount > 0;
@@ -426,12 +279,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     console.log('💰 대출 없는 건수:', noLoanCount);
     console.log('💰 대출 비율:', ((loanCount / total) * 100).toFixed(1) + '%');
 
-    // 총 근저당액과 평균 근저당액 계산
+    // 총 근저당액과 평균 근저당액 계산 (근저당금액 컬럼 사용)
     let totalLoanAmount = 0;
     let validLoanCount = 0;
     
     data.forEach(row => {
-      const loanAmount = row.유효근저당총액 || row['유효근저당총액'] || row.근저당총액 || row['근저당총액'] || row.대출금액 || row['대출금액'];
+      const loanAmount = row['근저당금액'];
       if (loanAmount) {
         const amount = parseFloat(loanAmount);
         if (!isNaN(amount) && amount > 0) {
@@ -446,10 +299,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     console.log('💰 총 근저당액:', totalLoanAmount);
     console.log('💰 평균 근저당액:', averageLoanAmount);
 
-    // 압류/가압류 현황
+    // 압류/가압류 현황 (압류가압류 컬럼 사용)
     const seizureCount = data.filter(row => {
-      const seizure = row['압류가압류유무'] || 'N';
-      return seizure === 'Y' || seizure === '1' || seizure === 'true';
+      const seizure = row['압류가압류'];
+      return seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음';
     }).length;
     const normalCount = total - seizureCount;
 

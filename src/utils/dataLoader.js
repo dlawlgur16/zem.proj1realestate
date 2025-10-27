@@ -25,6 +25,11 @@ export const loadStaticProjectData = async (dataFile) => {
         skipEmptyLines: true,
         complete: (results) => {
           console.log('✅ 정적 데이터 로드 완료:', results.data.length, '행');
+          console.log('🔍 CSV 파싱 결과 미리보기:', results.data.slice(0, 3));
+          console.log('🔍 CSV 파싱 에러:', results.errors);
+          
+          // 전체 데이터 로드 (577세대)
+          console.log('⚡ 전체 데이터 로드:', results.data.length, '행');
           resolve(results.data);
         },
         error: (error) => {
@@ -35,6 +40,47 @@ export const loadStaticProjectData = async (dataFile) => {
     });
   } catch (error) {
     console.error('❌ 정적 프로젝트 데이터 로드 실패:', error);
+    throw error;
+  }
+};
+
+/**
+ * 전처리된 프로젝트 데이터 로드 (백엔드 API에서 로드)
+ */
+export const loadProcessedProjectData = async (dataFile) => {
+  try {
+    console.log('🤖 전처리된 프로젝트 데이터 로드:', dataFile);
+    
+    // 최신 전처리된 데이터 목록 가져오기
+    const listResponse = await fetch(dataFile);
+    if (!listResponse.ok) {
+      throw new Error(`전처리된 데이터 목록을 가져올 수 없습니다: ${dataFile}`);
+    }
+    
+    const processedList = await listResponse.json();
+    console.log('📋 전처리된 데이터 목록:', processedList);
+    
+    if (!processedList.data || processedList.data.length === 0) {
+      throw new Error('전처리된 데이터가 없습니다.');
+    }
+    
+    // 가장 최신 데이터 선택
+    const latestData = processedList.data[0];
+    console.log('🔄 최신 전처리된 데이터 선택:', latestData.id);
+    
+    // 선택된 데이터의 실제 내용 가져오기
+    const dataResponse = await fetch(`${dataFile}/${latestData.id}`);
+    if (!dataResponse.ok) {
+      throw new Error(`전처리된 데이터를 가져올 수 없습니다: ${latestData.id}`);
+    }
+    
+    const processedData = await dataResponse.json();
+    console.log('✅ 전처리된 데이터 로드 완료:', processedData.data.length, '행');
+    console.log('🔍 전처리된 데이터 미리보기:', processedData.data.slice(0, 3));
+    
+    return processedData.data;
+  } catch (error) {
+    console.error('❌ 전처리된 프로젝트 데이터 로드 실패:', error);
     throw error;
   }
 };
@@ -112,6 +158,8 @@ export const loadProjectData = async (project) => {
     return await loadStaticProjectData(project.dataFile);
   } else if (project.type === 'user') {
     return loadUserProjectData(project);
+  } else if (project.type === 'processed') {
+    return await loadProcessedProjectData(project.dataFile);
   } else {
     throw new Error('알 수 없는 프로젝트 타입입니다.');
   }

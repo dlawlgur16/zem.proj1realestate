@@ -6,16 +6,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { staticProjects } from '../data/staticProjects';
-import { loadUserProjects, saveUserProject, deleteUserProject } from '../utils/dataLoader';
 import { loadProjectData } from '../utils/dataLoader';
 import ProjectCard from '../components/ProjectCard';
-import AddProjectModal from '../components/AddProjectModal';
 import './ProjectIndex.css';
 
 const ProjectIndex = () => {
   const navigate = useNavigate();
   const [allProjects, setAllProjects] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -24,19 +21,11 @@ const ProjectIndex = () => {
 
   const loadProjects = () => {
     try {
-      // 정적 프로젝트들
-      const staticProjectsList = staticProjects;
-      
-      // 사용자 프로젝트들 (LocalStorage에서)
-      const userProjects = loadUserProjects();
-      
-      // 두 리스트 합치기
-      setAllProjects([...staticProjectsList, ...userProjects]);
+      // 정적 프로젝트들만 표시
+      setAllProjects(staticProjects);
       
       console.log('📁 프로젝트 목록 로드 완료:', {
-        정적: staticProjectsList.length,
-        사용자: userProjects.length,
-        총합: staticProjectsList.length + userProjects.length
+        정적: staticProjects.length
       });
     } catch (error) {
       console.error('❌ 프로젝트 목록 로드 실패:', error);
@@ -68,40 +57,7 @@ const ProjectIndex = () => {
     }
   };
 
-  const handleAddProject = (newProject) => {
-    try {
-      // LocalStorage에 저장
-      const success = saveUserProject(newProject);
-      
-      if (success) {
-        // 프로젝트 목록 새로고침
-        loadProjects();
-        console.log('✅ 새 프로젝트 추가 완료:', newProject.name);
-      } else {
-        throw new Error('프로젝트 저장에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('❌ 프로젝트 추가 실패:', error);
-      alert('프로젝트 추가에 실패했습니다. 다시 시도해주세요.');
-    }
-  };
 
-  const handleDeleteProject = (projectId) => {
-    try {
-      const success = deleteUserProject(projectId);
-      
-      if (success) {
-        // 프로젝트 목록 새로고침
-        loadProjects();
-        console.log('🗑️ 프로젝트 삭제 완료:', projectId);
-      } else {
-        throw new Error('프로젝트 삭제에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('❌ 프로젝트 삭제 실패:', error);
-      alert('프로젝트 삭제에 실패했습니다. 다시 시도해주세요.');
-    }
-  };
 
   const handleLogout = () => {
     // 로그아웃 처리 (auth.js의 clearSession 사용)
@@ -141,7 +97,7 @@ const ProjectIndex = () => {
       <div className="center-content">
         <div className="content-header">
           <h2>프로젝트 선택</h2>
-          <p>분석할 재건축 아파트 프로젝트를 선택하거나 새 프로젝트를 추가하세요.</p>
+          <p>분석할 재건축 아파트 프로젝트를 선택하세요.</p>
         </div>
 
         {/* 프로젝트 그리드 */}
@@ -151,23 +107,8 @@ const ProjectIndex = () => {
               key={project.id}
               project={project}
               onSelect={handleProjectSelect}
-              onDelete={handleDeleteProject}
             />
           ))}
-          
-          {/* 새 프로젝트 추가 카드 */}
-          <div 
-            className="add-project-card"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <div className="add-project-icon">
-              <span className="material-symbols-outlined">add</span>
-            </div>
-            <div className="add-project-content">
-              <h3>새 프로젝트 추가</h3>
-              <p>CSV 파일을 업로드하여 새 프로젝트를 추가하세요</p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -181,12 +122,6 @@ const ProjectIndex = () => {
         </div>
       )}
 
-      {/* 새 프로젝트 추가 모달 */}
-      <AddProjectModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddProject={handleAddProject}
-      />
     </div>
   );
 };

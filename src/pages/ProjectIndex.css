@@ -108,6 +108,19 @@
   margin: 0 auto;
 }
 
+/* 기존 프로젝트 섹션 */
+.existing-projects-section {
+  margin-bottom: 40px;
+}
+
+.existing-projects-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
 /* 프로젝트 그리드 */
 .select-container {
   display: grid;
