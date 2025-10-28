@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import CsvLoader from './CsvLoader/CsvLoader';
 import DataAnalysis from './DataAnalysis/DataAnalysis';
 import ReportGenerator from './ReportGenerator';
 import { getSession, clearSession } from '../utils/auth';
@@ -140,13 +139,6 @@ const MainApp = () => {
       </div>
 
       <div className="main-app__content">
-        {currentStep === 'upload' && (
-          <CsvLoader
-            onDataLoad={handleDataLoad}
-            onError={handleError}
-          />
-        )}
-
         {currentStep === 'analysis' && csvData && (
           <DataAnalysis
             csvData={csvData}

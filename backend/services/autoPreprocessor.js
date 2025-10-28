@@ -188,49 +188,50 @@ class AutoPreprocessor {
   extractBirthDate(data) {
     return data.map(row => {
       const columns = Object.values(row);
-      const headers = Object.keys(row);
       
-      // 생년월일 컬럼 찾기 (여러 가능한 이름으로)
       let birthDate = null;
-      const possibleBirthColumns = ['생년월일', '생년', '출생년월일', '생년월', 'birth_date', '생년월일_1', '생년월일_2'];
       
-      for (const colName of possibleBirthColumns) {
-        if (row[colName] !== undefined && row[colName] !== null && row[colName] !== '') {
-          birthDate = row[colName];
-          break;
+      // 인덱스 24 확인 (Y열 - 생년월일 위치)
+      if (columns[24] !== null && columns[24] !== undefined && columns[24] !== '') {
+        const value = String(columns[24]).trim();
+        if (/^\d{6}$/.test(value)) {
+          birthDate = value;
+        } else if (/^\d{6}-\d{7}$/.test(value)) {
+          birthDate = value.substring(0, 6);
         }
       }
-      
-      // 컬럼명으로 찾지 못한 경우 인덱스로 찾기
-      if (!birthDate) {
-        for (let i = 0; i < columns.length; i++) {
-          const value = columns[i];
-          if (value && typeof value === 'string') {
-            // 6자리 숫자 형태의 생년월일 패턴 확인 (000127, 110111 등)
-            if (/^\d{6}$/.test(value)) {
-              birthDate = value;
-              console.log(`🔍 생년월일 발견 (인덱스 ${i}): ${value}, 컬럼명: ${headers[i]}`);
-              break;
-            }
-            // 주민번호 형태에서 생년월일 추출 (110111-0672538 -> 110111)
-            else if (/^\d{6}-\d{7}$/.test(value)) {
-              birthDate = value.substring(0, 6);
-              console.log(`🔍 주민번호에서 생년월일 추출 (인덱스 ${i}): ${value} -> ${birthDate}, 컬럼명: ${headers[i]}`);
-              break;
-            }
-          }
-        }
-      }
-      
-      console.log('🔍 생년월일 추출 결과:', {
-        headers: headers.slice(0, 10), // 처음 10개 컬럼명만 출력
-        birthDate,
-        rowKeys: Object.keys(row).slice(0, 10)
-      });
       
       return {
         ...row,
         생년월일: birthDate
+      };
+    });
+  }
+
+  extractUnitInfo(data) {
+    return data.map(row => {
+      const columns = Object.values(row);
+      // 인덱스 8: 동, 인덱스 11: 호수
+      const dong = columns[8] || '';
+      const ho = columns[11] || '';
+      const dongHosu = `${String(dong).trim()} ${String(ho).trim()}`.trim();
+      
+      return {
+        ...row,
+        동: dong,
+        호수: ho,
+        동호수: dongHosu
+      };
+    });
+  }
+
+  extractOwnerAddress(data) {
+    return data.map(row => {
+      const columns = Object.values(row);
+      // 인덱스 25: 소유자 주소
+      return {
+        ...row,
+        소유자_주소: columns[25] || null
       };
     });
   }

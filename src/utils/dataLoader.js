@@ -51,27 +51,10 @@ export const loadProcessedProjectData = async (dataFile) => {
   try {
     console.log('🤖 전처리된 프로젝트 데이터 로드:', dataFile);
     
-    // 최신 전처리된 데이터 목록 가져오기
-    const listResponse = await fetch(dataFile);
-    if (!listResponse.ok) {
-      throw new Error(`전처리된 데이터 목록을 가져올 수 없습니다: ${dataFile}`);
-    }
-    
-    const processedList = await listResponse.json();
-    console.log('📋 전처리된 데이터 목록:', processedList);
-    
-    if (!processedList.data || processedList.data.length === 0) {
-      throw new Error('전처리된 데이터가 없습니다.');
-    }
-    
-    // 가장 최신 데이터 선택
-    const latestData = processedList.data[0];
-    console.log('🔄 최신 전처리된 데이터 선택:', latestData.id);
-    
-    // 선택된 데이터의 실제 내용 가져오기
-    const dataResponse = await fetch(`${dataFile}/${latestData.id}`);
+    // 특정 전처리된 데이터 파일 직접 요청
+    const dataResponse = await fetch(dataFile);
     if (!dataResponse.ok) {
-      throw new Error(`전처리된 데이터를 가져올 수 없습니다: ${latestData.id}`);
+      throw new Error(`전처리된 데이터를 가져올 수 없습니다: ${dataFile}`);
     }
     
     const processedData = await dataResponse.json();

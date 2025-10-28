@@ -204,6 +204,15 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
                 <div className="text-emerald-100 text-xs mb-1">총 세대수</div>
                 <div className="text-white text-xl font-bold">{statsData[activeTab]?.total || 0}세대</div>
               </div>
+              <div className="bg-white/20 px-4 py-2 rounded-lg">
+                <div className="text-emerald-100 text-xs mb-1">총 대출금액</div>
+                <div className="text-white text-xl font-bold">
+                  {statsData[activeTab]?.totalLoanAmount 
+                    ? `${(statsData[activeTab].totalLoanAmount / 100000000).toFixed(1)}억원`
+                    : '0억원'
+                  }
+                </div>
+              </div>
             </div>
             
             <div className="text-right">
