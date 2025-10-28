@@ -216,9 +216,26 @@ ${stats.ageGroups ? Object.entries(stats.ageGroups)
 ### 💡 연령대별 인사이트 (확장형):
 ${stats.ageInsights ? Object.entries(stats.ageInsights)
   .sort((a, b) => {
-    // 연령대 순서: 20대, 30대, 40대, 50대, 60대, 70대
-    const ageOrder = ['20대', '30대', '40대', '50대', '60대', '70대'];
-    return ageOrder.indexOf(a[0]) - ageOrder.indexOf(b[0]);
+    // 연령대 순서: 10대, 20대, 30대, 40대, 50대, 60대, 70대, 80대, 90대 이상
+    const ageOrder = ['10대', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대 이상'];
+    
+    const indexA = ageOrder.indexOf(a[0]);
+    const indexB = ageOrder.indexOf(b[0]);
+    
+    // 디버깅: 정렬 과정 로그
+    console.log(`🔍 정렬: ${a[0]}(${indexA}) vs ${b[0]}(${indexB})`);
+    
+    // 둘 다 ageOrder에 있으면 순서대로 정렬
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+    
+    // 하나만 ageOrder에 있으면 그것을 앞으로
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    
+    // 둘 다 ageOrder에 없으면 알파벳 순으로 정렬
+    return a[0].localeCompare(b[0]);
   })
   .map(([age, insight]) => `
 #### 🔹 ${age}층 분석

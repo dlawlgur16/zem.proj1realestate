@@ -18,7 +18,13 @@ export function calculateAgeInsights(rows) {
     const digits = match[1]; // 예: 110111
     const yy = Number(digits.slice(0, 2));
     if (!Number.isFinite(yy)) return null;
-    const birthYearGuess = yy <= 30 ? 2000 + yy : 1900 + yy;
+    
+    // 현재 연도 기준으로 2000년대/1900년대 판단
+    const currentYear = new Date().getFullYear();
+    const currentYY = currentYear % 100;
+    
+    // 00~현재년도까지는 2000년대, 그 외는 1900년대
+    const birthYearGuess = yy <= currentYY ? 2000 + yy : 1900 + yy;
     return birthYearGuess;
   };
 
@@ -48,6 +54,10 @@ export function calculateAgeInsights(rows) {
     const decade = Math.floor(age / 10) * 10;
     if (decade < 20) return '10대';
     if (decade >= 90) return '90대 이상';
+    
+    // 디버깅: 나이 계산 과정 로그
+    console.log(`🔍 나이 계산: 생년월일=${row.생년월일}, 출생년도=${birthYear}, 나이=${age}, 연령대=${decade}대`);
+    
     return `${decade}대`;
   };
 
@@ -60,6 +70,16 @@ export function calculateAgeInsights(rows) {
 
   const ageValues = [...new Set(normalizedRows.map(r => r.연령대).filter(Boolean))];
   console.log('🔍 실제 연령대 값들:', ageValues);
+  console.log('🔍 연령대 정렬 전:', ageValues);
+  
+  // 연령대를 올바른 순서로 정렬
+  const ageOrder = ['10대', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대 이상'];
+  const sortedAgeValues = ageValues.sort((a, b) => {
+    const indexA = ageOrder.indexOf(a);
+    const indexB = ageOrder.indexOf(b);
+    return indexA - indexB;
+  });
+  console.log('🔍 연령대 정렬 후:', sortedAgeValues);
 
   // -------------------------------------------------------
   // 4️⃣ 유틸리티 함수들 (정규화)
@@ -102,7 +122,7 @@ export function calculateAgeInsights(rows) {
   // -------------------------------------------------------
   // 5️⃣ 연령대별 통계 계산
   // -------------------------------------------------------
-  const AGE_KEYS = ["10대", "20대", "30대", "40대", "50대", "60대", "70대", "80대", "90대 이상"];
+  const AGE_KEYS = sortedAgeValues; // 정렬된 연령대 순서 사용
   const insights = {};
   const toFixed1 = (n) => (typeof n === 'number' ? n.toFixed(1) : (Number(n) || 0).toFixed(1));
 
