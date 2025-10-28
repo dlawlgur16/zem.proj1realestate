@@ -116,8 +116,6 @@ export function calculateAgeInsights(rows) {
 
     console.groupCollapsed(`🏠 [${age}] residence debug (총 ${total}명)`);
 
-    // ✅ ② 근저당금액 파싱 결과 확인
-    const loanAmounts = group.map(r => parseAmount(r.유효근저당총액 || r.근저당금액 || 0));
     // ✅ 대출 현황
     const loaned = group.filter(r => {
       const raw = r.유효근저당총액 || r.근저당금액 || 0;
