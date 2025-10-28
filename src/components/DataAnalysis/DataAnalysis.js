@@ -142,12 +142,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       return residenceType === '투자';
     }).length;
     
-    console.log('🔍 DataAnalysis 실거주 비율:', {
-      total,
-      residenceCount,
-      investmentCount,
-      residenceRate: ((residenceCount / total) * 100).toFixed(1) + '%'
-    });
+    // console.log('🔍 DataAnalysis 실거주 비율:', {
+    //   total,
+    //   residenceCount,
+    //   investmentCount,
+    //   residenceRate: ((residenceCount / total) * 100).toFixed(1) + '%'
+    // });
 
     // 면적별 분포 (건축물_연면적 컬럼 사용)
     const areaGroups = {};
@@ -241,18 +241,18 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
     
-    console.log('🏠 투자자 거주지역 분석 결과:');
-    console.log('🏠 총 투자자 수:', investorCount);
-    console.log('🏠 주소가 있는 투자자 수:', addressFoundCount);
-    console.log('🏠 시/도가 추출된 투자자 수:', cityExtractedCount);
-    console.log('🏠 거주지역 분포:', investorResidence);
+    // console.log('🏠 투자자 거주지역 분석 결과:');
+    // console.log('🏠 총 투자자 수:', investorCount);
+    // console.log('🏠 주소가 있는 투자자 수:', addressFoundCount);
+    // console.log('🏠 시/도가 추출된 투자자 수:', cityExtractedCount);
+    // console.log('🏠 거주지역 분포:', investorResidence);
 
     // 대출금액대별 분포
     const loanAmountGroups = {};
     let loanDataCount = 0;
     
     // CSV 컬럼명 확인
-    console.log('💰 CSV 컬럼명 확인:', Object.keys(data[0] || {}));
+    // console.log('💰 CSV 컬럼명 확인:', Object.keys(data[0] || {}));
     
     data.forEach(row => {
       // 근저당금액 컬럼 사용
@@ -280,10 +280,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
     
-    console.log('💰 근저당 데이터 분석:');
-    console.log('💰 총 데이터 수:', data.length);
-    console.log('💰 근저당 데이터가 있는 행 수:', loanDataCount);
-    console.log('💰 근저당 금액대별 분포:', loanAmountGroups);
+    // console.log('💰 근저당 데이터 분석:');
+    // console.log('💰 총 데이터 수:', data.length);
+    // console.log('💰 근저당 데이터가 있는 행 수:', loanDataCount);
+    // console.log('💰 근저당 금액대별 분포:', loanAmountGroups);
 
     // 대출 여부 비율 (근저당금액 컬럼 사용)
     const loanCount = data.filter(row => {
@@ -294,10 +294,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     }).length;
     const noLoanCount = total - loanCount;
     
-    console.log('💰 대출 여부 분석:');
-    console.log('💰 대출 있는 건수:', loanCount);
-    console.log('💰 대출 없는 건수:', noLoanCount);
-    console.log('💰 대출 비율:', ((loanCount / total) * 100).toFixed(1) + '%');
+    // console.log('💰 대출 여부 분석:');
+    // console.log('💰 대출 있는 건수:', loanCount);
+    // console.log('💰 대출 없는 건수:', noLoanCount);
+    // console.log('💰 대출 비율:', ((loanCount / total) * 100).toFixed(1) + '%');
 
     // 총 근저당액과 평균 근저당액 계산 (근저당금액 컬럼 사용)
     let totalLoanAmount = 0;
@@ -316,8 +316,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     
     const averageLoanAmount = validLoanCount > 0 ? totalLoanAmount / validLoanCount : 0;
     
-    console.log('💰 총 근저당액:', totalLoanAmount);
-    console.log('💰 평균 근저당액:', averageLoanAmount);
+    // console.log('💰 총 근저당액:', totalLoanAmount);
+    // console.log('💰 평균 근저당액:', averageLoanAmount);
 
     // 압류/가압류 현황 (압류가압류 컬럼 사용)
     const seizureCount = data.filter(row => {
@@ -327,12 +327,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     const normalCount = total - seizureCount;
 
     // 연령대별 인사이트 계산
-    console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
-    console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', data[0]);
-    console.log('🔍 생년월일 값 확인:', data.map(d => d['생년월일']).filter(v => v).slice(0, 5));
+    // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
+    // console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', data[0]);
+    // console.log('🔍 생년월일 값 확인:', data.map(d => d['생년월일']).filter(v => v).slice(0, 5));
     const ageInsights = calculateAgeInsights(data);
-    console.log('📊 연령대별 인사이트:', ageInsights);
-    console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
+    // console.log('📊 연령대별 인사이트:', ageInsights);
+    // console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
     // 사용 가능한 나이대 목록 생성
     const availableAgeGroups = ['전체', ...Object.keys(ageGroups).sort()];
@@ -432,7 +432,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     }
   });
 
-  console.log(`🧮 나이대 필터링 완료: ${ageGroup}, 원본 ${data.length} → 결과 ${filtered.length}`);
+  // console.log(`🧮 나이대 필터링 완료: ${ageGroup}, 원본 ${data.length} → 결과 ${filtered.length}`);
   
     // if (ageGroup === '전체') return data;
     
@@ -484,24 +484,24 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   // 통계 데이터가 업데이트될 때마다 부모 컴포넌트에 전달
   useEffect(() => {
     if (onStatsUpdate && currentStats) {
-      console.log('📊 DataAnalysis에서 통계 데이터 전달:', currentStats);
-      console.log('📊 ageGroups:', currentStats.ageGroups);
-      console.log('📊 transferReasons:', currentStats.transferReasons);
-      console.log('📊 areaGroups:', currentStats.areaGroups);
-      console.log('📊 holdingGroups:', currentStats.holdingGroups);
-      console.log('📊 loanStatusData:', currentStats.loanStatusData);
-      console.log('📊 totalLoanAmount:', currentStats.totalLoanAmount);
-      console.log('📊 averageLoanAmount:', currentStats.averageLoanAmount);
-      console.log('📊 activeTab:', activeTab);
-      console.log('📊 onStatsUpdate 함수 존재:', !!onStatsUpdate);
+    // console.log('📊 DataAnalysis에서 통계 데이터 전달:', currentStats);
+    // console.log('📊 ageGroups:', currentStats.ageGroups);
+    // console.log('📊 transferReasons:', currentStats.transferReasons);
+    // console.log('📊 areaGroups:', currentStats.areaGroups);
+    // console.log('📊 holdingGroups:', currentStats.holdingGroups);
+    // console.log('📊 loanStatusData:', currentStats.loanStatusData);
+    // console.log('📊 totalLoanAmount:', currentStats.totalLoanAmount);
+    // console.log('📊 averageLoanAmount:', currentStats.averageLoanAmount);
+    // console.log('📊 activeTab:', activeTab);
+    // console.log('📊 onStatsUpdate 함수 존재:', !!onStatsUpdate);
       
       onStatsUpdate({
         [activeTab]: currentStats
       });
     } else {
-      console.log('❌ DataAnalysis에서 통계 데이터 전달 실패');
-      console.log('❌ onStatsUpdate 존재:', !!onStatsUpdate);
-      console.log('❌ currentStats 존재:', !!currentStats);
+      // console.log('❌ DataAnalysis에서 통계 데이터 전달 실패');
+      // console.log('❌ onStatsUpdate 존재:', !!onStatsUpdate);
+      // console.log('❌ currentStats 존재:', !!currentStats);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStats, activeTab]); // onStatsUpdate는 의도적으로 제외

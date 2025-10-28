@@ -85,9 +85,9 @@ const InvestorResidence = ({ data, total }) => {
     })
     .sort((a, b) => b.count - a.count); // 내림차순 정렬 (모든 데이터 표시)
 
-  console.log('🏠 투자자 거주지역 데이터:', residenceData);
-  console.log('🏠 원본 데이터:', data);
-  console.log('🏠 총 인원:', total);
+  // console.log('🏠 투자자 거주지역 데이터:', residenceData);
+  // console.log('🏠 원본 데이터:', data);
+  // console.log('🏠 총 인원:', total);
 
   // 데이터가 없을 때 처리
   if (!residenceData || residenceData.length === 0) {

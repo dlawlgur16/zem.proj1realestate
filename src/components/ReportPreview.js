@@ -1,10 +1,10 @@
 import React from 'react';
 
 export default function ReportPreview({ reportContent, onClose, onDownload }) {
-  console.log('📄 ReportPreview 렌더링:', {
-    reportContent: reportContent ? reportContent.substring(0, 100) + '...' : '없음',
-    reportContentLength: reportContent ? reportContent.length : 0
-  });
+  // console.log('📄 ReportPreview 렌더링:', {
+  //   reportContent: reportContent ? reportContent.substring(0, 100) + '...' : '없음',
+  //   reportContentLength: reportContent ? reportContent.length : 0
+  // });
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
