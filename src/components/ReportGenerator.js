@@ -65,14 +65,14 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
     // 통계 데이터 체크
     if (!statsData || !statsData[activeTab]) {
       alert('⚠️ 통계 데이터가 없습니다.\n먼저 데이터 분석을 완료해주세요.');
-      console.error('통계 데이터 없음:', statsData);
+    // console.error('통계 데이터 없음:', statsData);
       return;
     }
     
     // API 키 체크
     if (!GEMINI_API_KEY) {
       alert('⚠️ API 키가 설정되지 않았습니다.\n.env 파일에 REACT_APP_GEMINI_API_KEY를 설정해주세요.');
-      console.error('환경변수 REACT_APP_GEMINI_API_KEY가 설정되지 않았습니다.');
+      // console.error('환경변수 REACT_APP_GEMINI_API_KEY가 설정되지 않았습니다.');
       return;
     }
     
@@ -103,7 +103,7 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
       setShowReport(true);
       // console.log('📄 showReport 상태 변경:', true);
     } catch (error) {
-      console.error('보고서 생성 실패:', error);
+      // console.error('보고서 생성 실패:', error);
       
       // 에러 메시지 개선
       let errorMessage = '보고서 생성 중 오류가 발생했습니다.';
@@ -153,7 +153,7 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
             <div className="mt-4 flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
                 <span>⚡</span>
-                <span>약 3-5초 소요</span>
+                <span>약 30초 소요</span>
               </div>
               <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
                 <span>📊</span>

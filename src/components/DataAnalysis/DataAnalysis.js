@@ -211,8 +211,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // 투자자 거주지역 분석 (거주형태가 '투자'인 경우만) - 시/도 단위
     const investorResidence = {};
     let investorCount = 0; // 투자자 수 카운트
-    let addressFoundCount = 0; // 주소가 있는 투자자 수
-    let cityExtractedCount = 0; // 시/도가 추출된 투자자 수
     
     data.forEach(row => {
       if (row['거주형태'] === '투자') {
@@ -220,39 +218,27 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         const address = row['소유자_주소'];
         
         if (address) {
-          addressFoundCount++;
           // 주소에서 시/도 추출 (더 포괄적인 패턴 + 해외 지역)
           const cityMatch = address.match(/(서울특별시|서울시|부산광역시|부산시|대구광역시|대구시|인천광역시|인천시|광주광역시|광주시|대전광역시|대전시|울산광역시|울산시|세종특별자치시|세종시|경기도|강원도|강원특별자치도|충청북도|충북|충청남도|충남|전라북도|전북|전라남도|전남|경상북도|경북|경상남도|경남|제주특별자치도|제주도|미국|중국|일본|베트남|태국|필리핀|인도네시아|말레이시아|싱가포르|홍콩|대만|캐나다|호주|뉴질랜드|영국|독일|프랑스|이탈리아|스페인|러시아|브라질|멕시코|아르헨티나|칠레|콜롬비아|페루|에콰도르|볼리비아|파라과이|우루과이|베네수엘라|가이아나|수리남|프랑스령 기아나)/);
           
           if (cityMatch) {
-            cityExtractedCount++;
             const city = cityMatch[1];
             investorResidence[city] = (investorResidence[city] || 0) + 1;
           } else {
             // 주소는 있지만 시/도 추출 실패한 경우 - "기타"로 분류
             investorResidence['기타'] = (investorResidence['기타'] || 0) + 1;
-            cityExtractedCount++;
           }
         } else {
           // 주소가 없는 경우 - "정보없음"으로 분류
           investorResidence['정보없음'] = (investorResidence['정보없음'] || 0) + 1;
-          cityExtractedCount++;
         }
       }
     });
     
-    // console.log('🏠 투자자 거주지역 분석 결과:');
-    // console.log('🏠 총 투자자 수:', investorCount);
-    // console.log('🏠 주소가 있는 투자자 수:', addressFoundCount);
-    // console.log('🏠 시/도가 추출된 투자자 수:', cityExtractedCount);
-    // console.log('🏠 거주지역 분포:', investorResidence);
+    
 
     // 대출금액대별 분포
     const loanAmountGroups = {};
-    let loanDataCount = 0;
-    
-    // CSV 컬럼명 확인
-    // console.log('💰 CSV 컬럼명 확인:', Object.keys(data[0] || {}));
     
     data.forEach(row => {
       // 근저당금액 컬럼 사용
@@ -261,7 +247,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       if (loanAmount) {
         const amount = parseFloat(loanAmount);
         if (!isNaN(amount) && amount > 0) {
-          loanDataCount++;
           let amountGroup;
           if (amount < 100000000) amountGroup = '1억 미만';
           else if (amount < 200000000) amountGroup = '1억대';
@@ -280,10 +265,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
     
-    // console.log('💰 근저당 데이터 분석:');
-    // console.log('💰 총 데이터 수:', data.length);
-    // console.log('💰 근저당 데이터가 있는 행 수:', loanDataCount);
-    // console.log('💰 근저당 금액대별 분포:', loanAmountGroups);
+    
 
     // 대출 여부 비율 (근저당금액 컬럼 사용)
     const loanCount = data.filter(row => {

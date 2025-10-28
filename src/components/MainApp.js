@@ -58,17 +58,6 @@ const MainApp = () => {
   // 디버깅 로그 (필요시에만)
   // console.log('MainApp statsData:', statsData);
 
-  const handleDataLoad = (data) => {
-    setCsvData(data);
-    setError(null);
-    setCurrentStep('analysis');
-    setStatsData(null); // 새로운 데이터 로드 시 통계 초기화
-  };
-
-  const handleError = (errorMessage) => {
-    setError(errorMessage);
-  };
-
   const handleReportGenerated = (report) => {
     setCurrentStep('report');
   };
