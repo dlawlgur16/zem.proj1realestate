@@ -309,6 +309,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // 연령대별 인사이트 계산
     console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
     console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', data[0]);
+    console.log('🔍 생년월일 값 확인:', data.map(d => d['생년월일']).filter(v => v).slice(0, 5));
     const ageInsights = calculateAgeInsights(data);
     console.log('📊 연령대별 인사이트:', ageInsights);
     console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
@@ -375,42 +376,80 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
   // 나이대별 필터링 함수 (주민번호 기반)
   const filterByAge = (data, ageGroup) => {
+
     if (ageGroup === '전체') return data;
-    
+
     const filtered = data.filter(row => {
-      const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
-      if (!residentNumber || residentNumber.length < 7) return false;
-      
-      try {
-        const birthYear = parseInt(residentNumber.substring(0, 2));
-        const currentYear = new Date().getFullYear();
-        let fullBirthYear;
-        
-        if (birthYear <= 30) {
-          fullBirthYear = 2000 + birthYear;
-        } else {
-          fullBirthYear = 1900 + birthYear;
-        }
-        
-        const age = currentYear - fullBirthYear;
-        
-        switch (ageGroup) {
-          case '20대이하': return age >= 0 && age < 20;
-          case '20대': return age >= 20 && age < 30;
-          case '30대': return age >= 30 && age < 40;
-          case '40대': return age >= 40 && age < 50;
-          case '50대': return age >= 50 && age < 60;
-          case '60대': return age >= 60 && age < 70;
-          case '70대': return age >= 70 && age < 80;
-          case '80대': return age >= 80 && age < 90;
-          case '90대이상': return age >= 90;
-          default: return true;
-        }
-      } catch (error) {
-        console.error('나이대 필터링 오류:', error, residentNumber);
-        return false;
+    let birthRaw = row['생년월일'];
+    if (!birthRaw) return false;
+
+    // ✅ 정규식으로 주민번호 앞 6자리 추출
+    const match = birthRaw.match(/(\d{6})/);
+    if (!match) return false;
+    const birthDate = match[1]; // 예: "110111"
+
+    try {
+      const birthYear = parseInt(birthDate.substring(0, 2));
+      const currentYear = new Date().getFullYear();
+      const fullBirthYear = birthYear <= 30 ? 2000 + birthYear : 1900 + birthYear;
+      const age = currentYear - fullBirthYear;
+
+      switch (ageGroup) {
+        case '10대': return age < 20;
+        case '20대': return age >= 20 && age < 30;
+        case '30대': return age >= 30 && age < 40;
+        case '40대': return age >= 40 && age < 50;
+        case '50대': return age >= 50 && age < 60;
+        case '60대': return age >= 60 && age < 70;
+        case '70대': return age >= 70 && age < 80;
+        case '80대': return age >= 80 && age < 90;
+        case '90대': return age >= 90;
+        default: return false;
       }
-    });
+    } catch (error) {
+      console.error('나이대 필터링 오류:', error, birthRaw);
+      return false;
+    }
+  });
+
+  console.log(`🧮 나이대 필터링 완료: ${ageGroup}, 원본 ${data.length} → 결과 ${filtered.length}`);
+  
+    // if (ageGroup === '전체') return data;
+    
+    // const filtered = data.filter(row => {
+    //   const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
+    //   if (!residentNumber || residentNumber.length < 7) return false;
+      
+    //   try {
+    //     const birthYear = parseInt(residentNumber.substring(0, 2));
+    //     const currentYear = new Date().getFullYear();
+    //     let fullBirthYear;
+        
+    //     if (birthYear <= 30) {
+    //       fullBirthYear = 2000 + birthYear;
+    //     } else {
+    //       fullBirthYear = 1900 + birthYear;
+    //     }
+        
+    //     const age = currentYear - fullBirthYear;
+        
+    //     switch (ageGroup) {
+    //       case '20대이하': return age >= 0 && age < 20;
+    //       case '20대': return age >= 20 && age < 30;
+    //       case '30대': return age >= 30 && age < 40;
+    //       case '40대': return age >= 40 && age < 50;
+    //       case '50대': return age >= 50 && age < 60;
+    //       case '60대': return age >= 60 && age < 70;
+    //       case '70대': return age >= 70 && age < 80;
+    //       case '80대': return age >= 80 && age < 90;
+    //       case '90대이상': return age >= 90;
+    //       default: return true;
+    //     }
+    //   } catch (error) {
+    //     console.error('나이대 필터링 오류:', error, residentNumber);
+    //     return false;
+    //   }
+    // });
     
     // console.log(`나이대 필터링: ${ageGroup}, 원본: ${data.length}, 필터링 후: ${filtered.length}`);
     return filtered;
