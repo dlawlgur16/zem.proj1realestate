@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const dataRoutes = require('./routes/data');
-const reportRoutes = require('./routes/report');
 const processedDataRoutes = require('./routes/processedData');
 const AutoPreprocessor = require('./services/autoPreprocessor');
 
@@ -26,8 +24,6 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 라우트
-app.use('/api/data', dataRoutes);
-app.use('/api', reportRoutes);
 app.use('/api/processed', processedDataRoutes);
 
 // 헬스 체크
