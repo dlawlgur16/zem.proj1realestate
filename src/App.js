@@ -5,10 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import ProjectIndex from './pages/ProjectIndex';
 
-const basename =
-  process.env.NODE_ENV === 'production'
-    ? '/zem.proj1realestate'  // GitHub Pages 배포용
-    : '/';  // 로컬 개발용
+const basename = process.env.REACT_APP_BASENAME || '/';
 
 function App() {
   return (
