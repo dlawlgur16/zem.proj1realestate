@@ -112,16 +112,12 @@ const MainApp = () => {
           </div>
         </div>
         <div className="main-app__steps">
-          <div className={`main-app__step ${currentStep === 'upload' ? 'main-app__step--active' : ''}`}>
-            <div className="main-app__step-number">1</div>
-            <div className="main-app__step-label">데이터 업로드</div>
-          </div>
           <div className={`main-app__step ${currentStep === 'analysis' ? 'main-app__step--active' : ''}`}>
-            <div className="main-app__step-number">2</div>
+            <div className="main-app__step-number">1</div>
             <div className="main-app__step-label">데이터 분석</div>
           </div>
           <div className={`main-app__step ${currentStep === 'report' ? 'main-app__step--active' : ''}`}>
-            <div className="main-app__step-number">3</div>
+            <div className="main-app__step-number">2</div>
             <div className="main-app__step-label">리포트 생성</div>
           </div>
         </div>
@@ -221,15 +217,6 @@ const MainApp = () => {
             className="main-app__nav-button main-app__nav-button--secondary"
           >
             분석으로 돌아가기
-          </button>
-        )}
-
-        {csvData && (
-          <button
-            onClick={resetApp}
-            className="main-app__nav-button main-app__nav-button--secondary"
-          >
-            새 데이터 업로드
           </button>
         )}
       </div>
