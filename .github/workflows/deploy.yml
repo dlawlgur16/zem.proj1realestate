@@ -33,7 +33,7 @@ jobs:
       - name: Build
         run: |
           echo "HOMEPAGE=https://dlawlgur16.github.io/zem.proj1realestate" >> .env
-          REACT_APP_BASENAME=/zem.proj1realestate npm run build
+          npm run build
         
       - name: Check build files
         run: |
