@@ -23,7 +23,10 @@
     "eject": "react-scripts eject",
     "update-files": "node scripts/update-file-list.js",
     "dev": "npm run update-files && react-scripts start",
-    "postbuild": "cp build/index.html build/404.html"
+    "postbuild": "cp build/index.html build/404.html",
+    "preprocess": "node scripts/preprocess.js",
+    "copy-data": "node scripts/copy-processed-data.js",
+    "prepare-data": "npm run preprocess && npm run copy-data"
   },
   "eslintConfig": {
     "extends": [

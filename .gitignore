@@ -42,3 +42,6 @@ pids
 
 # OS generated files
 Thumbs.db
+
+# Include processed data for static deployment
+!public/processed-data/

@@ -24,24 +24,13 @@ const ProjectIndex = () => {
       // 정적 프로젝트들 로드
       let projects = [...staticProjects];
       
-      // 전처리된 데이터 목록 가져오기
+      // 전처리된 데이터 목록 가져오기 (정적 파일에서)
       try {
-        const response = await fetch('http://localhost:5000/api/processed');
+        const response = await fetch('/processed-projects.json');
         if (response.ok) {
-          const processedList = await response.json();
+          const processedProjects = await response.json();
           
-          if (processedList.data && processedList.data.length > 0) {
-            // 각 전처리된 파일을 개별 프로젝트로 추가
-            const processedProjects = processedList.data.map((dataItem, index) => ({
-              id: `processed-${index}`,
-              name: dataItem.name || `전처리된 데이터 ${index + 1}`,
-              address: '자동 전처리 시스템',
-              type: 'processed',
-              dataFile: `http://localhost:5000/api/processed/${dataItem.id}`,
-              image: process.env.PUBLIC_URL + '/image/img_chart-02.jpg',
-              description: `${dataItem.name || dataItem.id} 전처리된 데이터`
-            }));
-            
+          if (processedProjects && processedProjects.length > 0) {
             projects = [...projects, ...processedProjects];
             console.log('📊 전처리된 프로젝트 추가:', processedProjects.length);
           }

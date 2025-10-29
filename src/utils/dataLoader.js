@@ -45,23 +45,35 @@ export const loadStaticProjectData = async (dataFile) => {
 };
 
 /**
- * 전처리된 프로젝트 데이터 로드 (백엔드 API에서 로드)
+ * 전처리된 프로젝트 데이터 로드 (정적 파일에서 CSV 로드)
  */
 export const loadProcessedProjectData = async (dataFile) => {
   try {
     console.log('🤖 전처리된 프로젝트 데이터 로드:', dataFile);
     
-    // 특정 전처리된 데이터 파일 직접 요청
-    const dataResponse = await fetch(dataFile);
-    if (!dataResponse.ok) {
+    const response = await fetch(dataFile);
+    if (!response.ok) {
       throw new Error(`전처리된 데이터를 가져올 수 없습니다: ${dataFile}`);
     }
     
-    const processedData = await dataResponse.json();
-    console.log('✅ 전처리된 데이터 로드 완료:', processedData.data.length, '행');
-    console.log('🔍 전처리된 데이터 미리보기:', processedData.data.slice(0, 3));
+    const csvText = await response.text();
     
-    return processedData.data;
+    return new Promise((resolve, reject) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          console.log('✅ 전처리된 데이터 로드 완료:', results.data.length, '행');
+          console.log('🔍 전처리된 데이터 미리보기:', results.data.slice(0, 3));
+          console.log('🔍 CSV 파싱 에러:', results.errors);
+          resolve(results.data);
+        },
+        error: (error) => {
+          console.error('❌ 전처리된 데이터 파싱 실패:', error);
+          reject(error);
+        }
+      });
+    });
   } catch (error) {
     console.error('❌ 전처리된 프로젝트 데이터 로드 실패:', error);
     throw error;

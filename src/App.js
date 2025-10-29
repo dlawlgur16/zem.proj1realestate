@@ -5,14 +5,14 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import ProjectIndex from './pages/ProjectIndex';
 
-// const basename =
-//   process.env.NODE_ENV === 'production'
-//     ? '/zem.proj1realestate'  // ✅ 직접 지정
-//     : '/';
+const basename =
+  process.env.NODE_ENV === 'production'
+    ? '/zem.proj1realestate'  // GitHub Pages 배포용
+    : '/';  // 로컬 개발용
 
 function App() {
   return (
-    <Router basename="/zem.proj1realestate">
+    <Router basename={basename}>
       <div className="App">
         <Routes>
           <Route path="/" element={<Login />} />

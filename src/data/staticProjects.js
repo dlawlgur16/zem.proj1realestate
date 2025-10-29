@@ -4,15 +4,7 @@
  */
 
 export const staticProjects = [
-  {
-    id: 'processed-data',
-    name: '전처리된 데이터',
-    address: '자동 전처리 시스템',
-    type: 'processed',
-    dataFile: 'http://localhost:5000/api/processed',
-    image: process.env.PUBLIC_URL + '/image/img_chart-02.jpg',
-    description: '백엔드에서 자동으로 전처리된 데이터'
-  }
+  // 더미 프로젝트 제거 - 이제 processed-projects.json에서 동적으로 로드
 ];
 
 /**
