@@ -66,8 +66,9 @@ async function copyProcessedData() {
         name: cleanName,
         address: address,
         type: 'processed',
-        dataFile: `/processed-data/${file}`,
-        image: '/image/img_chart-02.jpg'
+        // 빌드 시 PUBLIC_URL 기준으로 안전하게 접근하도록 상대 경로 저장
+        dataFile: `processed-data/${file}`,
+        image: 'image/img_chart-02.jpg'
       });
     }
     

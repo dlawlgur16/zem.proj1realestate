@@ -8,10 +8,20 @@ import Papa from 'papaparse';
 /**
  * 정적 프로젝트 데이터 로드 (서버에서 CSV 파일 로드)
  */
+const resolveAssetUrl = (pathOrUrl) => {
+  if (!pathOrUrl) return pathOrUrl;
+  // 이미 절대 URL이면 그대로 사용
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = process.env.PUBLIC_URL || '';
+  // 선행 슬래시 유무에 관계없이 PUBLIC_URL 기준으로 정규화
+  const suffix = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
+  return `${base}${suffix}`;
+};
+
 export const loadStaticProjectData = async (dataFile) => {
   try {
     console.log('📁 정적 프로젝트 데이터 로드:', dataFile);
-    const response = await fetch(dataFile);
+    const response = await fetch(resolveAssetUrl(dataFile));
     
     if (!response.ok) {
       throw new Error(`파일을 찾을 수 없습니다: ${dataFile}`);
@@ -51,7 +61,7 @@ export const loadProcessedProjectData = async (dataFile) => {
   try {
     console.log('🤖 전처리된 프로젝트 데이터 로드:', dataFile);
     
-    const response = await fetch(dataFile);
+    const response = await fetch(resolveAssetUrl(dataFile));
     if (!response.ok) {
       throw new Error(`전처리된 데이터를 가져올 수 없습니다: ${dataFile}`);
     }

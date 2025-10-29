@@ -1,0 +1,59 @@
+name: Deploy to User Site (dlawlgur16.github.io)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Configure env for user site
+        run: |
+          echo "REACT_APP_BASENAME=/" >> $GITHUB_ENV
+          echo "PUBLIC_URL=https://dlawlgur16.github.io" >> $GITHUB_ENV
+
+      - name: Export Gemini key (optional)
+        run: |
+          if [ -n "${{ secrets.REACT_APP_GEMINI_API_KEY }}" ]; then
+            echo "REACT_APP_GEMINI_API_KEY=${{ secrets.REACT_APP_GEMINI_API_KEY }}" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare data (preprocess & copy)
+        run: npm run prepare-data
+
+      - name: Build
+        run: npm run build
+
+      - name: Check build
+        run: ls -la build/
+
+      - name: Publish to dlawlgur16.github.io
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.GH_PAT }}
+          external_repository: dlawlgur16/dlawlgur16.github.io
+          publish_branch: main
+          publish_dir: ./build
+          keep_files: true
+          commit_message: "deploy: zem.proj1realestate → user site"
+

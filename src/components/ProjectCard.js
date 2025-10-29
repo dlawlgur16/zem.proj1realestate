@@ -18,11 +18,19 @@ const ProjectCard = ({ project, onSelect, onDelete }) => {
     }
   };
 
+  const resolveImageSrc = (src) => {
+    if (!src) return src;
+    if (/^https?:\/\//i.test(src)) return src;
+    const base = process.env.PUBLIC_URL || '';
+    const suffix = src.startsWith('/') ? src : `/${src}`;
+    return `${base}${suffix}`;
+  };
+
   return (
     <div className="project-card" onClick={handleClick}>
       <div className="project-card-image">
         <img 
-          src={project.image} 
+          src={resolveImageSrc(project.image)} 
           alt={project.name}
           onError={(e) => {
             console.error('이미지 로드 실패:', project.image);
