@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainApp from './components/MainApp';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -15,7 +15,7 @@ function App() {
     <Router basename={basename}>
       <div className="App">
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Navigate to="/app" replace />} />
           <Route path="/app" element={<ProtectedRoute />}>
             <Route index element={<ProjectIndex />} />
           </Route>
