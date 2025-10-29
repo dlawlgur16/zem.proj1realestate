@@ -8,9 +8,8 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-// 백엔드 폴더의 node_modules에서 xlsx 모듈 로드
-const xlsxPath = path.join(__dirname, '../backend/node_modules/xlsx');
-const XLSX = require(xlsxPath);
+// 루트 node_modules의 xlsx 모듈 사용
+const XLSX = require('xlsx');
 
 // 경로 설정
 const inputDir = path.join(__dirname, '../backend/input-data');

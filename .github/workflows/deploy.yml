@@ -26,10 +26,29 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+
+      - name: Configure environment
+        run: |
+          echo "REACT_APP_BASENAME=/${{ github.event.repository.name }}" >> $GITHUB_ENV
+          echo "PUBLIC_URL=https://${{ github.actor }}.github.io/${{ github.event.repository.name }}" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Export secrets
+        run: |
+          if [ -n "${{ secrets.REACT_APP_GEMINI_API_KEY }}" ]; then
+            echo "REACT_APP_GEMINI_API_KEY=${{ secrets.REACT_APP_GEMINI_API_KEY }}" >> $GITHUB_ENV
+            echo "✅ Gemini API key exported"
+          else
+            echo "⚠️ REACT_APP_GEMINI_API_KEY secret not found; skipping export"
+          fi
           
       - name: Install dependencies
         run: npm install
         
+      - name: Prepare data (preprocess & copy)
+        run: npm run prepare-data
+
       - name: Build
         run: npm run build
         
