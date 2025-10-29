@@ -33,6 +33,15 @@ jobs:
       - name: Build
         run: npm run build
         
+      - name: Check build files
+        run: |
+          echo "Build directory contents:"
+          ls -la build/
+          echo "Processed data files:"
+          ls -la build/processed-data/ || echo "No processed-data directory"
+          echo "Processed projects JSON:"
+          cat build/processed-projects.json || echo "No processed-projects.json"
+        
       - name: Setup Pages
         uses: actions/configure-pages@v4
         

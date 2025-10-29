@@ -26,7 +26,7 @@ const ProjectIndex = () => {
       
       // 전처리된 데이터 목록 가져오기 (정적 파일에서)
       try {
-        const response = await fetch('/processed-projects.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/processed-projects.json`);
         if (response.ok) {
           const processedProjects = await response.json();
           
