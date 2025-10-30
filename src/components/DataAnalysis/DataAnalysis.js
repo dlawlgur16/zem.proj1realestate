@@ -69,26 +69,44 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const calculateStats = (data) => {
     const total = data.length;
     
-    // 나이대별 분포 (생년월일 분석)
+    // 나이대별 분포 (연령대 컬럼 또는 생년월일 분석)
     const ageGroups = {};
-    data.forEach(row => {
-      const birthDate = row['생년월일'];
-      if (birthDate && birthDate.length >= 6) {
-        try {
-          const birthYear = parseInt(birthDate.substring(0, 2));
-          const currentYear = new Date().getFullYear();
-          let fullBirthYear;
-          
-          // 2000년대 출생자 구분
-          if (birthYear <= 30) {
-            fullBirthYear = 2000 + birthYear;
-          } else {
-            fullBirthYear = 1900 + birthYear;
+    const hasAgeBand = data.some(row => row['연령대']);
+    if (hasAgeBand) {
+      data.forEach(row => {
+        const bandRaw = (row['연령대'] || '').trim();
+        if (!bandRaw) return;
+        const normalized = bandRaw.replace('이상', '').replace('이하', '');
+        ageGroups[normalized] = (ageGroups[normalized] || 0) + 1;
+      });
+    } else {
+      data.forEach(row => {
+        const birthRaw = (row['생년월일'] ?? '').toString().trim();
+        // 특수 표기 처리: 사업자/법인은 모두 '법인'으로 통일
+        if (/사업자/.test(birthRaw)) {
+          ageGroups['법인'] = (ageGroups['법인'] || 0) + 1;
+          return;
+        }
+        if (/법인|\d{3}-\d{2}-\d{5}/.test(birthRaw)) {
+          ageGroups['법인'] = (ageGroups['법인'] || 0) + 1;
+          return;
+        }
+        // 입력은 주민번호 앞 6자리만 제공된다고 가정 → 여기서만 판별
+        const m = birthRaw.match(/(\d{6})/);
+        if (!m) {
+          if (birthRaw) {
+            ageGroups['미분류'] = (ageGroups['미분류'] || 0) + 1;
           }
-          
+          return;
+        }
+        try {
+          const birth6 = m[1];
+          const birthYear = parseInt(birth6.substring(0, 2), 10);
+          const currentYear = new Date().getFullYear();
+          // 세기 판별 휴리스틱: YY <= 24 → 2000년대, 그 외 1900년대
+          const fullBirthYear = birthYear <= 24 ? 2000 + birthYear : 1900 + birthYear;
           const age = currentYear - fullBirthYear;
           let ageGroup;
-          
           if (age < 20) ageGroup = '10대';
           else if (age < 30) ageGroup = '20대';
           else if (age < 40) ageGroup = '30대';
@@ -98,13 +116,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           else if (age < 80) ageGroup = '70대';
           else if (age < 90) ageGroup = '80대';
           else ageGroup = '90대';
-          
           ageGroups[ageGroup] = (ageGroups[ageGroup] || 0) + 1;
-        } catch (error) {
-          console.error('생년월일 분석 오류:', error, birthDate);
+        } catch (e) {
+          ageGroups['미분류'] = (ageGroups['미분류'] || 0) + 1;
         }
-      }
-    });
+      });
+    }
 
     // 성별 분포 (주민번호 분석)
     const genderGroups = {};
@@ -208,28 +225,67 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
 
-    // 투자자 거주지역 분석 (거주형태가 '투자'인 경우만) - 시/도 단위
+    // 투자자 거주지역 분석 (거주형태가 '투자'인 경우만) - 시/도/해외 단위
     const investorResidence = {};
     let investorCount = 0; // 투자자 수 카운트
-    
+
+    const normalizeForeign = (text) => {
+      const t = (text || '').toString().toLowerCase();
+      if (/usa|u\.?s\.?a\.?|united states/.test(t)) return '미국';
+      if (/china/.test(t)) return '중국';
+      if (/japan/.test(t)) return '일본';
+      if (/australia/.test(t)) return '호주';
+      if (/canada/.test(t)) return '캐나다';
+      if (/vietnam/.test(t)) return '베트남';
+      if (/thailand/.test(t)) return '태국';
+      if (/philippine/.test(t)) return '필리핀';
+      if (/singapore/.test(t)) return '싱가포르';
+      if (/hong\s*kong/.test(t)) return '홍콩';
+      if (/taiwan/.test(t)) return '대만';
+      if (/united\s*kingdom|u\.?k\.?|england|great\s*britain/.test(t)) return '영국';
+      if (/germany/.test(t)) return '독일';
+      if (/france/.test(t)) return '프랑스';
+      if (/italy/.test(t)) return '이탈리아';
+      if (/spain/.test(t)) return '스페인';
+      if (/russia/.test(t)) return '러시아';
+      if (/brazil/.test(t)) return '브라질';
+      if (/mexico/.test(t)) return '멕시코';
+      if (/argentina/.test(t)) return '아르헨티나';
+      if (/chile/.test(t)) return '칠레';
+      if (/colombia/.test(t)) return '콜롬비아';
+      if (/peru/.test(t)) return '페루';
+      if (/ecuador/.test(t)) return '에콰도르';
+      if (/bolivia/.test(t)) return '볼리비아';
+      if (/paraguay/.test(t)) return '파라과이';
+      if (/uruguay/.test(t)) return '우루과이';
+      if (/venezuela/.test(t)) return '베네수엘라';
+      if (/guyana/.test(t)) return '가이아나';
+      if (/suriname/.test(t)) return '수리남';
+      return null;
+    };
+
     data.forEach(row => {
       if (row['거주형태'] === '투자') {
         investorCount++;
-        const address = row['소유자_주소'];
-        
-        if (address) {
-          // 주소에서 시/도 추출 (더 포괄적인 패턴 + 해외 지역)
-          const cityMatch = address.match(/(서울특별시|서울시|부산광역시|부산시|대구광역시|대구시|인천광역시|인천시|광주광역시|광주시|대전광역시|대전시|울산광역시|울산시|세종특별자치시|세종시|경기도|강원도|강원특별자치도|충청북도|충북|충청남도|충남|전라북도|전북|전라남도|전남|경상북도|경북|경상남도|경남|제주특별자치도|제주도|미국|중국|일본|베트남|태국|필리핀|인도네시아|말레이시아|싱가포르|홍콩|대만|캐나다|호주|뉴질랜드|영국|독일|프랑스|이탈리아|스페인|러시아|브라질|멕시코|아르헨티나|칠레|콜롬비아|페루|에콰도르|볼리비아|파라과이|우루과이|베네수엘라|가이아나|수리남|프랑스령 기아나)/);
-          
-          if (cityMatch) {
-            const city = cityMatch[1];
-            investorResidence[city] = (investorResidence[city] || 0) + 1;
+        const regionSource = row['소유자_주소'] || row['투자자거주지역'] || '';
+
+        if (regionSource) {
+          // 1) 국내 시/도 한글 매칭
+          const cityMatch = regionSource.match(/(서울특별시|서울시|부산광역시|부산시|대구광역시|대구시|인천광역시|인천시|광주광역시|광주시|대전광역시|대전시|울산광역시|울산시|세종특별자치시|세종시|경기도|강원도|강원특별자치도|충청북도|충북|충청남도|충남|전라북도|전북|전라남도|전남|경상북도|경북|경상남도|경남|제주특별자치도|제주도|미국|중국|일본|베트남|태국|필리핀|인도네시아|말레이시아|싱가포르|홍콩|대만|캐나다|호주|뉴질랜드|영국|독일|프랑스|이탈리아|스페인|러시아|브라질|멕시코|아르헨티나|칠레|콜롬비아|페루|에콰도르|볼리비아|파라과이|우루과이|베네수엘라|가이아나|수리남|프랑스령 기아나)/);
+          let region = cityMatch ? cityMatch[1] : null;
+
+          // 2) 영문 해외 표기 보정
+          if (!region) {
+            const foreign = normalizeForeign(regionSource);
+            if (foreign) region = foreign;
+          }
+
+          if (region) {
+            investorResidence[region] = (investorResidence[region] || 0) + 1;
           } else {
-            // 주소는 있지만 시/도 추출 실패한 경우 - "기타"로 분류
             investorResidence['기타'] = (investorResidence['기타'] || 0) + 1;
           }
         } else {
-          // 주소가 없는 경우 - "정보없음"으로 분류
           investorResidence['정보없음'] = (investorResidence['정보없음'] || 0) + 1;
         }
       }
@@ -316,8 +372,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // console.log('📊 연령대별 인사이트:', ageInsights);
     // console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
-    // 사용 가능한 나이대 목록 생성
-    const availableAgeGroups = ['전체', ...Object.keys(ageGroups).sort()];
+    // 사용 가능한 나이대 목록 생성 (탭에서는 '미분류', '법인' 제외)
+    const availableAgeGroups = ['전체', ...Object.keys(ageGroups)
+      .filter(key => key !== '미분류' && key !== '법인')
+      .sort()];
 
     return {
       total,

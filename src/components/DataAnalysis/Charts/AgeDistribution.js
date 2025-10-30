@@ -10,6 +10,7 @@ const AgeDistribution = ({ data, total }) => {
       percentage: total > 0 ? ((count / total) * 100).toFixed(1) : 0
     }))
     .sort((a, b) => {
+      // '사업자'는 '법인'으로 통일
       const order = ['미성년', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대', '90대 이상', '미분류', '법인'];
       return order.indexOf(a.range) - order.indexOf(b.range);
     });
