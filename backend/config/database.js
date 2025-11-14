@@ -8,11 +8,20 @@ const { Pool } = require('pg');
 const path = require('path');
 
 // 환경 변수에서 DB 연결 정보 가져오기
-// estate-registry-et1/.env 파일의 DATABASE_URL 사용
+// Vercel 환경에서는 process.env.DATABASE_URL을 직접 사용
 let DATABASE_URL = process.env.DATABASE_URL;
 
+// 디버깅: DATABASE_URL 확인 (비밀번호는 마스킹)
+if (DATABASE_URL) {
+  const maskedUrl = DATABASE_URL.replace(/:[^:@]+@/, ':****@');
+  console.log('📡 DATABASE_URL 발견:', maskedUrl.substring(0, 50) + '...');
+} else {
+  console.warn('⚠️ process.env.DATABASE_URL이 설정되지 않았습니다.');
+}
+
 // .env 파일이 없거나 DATABASE_URL이 없으면 estate-registry-et1 폴더의 .env에서 읽기 시도
-if (!DATABASE_URL) {
+// (로컬 개발 환경에서만)
+if (!DATABASE_URL && process.env.NODE_ENV !== 'production') {
   try {
     const fs = require('fs');
     const estateEnvPath = path.join(__dirname, '../../estate-registry-et1/.env');
@@ -30,17 +39,33 @@ if (!DATABASE_URL) {
 }
 
 if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL 환경 변수가 설정되지 않았습니다.\nbackend/.env 또는 estate-registry-et1/.env 파일에 DATABASE_URL을 설정해주세요.');
+  const errorMsg = 'DATABASE_URL 환경 변수가 설정되지 않았습니다.\n' +
+    'Vercel Dashboard에서 환경 변수를 설정해주세요:\n' +
+    'https://vercel.com/jis-projects-55d8fd7d/backend/settings/environment-variables';
+  console.error('❌', errorMsg);
+  throw new Error(errorMsg);
+}
+
+// DATABASE_URL 유효성 검사
+if (typeof DATABASE_URL !== 'string' || DATABASE_URL.trim() === '') {
+  throw new Error('DATABASE_URL이 유효하지 않습니다. 문자열이어야 합니다.');
 }
 
 // PostgreSQL 연결 풀 생성
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: DATABASE_URL.includes('supabase') ? { rejectUnauthorized: false } : false,
-  max: 20, // 최대 연결 수
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+let pool;
+try {
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL.includes('supabase') || DATABASE_URL.includes('postgres') ? { rejectUnauthorized: false } : false,
+    max: 20, // 최대 연결 수
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000, // 타임아웃 증가
+  });
+  console.log('✅ PostgreSQL 연결 풀 생성 완료');
+} catch (error) {
+  console.error('❌ PostgreSQL 연결 풀 생성 실패:', error.message);
+  throw error;
+}
 
 // 연결 테스트
 pool.on('connect', () => {
