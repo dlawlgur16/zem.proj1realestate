@@ -65,16 +65,32 @@ if (!DATABASE_URL) {
 }
 
 // DATABASE_URL 유효성 검사
-if (typeof DATABASE_URL !== 'string' || DATABASE_URL.trim() === '') {
-  throw new Error('DATABASE_URL이 유효하지 않습니다. 문자열이어야 합니다.');
+if (typeof DATABASE_URL !== 'string') {
+  console.error('❌ DATABASE_URL 타입 오류:', typeof DATABASE_URL, DATABASE_URL);
+  throw new Error(`DATABASE_URL이 유효하지 않습니다. 문자열이어야 하는데 ${typeof DATABASE_URL} 타입입니다.`);
+}
+
+if (DATABASE_URL.trim() === '') {
+  console.error('❌ DATABASE_URL이 빈 문자열입니다.');
+  throw new Error('DATABASE_URL이 빈 문자열입니다.');
+}
+
+// DATABASE_URL 형식 검사 (postgresql://로 시작해야 함)
+if (!DATABASE_URL.startsWith('postgresql://') && !DATABASE_URL.startsWith('postgres://')) {
+  console.error('❌ DATABASE_URL 형식 오류:', DATABASE_URL.substring(0, 50));
+  throw new Error('DATABASE_URL은 postgresql:// 또는 postgres://로 시작해야 합니다.');
 }
 
 // PostgreSQL 연결 풀 생성
 let pool;
 try {
+  console.log('🔧 PostgreSQL 연결 풀 생성 시도...');
+  console.log('📝 connectionString 길이:', DATABASE_URL.length);
+  console.log('📝 connectionString 시작:', DATABASE_URL.substring(0, 30) + '...');
+  
   pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: DATABASE_URL.includes('supabase') || DATABASE_URL.includes('postgres') ? { rejectUnauthorized: false } : false,
+    connectionString: DATABASE_URL.trim(), // 공백 제거
+    ssl: (DATABASE_URL.includes('supabase') || DATABASE_URL.includes('postgres')) ? { rejectUnauthorized: false } : false,
     max: 20, // 최대 연결 수
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000, // 타임아웃 증가
@@ -82,7 +98,8 @@ try {
   console.log('✅ PostgreSQL 연결 풀 생성 완료');
 } catch (error) {
   console.error('❌ PostgreSQL 연결 풀 생성 실패:', error.message);
-  throw error;
+  console.error('❌ 에러 스택:', error.stack);
+  throw new Error(`데이터베이스 연결 풀 생성 실패: ${error.message}`);
 }
 
 // 연결 테스트
