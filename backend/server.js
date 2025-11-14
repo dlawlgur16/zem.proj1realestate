@@ -4,7 +4,16 @@
  * Supabase PostgreSQL DB 연결
  */
 
-require('dotenv').config();
+// Vercel serverless 환경에서는 dotenv가 필요 없음
+// 로컬 개발 환경에서만 dotenv 사용
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    // dotenv가 없어도 계속 진행
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

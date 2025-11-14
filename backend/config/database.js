@@ -3,7 +3,16 @@
  * estate-registry-et1 폴더의 DB와 연결
  */
 
-require('dotenv').config();
+// Vercel serverless 환경에서는 dotenv가 필요 없음 (환경 변수가 자동 주입됨)
+// 로컬 개발 환경에서만 dotenv 사용
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    // dotenv가 없어도 계속 진행
+  }
+}
+
 const { Pool } = require('pg');
 const path = require('path');
 
@@ -12,11 +21,20 @@ const path = require('path');
 let DATABASE_URL = process.env.DATABASE_URL;
 
 // 디버깅: DATABASE_URL 확인 (비밀번호는 마스킹)
+console.log('🔍 환경 변수 확인:', {
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL: process.env.VERCEL,
+  DATABASE_URL_exists: !!DATABASE_URL,
+  DATABASE_URL_type: typeof DATABASE_URL,
+  DATABASE_URL_length: DATABASE_URL ? DATABASE_URL.length : 0
+});
+
 if (DATABASE_URL) {
   const maskedUrl = DATABASE_URL.replace(/:[^:@]+@/, ':****@');
-  console.log('📡 DATABASE_URL 발견:', maskedUrl.substring(0, 50) + '...');
+  console.log('📡 DATABASE_URL 발견:', maskedUrl.substring(0, 80) + '...');
 } else {
-  console.warn('⚠️ process.env.DATABASE_URL이 설정되지 않았습니다.');
+  console.error('❌ process.env.DATABASE_URL이 설정되지 않았습니다.');
+  console.error('🔍 사용 가능한 환경 변수:', Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('DB')));
 }
 
 // .env 파일이 없거나 DATABASE_URL이 없으면 estate-registry-et1 폴더의 .env에서 읽기 시도
