@@ -3,7 +3,8 @@
  * Supabase PostgreSQL DB와 연동
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// 로컬 개발 환경: 하드코딩
+const API_BASE_URL = 'http://localhost:5000/api';
 
 /**
  * API 요청 헬퍼 함수
@@ -24,7 +25,16 @@ async function apiRequest(endpoint, options = {}) {
   }
 
   try {
+    console.log(`🌐 API 요청: ${url}`, { method: config.method || 'GET', headers: config.headers });
+    
     const response = await fetch(url, config);
+    
+    console.log(`📡 API 응답: ${url}`, {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      contentType: response.headers.get('content-type')
+    });
     
     // 응답이 비어있을 수 있음
     let data;
@@ -36,13 +46,21 @@ async function apiRequest(endpoint, options = {}) {
       data = text ? JSON.parse(text) : {};
     }
     
+    console.log(`📦 API 응답 데이터: ${url}`, data);
+    
     if (!response.ok) {
-      throw new Error(data.error?.message || data.error || `HTTP error! status: ${response.status}`);
+      const errorMsg = data.error?.message || data.error || `HTTP error! status: ${response.status}`;
+      console.error(`❌ API 요청 실패: ${url}`, errorMsg);
+      throw new Error(errorMsg);
     }
     
     return data;
   } catch (error) {
-    console.error('API 요청 실패:', error);
+    console.error(`❌ API 요청 실패: ${url}`, {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
     throw error;
   }
 }
@@ -110,7 +128,7 @@ export const uploadCSV = async (file) => {
   const formData = new FormData();
   formData.append('csvFile', file);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const API_BASE_URL = 'http://localhost:5000/api';
   const url = `${API_BASE_URL}/upload/csv`;
 
   try {
@@ -137,11 +155,20 @@ export const uploadCSV = async (file) => {
  */
 export const loadBuildingsAsProjects = async () => {
   try {
+    console.log('🔍 DB 건물 목록 로드 시작...');
+    console.log('📡 API URL: http://localhost:5000/api');
+    
     const response = await buildingsAPI.getAll();
     
-    if (response.success && response.data) {
-      // DB의 buildings를 프로젝트 형식으로 변환
-      return response.data.map(building => ({
+    console.log('📦 API 응답:', {
+      success: response?.success,
+      hasData: !!response?.data,
+      dataLength: response?.data?.length,
+      response: response
+    });
+    
+    if (response && response.success && response.data) {
+      const projects = response.data.map(building => ({
         id: `db-${building.id}`,
         name: building.name || '이름 없음',
         address: building.address || building.city || '',
@@ -154,11 +181,20 @@ export const loadBuildingsAsProjects = async () => {
         dataFile: null,
         image: '/image/img_chart-02.jpg'
       }));
+      
+      console.log('✅ DB 프로젝트 변환 완료:', projects.length, '개');
+      return projects;
     }
     
+    console.warn('⚠️ 응답에 데이터가 없습니다:', response);
     return [];
   } catch (error) {
-    console.error('DB에서 건물 목록 로드 실패:', error);
+    console.error('❌ DB에서 건물 목록 로드 실패:', error);
+    console.error('❌ 에러 상세:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return [];
   }
 };

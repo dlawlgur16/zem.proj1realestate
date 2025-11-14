@@ -44,13 +44,22 @@ const ProjectIndex = () => {
       
       // DB에서 건물 목록 가져오기
       try {
+        console.log('🗄️ DB 프로젝트 로드 시도...');
         const dbProjects = await loadBuildingsAsProjects();
+        console.log('🗄️ DB 프로젝트 로드 결과:', {
+          count: dbProjects?.length || 0,
+          projects: dbProjects
+        });
+        
         if (dbProjects && dbProjects.length > 0) {
           projects = [...projects, ...dbProjects];
-          console.log('🗄️ DB 프로젝트 추가:', dbProjects.length);
+          console.log('✅ DB 프로젝트 추가 완료:', dbProjects.length, '개');
+        } else {
+          console.warn('⚠️ DB 프로젝트가 없습니다.');
         }
       } catch (error) {
-        console.warn('⚠️ DB 프로젝트 로드 실패 (서버가 실행 중이 아닐 수 있습니다):', error.message);
+        console.error('❌ DB 프로젝트 로드 실패:', error);
+        console.error('❌ 에러 상세:', error.message, error.stack);
       }
       
       setAllProjects(projects);

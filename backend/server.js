@@ -30,7 +30,32 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // 미들웨어 설정
-app.use(cors());
+// OPTIONS 요청 명시적 처리 (CORS preflight)
+app.options('*', cors());
+
+// CORS 설정: 모든 origin 허용
+app.use(cors({
+  origin: '*', // 모든 origin 허용
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Disposition', 'X-Requested-With'],
+  exposedHeaders: ['Content-Disposition'],
+  credentials: false, // origin: '*'일 때는 credentials를 false로 설정
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// 모든 OPTIONS 요청에 대해 CORS 헤더 반환
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Disposition, X-Requested-With');
+    res.header('Access-Control-Max-Age', '86400'); // 24시간
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,13 +73,18 @@ app.get('/api/health', async (req, res) => {
       status: 'ok', 
       message: '재건축 데이터 분석 시스템 백엔드 서버',
       database: 'connected',
+      environment: process.env.VERCEL ? 'vercel' : 'local',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('❌ Health check 실패:', error);
     res.status(500).json({
       status: 'error',
       message: '데이터베이스 연결 실패',
-      error: error.message
+      error: error.message,
+      environment: process.env.VERCEL ? 'vercel' : 'local',
+      errorType: error.constructor.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
