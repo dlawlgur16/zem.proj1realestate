@@ -5,8 +5,8 @@
  */
 
 export function calculateAgeInsights(rows) {
-  console.log('🔍 calculateAgeInsights 시작 - 입력 데이터:', rows?.length || 0, '건');
-  console.log('🔍 첫 번째 행 샘플:', rows?.[0]);
+  // console.log('🔍 calculateAgeInsights 시작 - 입력 데이터:', rows?.length || 0, '건');
+  // console.log('🔍 첫 번째 행 샘플:', rows?.[0]);
 
   // -------------------------------------------------------
   // 1️⃣ 출생년도 파싱 (주민번호 및 생년월일)
@@ -55,9 +55,6 @@ export function calculateAgeInsights(rows) {
     if (decade < 20) return '10대';
     if (decade >= 90) return '90대 이상';
     
-    // 디버깅: 나이 계산 과정 로그
-    console.log(`🔍 나이 계산: 생년월일=${row.생년월일}, 출생년도=${birthYear}, 나이=${age}, 연령대=${decade}대`);
-    
     return `${decade}대`;
   };
 
@@ -69,8 +66,8 @@ export function calculateAgeInsights(rows) {
     : [];
 
   const ageValues = [...new Set(normalizedRows.map(r => r.연령대).filter(Boolean))];
-  console.log('🔍 실제 연령대 값들:', ageValues);
-  console.log('🔍 연령대 정렬 전:', ageValues);
+  // console.log('🔍 실제 연령대 값들:', ageValues);
+  // console.log('🔍 연령대 정렬 전:', ageValues);
   
   // 연령대를 올바른 순서로 정렬
   const ageOrder = ['10대', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대 이상'];
@@ -79,7 +76,7 @@ export function calculateAgeInsights(rows) {
     const indexB = ageOrder.indexOf(b);
     return indexA - indexB;
   });
-  console.log('🔍 연령대 정렬 후:', sortedAgeValues);
+  // console.log('🔍 연령대 정렬 후:', sortedAgeValues);
 
   // -------------------------------------------------------
   // 4️⃣ 유틸리티 함수들 (정규화)
@@ -131,10 +128,10 @@ export function calculateAgeInsights(rows) {
     const total = group.length;
     if (!total) return;
 
-    console.log(`\n🔹 [${age}] 그룹 전체 데이터 샘플:`);
-    console.log(group.slice(0, 5));
+    // console.log(`\n🔹 [${age}] 그룹 전체 데이터 샘플:`);
+    // console.log(group.slice(0, 5));
 
-    console.groupCollapsed(`🏠 [${age}] residence debug (총 ${total}명)`);
+    // console.groupCollapsed(`🏠 [${age}] residence debug (총 ${total}명)`);
 
     // ✅ 대출 현황
     const loaned = group.filter(r => {
@@ -216,7 +213,7 @@ export function calculateAgeInsights(rows) {
       comment
     };
 
-    console.log(`✅ ${age} 계산 결과:`, insights[age]);
+    // console.log(`✅ ${age} 계산 결과:`, insights[age]);
   });
 
 
@@ -224,7 +221,7 @@ export function calculateAgeInsights(rows) {
   // -------------------------------------------------------
   // 6️⃣ 최종 반환
   // -------------------------------------------------------
-  console.log('🎯 ageInsights 최종 반환:', insights);
+  // console.log('🎯 ageInsights 최종 반환:', insights);
   return insights;
 }
 

@@ -57,58 +57,68 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
 
   // 보고서 생성
   const handleGenerateReport = async () => {
-    // console.log('=== 보고서 생성 시작 ===');
-    // console.log('statsData:', statsData);
-    // console.log('activeTab:', activeTab);
-    // console.log('csvData 길이:', csvData ? csvData.length : '없음');
+    console.log('=== 📄 보고서 생성 시작 ===');
+    console.log('📊 statsData:', statsData);
+    console.log('📊 activeTab:', activeTab);
+    console.log('📊 csvData 길이:', csvData ? csvData.length : '없음');
+    
+    // 리포트는 항상 전체통계 데이터를 사용 (동별 통계 제외)
+    const reportStatsKey = '전체통계';
     
     // 통계 데이터 체크
-    if (!statsData || !statsData[activeTab]) {
+    if (!statsData || !statsData[reportStatsKey]) {
+      console.error('❌ 통계 데이터 없음:', statsData);
       alert('⚠️ 통계 데이터가 없습니다.\n먼저 데이터 분석을 완료해주세요.');
-    // console.error('통계 데이터 없음:', statsData);
       return;
     }
     
     // API 키 체크
     if (!GEMINI_API_KEY) {
+      console.error('❌ API 키 없음');
       alert('⚠️ API 키가 설정되지 않았습니다.\n.env 파일에 REACT_APP_GEMINI_API_KEY를 설정해주세요.');
-      // console.error('환경변수 REACT_APP_GEMINI_API_KEY가 설정되지 않았습니다.');
       return;
     }
     
-    // 실제 Gemini API 사용
-    // console.log('✅ 유효한 API 키로 Gemini API 사용');
-
-    // console.log('API 키 확인:', GEMINI_API_KEY ? '설정됨' : '설정되지 않음');
-    // console.log('통계 데이터:', statsData);
+    console.log('✅ 유효한 API 키로 Gemini API 사용');
+    console.log('🔑 API 키 확인:', GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 10)}...` : '없음');
+    console.log('📊 통계 데이터:', statsData);
 
     setIsGenerating(true);
     
     try {
-      // AI 인사이트 포함하여 보고서 생성
-      // console.log('📊 generateHybridReport 호출 전 데이터 확인:');
-      // console.log('📊 statsData[activeTab]:', statsData[activeTab]);
-      // console.log('📊 ageGroups:', statsData[activeTab]?.ageGroups);
-      // console.log('📊 ageGroups 비어있나?', !statsData[activeTab]?.ageGroups || Object.keys(statsData[activeTab]?.ageGroups || {}).length === 0);
+      // AI 인사이트 포함하여 보고서 생성 (항상 전체통계 데이터 사용)
+      console.log('📊 generateHybridReport 호출 전 데이터 확인:');
+      console.log('📊 statsData[전체통계]:', statsData[reportStatsKey]);
+      console.log('📊 API 키 확인:', GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 10)}...` : '없음');
       
       const report = await generateHybridReport(
-        statsData[activeTab], 
+        statsData[reportStatsKey], 
         GEMINI_API_KEY,
-        csvData
+        csvData // 전체 CSV 데이터 사용 (필터링 없음)
       );
       
-      // console.log('📄 생성된 보고서:', report);
-      // console.log('📄 보고서 길이:', report ? report.length : 0);
+      console.log('📄 생성된 보고서:', report ? report.substring(0, 200) : '없음');
+      console.log('📄 보고서 길이:', report ? report.length : 0);
+      
+      // Fallback 보고서인지 확인
+      if (report && report.includes('# 재건축 분석 보고서 (Fallback)')) {
+        console.warn('⚠️ Fallback 보고서가 생성되었습니다. Gemini API 호출이 실패했습니다.');
+        alert('⚠️ Gemini API 호출에 실패하여 기본 보고서가 생성되었습니다.\n\n브라우저 콘솔(F12)에서 상세 에러를 확인하세요.\n\n확인사항:\n1. .env 파일에 REACT_APP_GEMINI_API_KEY가 설정되어 있는지\n2. API 키가 유효한지\n3. 네트워크 연결 상태\n4. 브라우저 콘솔의 에러 메시지 확인');
+      }
+      
       setReportContent(report);
       setShowReport(true);
-      // console.log('📄 showReport 상태 변경:', true);
     } catch (error) {
-      // console.error('보고서 생성 실패:', error);
+      console.error('보고서 생성 실패:', error);
+      console.error('에러 상세:', error.message);
+      console.error('에러 스택:', error.stack);
       
       // 에러 메시지 개선
       let errorMessage = '보고서 생성 중 오류가 발생했습니다.';
       
-      if (error.message.includes('API key') || error.message.includes('API_KEY_INVALID')) {
+      if (error.message.includes('API 키가 설정되지 않았습니다')) {
+        errorMessage = '❌ API 키가 설정되지 않았습니다.\n.env 파일에 REACT_APP_GEMINI_API_KEY를 설정해주세요.';
+      } else if (error.message.includes('API key') || error.message.includes('API_KEY_INVALID')) {
         errorMessage = '❌ API 키가 유효하지 않습니다.\n.env 파일의 API 키를 확인해주세요.';
       } else if (error.message.includes('quota') || error.message.includes('RATE_LIMIT')) {
         errorMessage = '❌ 일일 사용량(1,500회)을 초과했습니다.\n내일 다시 시도해주세요.';
@@ -116,6 +126,8 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
         errorMessage = '❌ 네트워크 오류가 발생했습니다.\n인터넷 연결을 확인해주세요.';
       } else if (error.message.includes('HTML 응답') || error.message.includes('JSON')) {
         errorMessage = '❌ API 키가 잘못되었거나 API 서비스에 문제가 있습니다.\n.env 파일의 API 키를 확인해주세요.';
+      } else if (error.message.includes('Gemini API 호출 실패')) {
+        errorMessage = `❌ ${error.message}\n\n브라우저 콘솔(F12)에서 상세 에러를 확인하세요.`;
       } else {
         errorMessage = `❌ ${error.message}`;
       }
@@ -128,7 +140,8 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
 
   // 보고서 다운로드
   const handleDownloadReport = (format) => {
-    const filename = `${activeTab}_재건축분석보고서`;
+    // 리포트는 항상 전체통계를 사용하므로 파일명도 전체통계로 고정
+    const filename = `전체통계_재건축분석보고서`;
     
     if (format === 'markdown') {
       downloadAsMarkdown(reportContent, filename);
@@ -198,17 +211,17 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
             <div className="flex items-center gap-4">
               <div className="bg-white/20 px-4 py-2 rounded-lg">
                 <div className="text-emerald-100 text-xs mb-1">분석 대상</div>
-                <div className="text-white text-xl font-bold">{activeTab}</div>
+                <div className="text-white text-xl font-bold">전체 통계</div>
               </div>
               <div className="bg-white/20 px-4 py-2 rounded-lg">
                 <div className="text-emerald-100 text-xs mb-1">총 세대수</div>
-                <div className="text-white text-xl font-bold">{statsData[activeTab]?.total || 0}세대</div>
+                <div className="text-white text-xl font-bold">{statsData['전체통계']?.total || 0}세대</div>
               </div>
               <div className="bg-white/20 px-4 py-2 rounded-lg">
                 <div className="text-emerald-100 text-xs mb-1">총 대출금액</div>
                 <div className="text-white text-xl font-bold">
-                  {statsData[activeTab]?.totalLoanAmount 
-                    ? `${(statsData[activeTab].totalLoanAmount / 100000000).toFixed(1)}억원`
+                  {statsData['전체통계']?.totalLoanAmount 
+                    ? `${(statsData['전체통계'].totalLoanAmount / 100000000).toFixed(1)}억원`
                     : '0억원'
                   }
                 </div>
