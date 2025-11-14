@@ -80,20 +80,24 @@ app.use((req, res) => {
   res.status(404).json({ error: '요청한 리소스를 찾을 수 없습니다.' });
 });
 
-// 서버 시작
-app.listen(PORT, async () => {
-  console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
-  console.log(`📡 API 엔드포인트: http://localhost:${PORT}/api`);
-  
-  // DB 연결 테스트
-  try {
-    await query('SELECT 1');
-    console.log('✅ 데이터베이스 연결 성공');
-  } catch (error) {
-    console.error('❌ 데이터베이스 연결 실패:', error.message);
-    console.error('💡 estate-registry-et1/.env 파일의 DATABASE_URL을 확인해주세요.');
-  }
-});
+// Vercel serverless function으로 실행될 때는 app.listen()을 사용하지 않음
+// 로컬 개발 환경에서만 서버 시작
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
+    console.log(`📡 API 엔드포인트: http://localhost:${PORT}/api`);
+    
+    // DB 연결 테스트
+    try {
+      await query('SELECT 1');
+      console.log('✅ 데이터베이스 연결 성공');
+    } catch (error) {
+      console.error('❌ 데이터베이스 연결 실패:', error.message);
+      console.error('💡 estate-registry-et1/.env 파일의 DATABASE_URL을 확인해주세요.');
+    }
+  });
+}
 
+// Vercel serverless function으로 export
 module.exports = app;
 
