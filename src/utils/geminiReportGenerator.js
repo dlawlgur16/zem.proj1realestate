@@ -35,7 +35,7 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
     
     try {
       const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: {
@@ -59,18 +59,43 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
   
       if (!response.ok) {
       let errorMessage = `API Error: ${response.status}`;
+      
+      // Response body는 한 번만 읽을 수 있으므로 clone하거나 text로 먼저 읽기
+      const responseText = await response.text();
+      
       try {
-        const errorData = await response.json();
-        errorMessage += ` - ${errorData.error?.message || '알 수 없는 오류'}`;
+        const errorData = JSON.parse(responseText);
+        const apiError = errorData.error?.message || '알 수 없는 오류';
+        errorMessage += ` - ${apiError}`;
+        
+        // 429 에러 (할당량 초과) 특별 처리
+        if (response.status === 429) {
+          console.error('❌ API 할당량 초과 - 전체 에러 데이터:', JSON.stringify(errorData, null, 2));
+          console.error('❌ 에러 상세:', errorData.error);
+          
+          // 에러 데이터에서 할당량 정보 추출
+          const quotaViolations = errorData.error?.details?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.QuotaFailure')?.violations || [];
+          const quotaDetails = quotaViolations.map(v => `- ${v.quotaMetric || '알 수 없음'}: limit ${v.quotaId || 'N/A'}`).join('\n');
+          
+          // 재시도 시간 추출
+          const retryInfo = errorData.error?.details?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+          const retryDelay = retryInfo?.retryDelay ? `재시도 가능 시간: ${retryInfo.retryDelay}` : '';
+          
+          throw new Error(`API 할당량 초과 (429)\n\n무료 티어의 할당량이 모두 소진되었습니다.\n\n에러 상세:\n${apiError}\n\n할당량 정보:\n${quotaDetails || '상세 정보 없음'}\n${retryDelay ? retryDelay + '\n' : ''}\n해결 방법:\n1. Google AI Studio에서 할당량 확인: https://ai.dev/usage?tab=rate-limit\n2. 유료 플랜으로 업그레이드 (즉시 사용 가능)\n3. 할당량 리셋 대기 (보통 24시간마다 리셋)\n4. 다른 API 키 사용\n\n⚠️ 무료 티어의 일일 할당량이 0으로 설정되어 있어 당장 사용할 수 없습니다.`);
+        }
       } catch (jsonError) {
-        // JSON 파싱 실패 시 HTML 응답일 가능성
-        const htmlResponse = await response.text();
-        console.error('HTML 응답:', htmlResponse.substring(0, 200));
+        // JSON 파싱 실패 시
+        if (response.status === 429) {
+          console.error('❌ 429 에러 - 텍스트 응답:', responseText.substring(0, 500));
+          throw new Error('API 할당량 초과 (429)\n\n무료 티어의 일일 사용량을 초과했습니다.\n\n해결 방법:\n1. Google AI Studio에서 할당량 확인\n2. 유료 플랜으로 업그레이드\n3. 할당량 리셋 대기');
+        }
+        console.error('HTML 응답:', responseText.substring(0, 200));
         errorMessage += ` - HTML 응답을 받았습니다. API 키를 확인해주세요.`;
       }
       throw new Error(errorMessage);
     }
 
+    // response.ok가 true이므로 여기서는 body를 읽을 수 있음
     const responseText = await response.text();
     console.log('API 응답:', responseText.substring(0, 200));
     
@@ -411,12 +436,26 @@ ${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups)
  * 하이브리드 보고서 생성 (Gemini API + Fallback)
  */
 export async function generateHybridReport(stats, apiKey, csvData = null) {
+  // API 키 확인
+  if (!apiKey) {
+    console.error('❌ API 키가 없습니다.');
+    console.warn('⚠️ Fallback 보고서로 전환합니다.');
+    return generateFallbackReport(stats);
+  }
+  
   try {
     console.log('🤖 Gemini API로 보고서 생성 시도...');
-    return await generateGeminiInsights(stats, apiKey, csvData);
+    console.log('🔑 API 키 확인:', apiKey ? `${apiKey.substring(0, 10)}...` : '없음');
+    const result = await generateGeminiInsights(stats, apiKey, csvData);
+    console.log('✅ Gemini API 성공!');
+    return result;
   } catch (error) {
     console.error('❌ Gemini API 실패:', error);
-    console.log('🔄 Fallback 보고서로 전환...');
+    console.error('❌ 에러 상세:', error.message);
+    console.error('❌ 에러 스택:', error.stack);
+    console.warn('⚠️ Fallback 보고서로 전환합니다.');
+    
+    // Fallback 보고서 반환 (에러 정보는 콘솔에만 출력)
     return generateFallbackReport(stats);
   }
 }

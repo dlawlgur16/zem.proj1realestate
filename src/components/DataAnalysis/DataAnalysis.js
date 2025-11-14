@@ -9,6 +9,7 @@ import TransferReason from './Charts/TransferReason';
 import LoanAmount from './Charts/LoanAmount';
 import InvestorResidence from './Charts/InvestorResidence';
 import YearlyOwnership from './Charts/YearlyOwnership';
+import HouseholdType from './Charts/HouseholdType';
 import { calculateAgeInsights } from '../../utils/ageInsights';
 import './DataAnalysis.css';
 import './Charts/ChartCard.css';
@@ -24,20 +25,43 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   const [selectedAgeGroupArea, setSelectedAgeGroupArea] = useState('전체');
   const [selectedAgeGroupYearly, setSelectedAgeGroupYearly] = useState('전체');
  
+  // 동호수에서 동 번호 추출하는 헬퍼 함수
+  // "동"이라는 글자가 명시적으로 있어야만 동으로 인식
+  const extractDongNumber = (dongho) => {
+    if (!dongho) return null;
+    
+    const str = dongho.toString().trim();
+    
+    // 패턴 1: "1동" 또는 "1동 101호" 형태 (동이 명시적으로 있음)
+    let match = str.match(/(\d+)동/);
+    if (match) return match[1];
+    
+    // 패턴 2: "1 101" 형태 (공백으로 구분, 첫 번째가 동일 수 있음)
+    // 하지만 "동"이 없으면 동으로 인식하지 않음
+    // 이 패턴은 제외
+    
+    // 패턴 3: "1205-1호" 같은 형태는 동이 아님 (동이 명시되지 않음)
+    // 이런 경우는 null 반환
+    
+    return null; // "동"이 명시적으로 없으면 동이 아님
+  };
+
   // 동별 탭을 동적으로 생성하는 함수
   const generateDongTabs = (data) => {
     const dongSet = new Set();
     
     data.forEach(row => {
-      // 건물명에서 동 정보 추출 (예: "대교아파트 1동 101호" -> "대교아파트 1동")
-      const buildingName = row.건물명 || '';
-      if (buildingName) {
-        const dongMatch = buildingName.match(/(대교아파트\s*\d+동)/);
-        if (dongMatch) {
-          dongSet.add(dongMatch[1]);
-        }
+      // 동호수 컬럼에서 동 정보 추출
+      const dongNum = extractDongNumber(row.동호수);
+      if (dongNum) {
+        dongSet.add(`${dongNum}동`);
       }
     });
+    
+    // 동 정보가 없거나 1개 이하면 전체통계만 표시
+    if (dongSet.size === 0 || dongSet.size === 1) {
+      return ['전체통계'];
+    }
     
     // 동을 번호 순으로 정렬
     const sortedDongs = Array.from(dongSet).sort((a, b) => {
@@ -46,6 +70,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       return aNum - bNum;
     });
     
+    // 동이 2개 이상일 때만 탭 표시
     return ['전체통계', ...sortedDongs];
   };
 
@@ -55,19 +80,28 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       return data;
     }
     
+    // 선택된 동 번호 추출 (예: "1동" -> "1")
+    const selectedDongNum = selectedDong.match(/\d+/)?.[0];
+    if (!selectedDongNum) {
+      return data;
+    }
+    
     return data.filter(row => {
-      const buildingName = row.건물명 || '';
-      if (buildingName) {
-        // 건물명에서 동 정보 추출하여 선택된 동과 비교
-        const dongMatch = buildingName.match(/(대교아파트\s*\d+동)/);
-        return dongMatch && dongMatch[1] === selectedDong;
-      }
-      return false;
+      const dongNum = extractDongNumber(row.동호수);
+      return dongNum === selectedDongNum;
     });
   };
 
   const calculateStats = (data) => {
-    const total = data.length;
+    // 동호수 기준으로 고유 세대만 카운트 (공유자 개별 행이 아닌)
+    const uniqueHouseholds = new Set();
+    data.forEach(row => {
+      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      if (dongho) {
+        uniqueHouseholds.add(dongho);
+      }
+    });
+    const total = uniqueHouseholds.size;
     
     // 나이대별 분포 (연령대 컬럼 또는 생년월일 분석)
     const ageGroups = {};
@@ -372,6 +406,31 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // console.log('📊 연령대별 인사이트:', ageInsights);
     // console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
+    // 공유세대/단독세대 분포 계산
+    // 공유세대는 동호수 기준으로 고유 세대만 세어야 함 (공유자 개별 행이 아닌)
+    const sharedHouseholdSet = new Set();
+    const singleHouseholdSet = new Set();
+    
+    data.forEach(row => {
+      const householdType = row['세대유형'];
+      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      
+      if (householdType === '공유세대') {
+        // 공유세대는 동호수 기준으로 고유 세대만 카운트
+        if (dongho) {
+          sharedHouseholdSet.add(dongho);
+        }
+      } else if (householdType === '단독세대') {
+        // 단독세대도 동호수 기준으로 고유 세대만 카운트
+        if (dongho) {
+          singleHouseholdSet.add(dongho);
+        }
+      }
+    });
+    
+    const sharedHouseholdCount = sharedHouseholdSet.size;
+    const singleHouseholdCount = singleHouseholdSet.size;
+
     // 사용 가능한 나이대 목록 생성 (탭에서는 '미분류', '법인' 제외)
     const availableAgeGroups = ['전체', ...Object.keys(ageGroups)
       .filter(key => key !== '미분류' && key !== '법인')
@@ -398,6 +457,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       averageLoanAmount,
       ageInsights, // 연령대별 인사이트 추가
       availableAgeGroups, // 사용 가능한 나이대 목록 추가
+      sharedHouseholdCount, // 공유세대 수
+      singleHouseholdCount, // 단독세대 수
       loanStatusData: [
         { name: '대출', value: loanCount, color: '#ef4444' },
         { name: '무대출', value: noLoanCount, color: '#10b981' }
@@ -409,6 +470,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       residenceInvestmentData: [
         { name: '거주', value: residenceCount, color: '#10b981' },
         { name: '투자', value: investmentCount, color: '#3b82f6' }
+      ],
+      householdTypeData: [
+        { name: '공유세대', value: sharedHouseholdCount, color: '#f59e0b' },
+        { name: '단독세대', value: singleHouseholdCount, color: '#8b5cf6' }
       ],
       genderData: [
         { name: '남', value: genderGroups['남'] || 0, color: '#3b82f6' },
@@ -655,6 +720,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           selectedAgeGroup={selectedAgeGroupArea}
           setSelectedAgeGroup={setSelectedAgeGroupArea}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
+        />
+        
+        {/* 네번째 줄: 세대 유형 분포 */}
+        <HouseholdType 
+          data={calculateStats(baseFilteredData).householdTypeData}
+          total={calculateStats(baseFilteredData).total}
         />
       </div>
 

@@ -156,9 +156,37 @@ export const deleteUserProject = (projectId) => {
 };
 
 /**
+ * DB에서 프로젝트 데이터 로드
+ */
+export const loadProjectDataFromDB = async (project) => {
+  try {
+    const { loadBuildingDataFromDB } = require('./api');
+    console.log('🗄️ DB에서 프로젝트 데이터 로드:', project.name);
+    
+    const buildingId = project.buildingId || project.id?.replace('db-', '');
+    if (!buildingId) {
+      throw new Error('건물 ID가 없습니다.');
+    }
+    
+    const data = await loadBuildingDataFromDB(buildingId);
+    console.log('✅ DB 데이터 로드 완료:', data.length, '행');
+    return data;
+  } catch (error) {
+    console.error('❌ DB 데이터 로드 실패:', error);
+    throw error;
+  }
+};
+
+/**
  * 프로젝트 데이터 로드 (타입에 따라 자동 선택)
  */
 export const loadProjectData = async (project) => {
+  // DB 타입인 경우
+  if (project.type === 'db') {
+    return await loadProjectDataFromDB(project);
+  }
+  
+  // 기존 방식들
   if (project.type === 'static') {
     return await loadStaticProjectData(project.dataFile);
   } else if (project.type === 'user') {

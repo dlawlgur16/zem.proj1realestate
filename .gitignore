@@ -45,3 +45,6 @@ Thumbs.db
 
 # Include processed data for static deployment
 !public/processed-data/
+
+# Other projects
+estate-registry-et1/
