@@ -128,7 +128,9 @@ const ProjectIndex = () => {
       const result = await uploadCSV(file);
       
       console.log('✅ 업로드 성공:', result);
-      alert(`✅ 파일이 성공적으로 업로드되었습니다!\n\n건물명: ${result.building.name}\n세대 수: ${result.units.inserted}개`);
+      // total은 실제 세대 그룹 수, inserted는 저장된 행 수 (공유세대 포함)
+      const householdCount = result.units.total || result.units.inserted;
+      alert(`✅ 파일이 성공적으로 업로드되었습니다!\n\n건물명: ${result.building.name}\n세대 수: ${householdCount}개`);
 
       // 프로젝트 목록 새로고침
       await loadProjects();

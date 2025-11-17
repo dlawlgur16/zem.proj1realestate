@@ -4,7 +4,13 @@
  */
 
 // 환경 변수에서 API URL 가져오기 (배포 환경), 없으면 로컬 개발 환경 기본값 사용
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// 환경 변수에 /api가 없으면 자동으로 추가
+let apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+if (apiUrl && !apiUrl.endsWith('/api')) {
+  // /api로 끝나지 않으면 추가 (단, 이미 /로 끝나면 /api만 추가)
+  apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api` : `${apiUrl}/api`;
+}
+const API_BASE_URL = apiUrl;
 
 /**
  * API 요청 헬퍼 함수
@@ -128,7 +134,6 @@ export const uploadCSV = async (file) => {
   const formData = new FormData();
   formData.append('csvFile', file);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   const url = `${API_BASE_URL}/upload/csv`;
 
   try {

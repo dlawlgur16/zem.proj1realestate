@@ -318,6 +318,21 @@ async function saveToDatabase(dbData, res) {
       console.error(`   ⚠️ 첫 번째 데이터 샘플:`, JSON.stringify(dbData.units[0]).substring(0, 300));
     }
 
+    // 실제 세대 그룹 수 계산 (동호수 기준 고유 세대 수)
+    // 공유세대는 여러 행으로 저장되므로 동호수로 그룹화하여 실제 세대 수 계산
+    const uniqueHouseholds = new Set();
+    dbData.units.forEach(unit => {
+      const dong = unit.dong || '';
+      const ho = unit.ho || '';
+      const householdKey = `${dong}-${ho}`;
+      if (dong || ho) {
+        uniqueHouseholds.add(householdKey);
+      }
+    });
+    const actualHouseholdCount = uniqueHouseholds.size || dbData.units.length;
+
+    console.log(`   📊 실제 세대 그룹 수: ${actualHouseholdCount}개 (저장된 행: ${inserted}개)`);
+
     res.json({
       success: true,
       message: '파일이 성공적으로 업로드되고 DB에 저장되었습니다.',
@@ -326,8 +341,9 @@ async function saveToDatabase(dbData, res) {
         name: dbData.building.name
       },
       units: {
-        total: dbData.units.length,
-        inserted: inserted
+        total: actualHouseholdCount, // 실제 세대 그룹 수
+        inserted: inserted, // 저장된 행 수 (공유세대 포함)
+        records: dbData.units.length // 원본 데이터 행 수
       }
     });
   } catch (error) {
