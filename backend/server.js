@@ -145,7 +145,13 @@
  */
 
 // 로컬에서는 dotenv 사용, Render에서는 환경변수 자동 적용
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production' && !process.env.RENDER) {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    // dotenv가 없어도 계속 진행
+  }
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -185,7 +191,7 @@ app.get('/api/health', async (req, res) => {
     res.json({
       status: 'ok',
       database: 'connected',
-      environment: 'render',
+      environment: process.env.RENDER ? 'render' : (process.env.NODE_ENV || 'development'),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
