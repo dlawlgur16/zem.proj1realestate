@@ -3,8 +3,8 @@
  * Supabase PostgreSQL DB와 연동
  */
 
-// 로컬 개발 환경: 하드코딩
-const API_BASE_URL = 'http://localhost:5000/api';
+// 환경 변수에서 API URL 가져오기 (배포 환경), 없으면 로컬 개발 환경 기본값 사용
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
  * API 요청 헬퍼 함수
@@ -128,7 +128,7 @@ export const uploadCSV = async (file) => {
   const formData = new FormData();
   formData.append('csvFile', file);
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   const url = `${API_BASE_URL}/upload/csv`;
 
   try {
@@ -156,7 +156,7 @@ export const uploadCSV = async (file) => {
 export const loadBuildingsAsProjects = async () => {
   try {
     console.log('🔍 DB 건물 목록 로드 시작...');
-    console.log('📡 API URL: http://localhost:5000/api');
+    console.log('📡 API URL:', API_BASE_URL);
     
     const response = await buildingsAPI.getAll();
     
