@@ -359,17 +359,14 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 대출 여부 비율 (근저당금액 컬럼 사용) - 동호수 기준으로 고유 세대만 카운트
     const loanHouseholdSet = new Set();
-    const allLoanHouseholdSet = new Set(); // 대출 정보가 있는 모든 세대 (대출 있음 + 대출 없음)
     
     data.forEach(row => {
       const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
       if (!dongho) return;
       
       const loanAmount = row['근저당금액'];
-      // 근저당금액 컬럼이 존재하는 경우만 처리 (값이 0이거나 빈 문자열이어도 정보가 있는 것으로 간주)
+      // 대출이 있는 세대만 카운트 (금액이 0보다 큰 경우)
       if (loanAmount !== undefined && loanAmount !== null && loanAmount !== '') {
-        allLoanHouseholdSet.add(dongho); // 대출 정보가 있는 세대
-        
         const amount = parseFloat(loanAmount);
         if (!isNaN(amount) && amount > 0) {
           loanHouseholdSet.add(dongho);
@@ -379,10 +376,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     
     // 대출이 있는 세대와 없는 세대를 분리
     const loanCount = loanHouseholdSet.size;
-    // 대출 정보가 있는 세대 중에서 대출이 없는 세대
-    const noLoanCount = allLoanHouseholdSet.size - loanCount;
-    // 실제 대출 정보가 있는 세대 수를 total로 사용
-    const loanTotal = allLoanHouseholdSet.size;
+    // 전체 세대에서 대출이 있는 세대를 뺀 나머지가 무대출 세대
+    const noLoanCount = total - loanCount;
+    // 전체 세대 수를 total로 사용
+    const loanTotal = total;
     
     // console.log('💰 대출 여부 분석:');
     // console.log('💰 대출 있는 건수:', loanCount);
@@ -411,26 +408,23 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 압류/가압류 현황 (압류가압류 컬럼 사용) - 동호수 기준으로 고유 세대만 카운트
     const seizureHouseholdSet = new Set();
-    const allSeizureHouseholdSet = new Set(); // 압류 정보가 있는 모든 세대
     
     data.forEach(row => {
       const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
       if (!dongho) return;
       
       const seizure = row['압류가압류'];
-      if (seizure !== undefined && seizure !== null && seizure !== '') {
-        allSeizureHouseholdSet.add(dongho); // 압류 정보가 있는 세대
-        if (seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음') {
-          seizureHouseholdSet.add(dongho);
-        }
+      // 압류/가압류가 있는 세대만 카운트
+      if (seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음') {
+        seizureHouseholdSet.add(dongho);
       }
     });
     
     const seizureCount = seizureHouseholdSet.size;
-    // 압류 정보가 있는 세대 중에서 정상 세대
-    const normalCount = allSeizureHouseholdSet.size - seizureCount;
-    // 실제 압류 정보가 있는 세대 수를 total로 사용
-    const seizureTotal = allSeizureHouseholdSet.size;
+    // 전체 세대에서 압류/가압류가 있는 세대를 뺀 나머지가 정상 세대
+    const normalCount = total - seizureCount;
+    // 전체 세대 수를 total로 사용
+    const seizureTotal = total;
 
     // 연령대별 인사이트 계산
     // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
