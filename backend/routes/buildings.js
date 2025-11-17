@@ -135,6 +135,10 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(404).json({ success: false, error: '건물을 찾을 수 없습니다.' });
     }
     
+    // 관련 units 먼저 삭제 (CASCADE가 설정되어 있어도 명시적으로 삭제)
+    await query('DELETE FROM units WHERE building_id = $1', [req.params.id]);
+    
+    // 건물 삭제
     await query('DELETE FROM buildings WHERE id = $1', [req.params.id]);
     
     res.json({ success: true, message: '건물이 삭제되었습니다.' });

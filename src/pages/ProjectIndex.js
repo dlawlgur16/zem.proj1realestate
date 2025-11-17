@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { staticProjects } from '../data/staticProjects';
 import { loadProjectData } from '../utils/dataLoader';
-import { loadBuildingsAsProjects, uploadCSV } from '../utils/api';
+import { loadBuildingsAsProjects, uploadCSV, buildingsAPI } from '../utils/api';
 import ProjectCard from '../components/ProjectCard';
 import './ProjectIndex.css';
 
@@ -105,6 +105,32 @@ const ProjectIndex = () => {
     // 로그아웃 처리 (auth.js의 clearSession 사용)
     localStorage.removeItem('session');
     navigate('/');
+  };
+
+  const handleDeleteProject = async (projectId) => {
+    try {
+      // DB 프로젝트인 경우 (buildingId가 있는 경우)
+      if (projectId.startsWith('db-')) {
+        const buildingId = projectId.replace('db-', '');
+        console.log('🗑️ DB 프로젝트 삭제 시도:', buildingId);
+        
+        const result = await buildingsAPI.delete(buildingId);
+        
+        if (result.success) {
+          alert('프로젝트가 삭제되었습니다.');
+          // 프로젝트 목록 새로고침
+          await loadProjects();
+        } else {
+          alert('프로젝트 삭제에 실패했습니다.');
+        }
+      } else {
+        // 정적 프로젝트나 사용자 프로젝트는 삭제 불가
+        alert('이 프로젝트는 삭제할 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('❌ 프로젝트 삭제 실패:', error);
+      alert(`프로젝트 삭제에 실패했습니다: ${error.message}`);
+    }
   };
 
   const handleFileUpload = async (event) => {
@@ -221,6 +247,7 @@ const ProjectIndex = () => {
               key={project.id}
               project={project}
               onSelect={handleProjectSelect}
+              onDelete={handleDeleteProject}
             />
           ))}
         </div>
