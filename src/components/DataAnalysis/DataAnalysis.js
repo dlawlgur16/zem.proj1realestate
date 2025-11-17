@@ -357,14 +357,32 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     
     
 
-    // 대출 여부 비율 (근저당금액 컬럼 사용)
-    const loanCount = data.filter(row => {
+    // 대출 여부 비율 (근저당금액 컬럼 사용) - 동호수 기준으로 고유 세대만 카운트
+    const loanHouseholdSet = new Set();
+    const allLoanHouseholdSet = new Set(); // 대출 정보가 있는 모든 세대 (대출 있음 + 대출 없음)
+    
+    data.forEach(row => {
+      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      if (!dongho) return;
+      
       const loanAmount = row['근저당금액'];
-      if (!loanAmount) return false;
-      const amount = parseFloat(loanAmount);
-      return !isNaN(amount) && amount > 0;
-    }).length;
-    const noLoanCount = total - loanCount;
+      // 근저당금액 컬럼이 존재하는 경우만 처리 (값이 0이거나 빈 문자열이어도 정보가 있는 것으로 간주)
+      if (loanAmount !== undefined && loanAmount !== null && loanAmount !== '') {
+        allLoanHouseholdSet.add(dongho); // 대출 정보가 있는 세대
+        
+        const amount = parseFloat(loanAmount);
+        if (!isNaN(amount) && amount > 0) {
+          loanHouseholdSet.add(dongho);
+        }
+      }
+    });
+    
+    // 대출이 있는 세대와 없는 세대를 분리
+    const loanCount = loanHouseholdSet.size;
+    // 대출 정보가 있는 세대 중에서 대출이 없는 세대
+    const noLoanCount = allLoanHouseholdSet.size - loanCount;
+    // 실제 대출 정보가 있는 세대 수를 total로 사용
+    const loanTotal = allLoanHouseholdSet.size;
     
     // console.log('💰 대출 여부 분석:');
     // console.log('💰 대출 있는 건수:', loanCount);
@@ -391,12 +409,28 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // console.log('💰 총 근저당액:', totalLoanAmount);
     // console.log('💰 평균 근저당액:', averageLoanAmount);
 
-    // 압류/가압류 현황 (압류가압류 컬럼 사용)
-    const seizureCount = data.filter(row => {
+    // 압류/가압류 현황 (압류가압류 컬럼 사용) - 동호수 기준으로 고유 세대만 카운트
+    const seizureHouseholdSet = new Set();
+    const allSeizureHouseholdSet = new Set(); // 압류 정보가 있는 모든 세대
+    
+    data.forEach(row => {
+      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      if (!dongho) return;
+      
       const seizure = row['압류가압류'];
-      return seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음';
-    }).length;
-    const normalCount = total - seizureCount;
+      if (seizure !== undefined && seizure !== null && seizure !== '') {
+        allSeizureHouseholdSet.add(dongho); // 압류 정보가 있는 세대
+        if (seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음') {
+          seizureHouseholdSet.add(dongho);
+        }
+      }
+    });
+    
+    const seizureCount = seizureHouseholdSet.size;
+    // 압류 정보가 있는 세대 중에서 정상 세대
+    const normalCount = allSeizureHouseholdSet.size - seizureCount;
+    // 실제 압류 정보가 있는 세대 수를 total로 사용
+    const seizureTotal = allSeizureHouseholdSet.size;
 
     // 연령대별 인사이트 계산
     // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
@@ -463,10 +497,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         { name: '대출', value: loanCount, color: '#ef4444' },
         { name: '무대출', value: noLoanCount, color: '#10b981' }
       ],
+      loanTotal, // 대출 정보가 있는 실제 세대 수
       seizureStatusData: [
         { name: '정상', value: normalCount, color: '#10b981' },
         { name: '압류/가압류', value: seizureCount, color: '#ef4444' }
       ],
+      seizureTotal, // 압류 정보가 있는 실제 세대 수
       residenceInvestmentData: [
         { name: '거주', value: residenceCount, color: '#10b981' },
         { name: '투자', value: investmentCount, color: '#3b82f6' }
@@ -646,14 +682,14 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         {/* 첫번째 줄: 나이, 거주/투자, 면적 */}
         <AgeDistribution 
           data={currentStats.ageGroups} 
-          total={currentStats.total}
+          total={Object.values(currentStats.ageGroups).reduce((sum, count) => sum + count, 0)}
           selectedAgeGroup={selectedAgeGroup}
           setSelectedAgeGroup={setSelectedAgeGroup}
         />
         
         <ResidenceInvestment 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupResidence)).residenceInvestmentData} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupResidence)).total}
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupResidence)).residenceInvestmentData.reduce((sum, item) => sum + item.value, 0)}
           selectedAgeGroup={selectedAgeGroupResidence}
           setSelectedAgeGroup={setSelectedAgeGroupResidence}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -667,7 +703,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         {/* 두번째 줄: 등기이전원인, 보유기간, 연도별 소유권 변동 */}
         <TransferReason 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).transferReasons} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).total}
+          total={Object.values(calculateStats(filterByAge(baseFilteredData, selectedAgeGroupTransfer)).transferReasons).reduce((sum, count) => sum + count, 0)}
           selectedAgeGroup={selectedAgeGroupTransfer}
           setSelectedAgeGroup={setSelectedAgeGroupTransfer}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -675,7 +711,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         
         <HoldingPeriod 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupHolding)).holdingGroups} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupHolding)).total}
+          total={Object.values(calculateStats(filterByAge(baseFilteredData, selectedAgeGroupHolding)).holdingGroups).reduce((sum, count) => sum + count, 0)}
           selectedAgeGroup={selectedAgeGroupHolding}
           setSelectedAgeGroup={setSelectedAgeGroupHolding}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -683,7 +719,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         
         <YearlyOwnership 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).yearlyOwnership} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).total}
+          total={Object.values(calculateStats(filterByAge(baseFilteredData, selectedAgeGroupYearly)).yearlyOwnership).reduce((sum, count) => sum + count, 0)}
           selectedAgeGroup={selectedAgeGroupYearly}
           setSelectedAgeGroup={setSelectedAgeGroupYearly}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -692,7 +728,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         {/* 세번째 줄: 대출 여부 비율, 대출금액대별, 압류/가압류 현황 */}
         <LoanStatus 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanStatusData}
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).total}
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanTotal || calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanStatusData.reduce((sum, item) => sum + item.value, 0)}
           selectedAgeGroup={selectedAgeGroupLoan}
           setSelectedAgeGroup={setSelectedAgeGroupLoan}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -700,7 +736,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         
         <LoanAmount 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoanAmount)).loanAmountGroups} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoanAmount)).loanCount}
+          total={Object.values(calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoanAmount)).loanAmountGroups).reduce((sum, count) => sum + count, 0)}
           selectedAgeGroup={selectedAgeGroupLoanAmount}
           setSelectedAgeGroup={setSelectedAgeGroupLoanAmount}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -708,7 +744,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         
         <SeizureStatus 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureStatusData}
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).total}
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureTotal || calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureStatusData.reduce((sum, item) => sum + item.value, 0)}
           selectedAgeGroup={selectedAgeGroupSeizure}
           setSelectedAgeGroup={setSelectedAgeGroupSeizure}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -716,7 +752,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         
         <AreaDistribution 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).areaGroups} 
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).total}
+          total={Object.values(calculateStats(filterByAge(baseFilteredData, selectedAgeGroupArea)).areaGroups).reduce((sum, count) => sum + count, 0)}
           selectedAgeGroup={selectedAgeGroupArea}
           setSelectedAgeGroup={setSelectedAgeGroupArea}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -725,7 +761,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         {/* 네번째 줄: 세대 유형 분포 */}
         <HouseholdType 
           data={calculateStats(baseFilteredData).householdTypeData}
-          total={calculateStats(baseFilteredData).total}
+          total={calculateStats(baseFilteredData).householdTypeData.reduce((sum, item) => sum + item.value, 0)}
         />
       </div>
 

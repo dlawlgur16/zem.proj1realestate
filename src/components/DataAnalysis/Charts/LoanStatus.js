@@ -6,7 +6,7 @@ const LoanStatus = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availa
   return (
     <div className="chart-card">
       <h3 className="chart-card__title">대출 여부 비율</h3>
-      <p className="chart-card__subtitle">총 {total}명</p>
+      <p className="chart-card__subtitle">총 {total}세대</p>
       
       <div className="chart-card__tabs">
         {(availableAgeGroups || []).map((ageGroup) => (
@@ -33,7 +33,7 @@ const LoanStatus = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availa
               outerRadius={80}
               paddingAngle={2}
               labelLine={true}
-              label={({ name, percent, value }) => `${name}\n${value}명 (${(percent * 100).toFixed(1)}%)`}
+              label={({ name, percent, value }) => `${name}\n${value}세대 (${(percent * 100).toFixed(1)}%)`}
               dataKey="value"
             >
               {(data || []).map((entry, index) => (
@@ -65,7 +65,7 @@ const LoanStatus = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availa
                 style={{ backgroundColor: entry.color }}
               ></div>
               <span className="chart-card__legend-label">{entry.name}</span>
-              <span className="chart-card__legend-value">{entry.value}명</span>
+              <span className="chart-card__legend-value">{entry.value}세대</span>
             </div>
           ))}
         </div>
