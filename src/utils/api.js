@@ -4,9 +4,19 @@
  */
 
 // 환경 변수에서 API URL 가져오기 (배포 환경), 없으면 로컬 개발 환경 기본값 사용
+// 개발 환경에서는 proxy를 사용하므로 상대 경로 사용
 // 환경 변수에 /api가 없으면 자동으로 추가
-let apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-if (apiUrl && !apiUrl.endsWith('/api')) {
+let apiUrl = process.env.REACT_APP_API_URL;
+if (!apiUrl) {
+  // 개발 환경에서는 proxy 사용 (package.json의 proxy 설정)
+  // 프로덕션에서는 환경 변수 필요
+  if (process.env.NODE_ENV === 'development') {
+    apiUrl = '/api';
+  } else {
+    apiUrl = 'http://localhost:5000/api';
+  }
+}
+if (apiUrl && !apiUrl.startsWith('/') && !apiUrl.endsWith('/api')) {
   // /api로 끝나지 않으면 추가 (단, 이미 /로 끝나면 /api만 추가)
   apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api` : `${apiUrl}/api`;
 }

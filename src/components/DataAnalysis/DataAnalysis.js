@@ -93,28 +93,44 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   };
 
   const calculateStats = (data) => {
+    // 동호수 추출 헬퍼 함수 (일관성 유지)
+    const getDongho = (row) => {
+      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      return dongho || null;
+    };
+    
     // 동호수 기준으로 고유 세대만 카운트 (공유자 개별 행이 아닌)
     const uniqueHouseholds = new Set();
     data.forEach(row => {
-      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      const dongho = getDongho(row);
       if (dongho) {
         uniqueHouseholds.add(dongho);
       }
     });
     const total = uniqueHouseholds.size;
     
-    // 나이대별 분포 (연령대 컬럼 또는 생년월일 분석)
+    // 동호수 기준으로 세대 그룹화 (공유세대 중복 제거)
+    const householdMap = new Map(); // 동호수 -> 첫 번째 행
+    data.forEach(row => {
+      const dongho = getDongho(row);
+      if (dongho && !householdMap.has(dongho)) {
+        householdMap.set(dongho, row);
+      }
+    });
+    const uniqueHouseholdData = Array.from(householdMap.values());
+    
+    // 나이대별 분포 (연령대 컬럼 또는 생년월일 분석) - 세대 단위로 계산
     const ageGroups = {};
-    const hasAgeBand = data.some(row => row['연령대']);
+    const hasAgeBand = uniqueHouseholdData.some(row => row['연령대']);
     if (hasAgeBand) {
-      data.forEach(row => {
+      uniqueHouseholdData.forEach(row => {
         const bandRaw = (row['연령대'] || '').trim();
         if (!bandRaw) return;
         const normalized = bandRaw.replace('이상', '').replace('이하', '');
         ageGroups[normalized] = (ageGroups[normalized] || 0) + 1;
       });
     } else {
-      data.forEach(row => {
+      uniqueHouseholdData.forEach(row => {
         const birthRaw = (row['생년월일'] ?? '').toString().trim();
         // 특수 표기 처리: 사업자/법인은 모두 '법인'으로 통일
         if (/사업자/.test(birthRaw)) {
@@ -183,12 +199,12 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     //   return residentNumber && residentNumber.length >= 7;
     // }).length);
 
-    // 거주/투자 비율 (거주형태 컬럼 사용)
-    const residenceCount = data.filter(row => {
+    // 거주/투자 비율 (거주형태 컬럼 사용) - 세대 단위로 계산
+    const residenceCount = uniqueHouseholdData.filter(row => {
       const residenceType = row['거주형태'];
       return residenceType === '실거주';
     }).length;
-    const investmentCount = data.filter(row => {
+    const investmentCount = uniqueHouseholdData.filter(row => {
       const residenceType = row['거주형태'];
       return residenceType === '투자';
     }).length;
@@ -200,9 +216,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     //   residenceRate: ((residenceCount / total) * 100).toFixed(1) + '%'
     // });
 
-    // 면적별 분포 (건축물_연면적 컬럼 사용)
+    // 면적별 분포 (건축물_연면적 컬럼 사용) - 세대 단위로 계산
     const areaGroups = {};
-    data.forEach(row => {
+    uniqueHouseholdData.forEach(row => {
       const area = row['건축물_연면적'];
       if (area) {
         const areaNum = parseFloat(area);
@@ -214,9 +230,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
 
-    // 보유기간별 분포 (보유기간 컬럼 사용)
+    // 보유기간별 분포 (보유기간 컬럼 사용) - 세대 단위로 계산
     const holdingGroups = {};
-    data.forEach(row => {
+    uniqueHouseholdData.forEach(row => {
       const holdingPeriod = row['보유기간'];
       if (holdingPeriod) {
         // "4년 11개월" 형태의 문자열에서 년수 추출
@@ -236,18 +252,18 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       }
     });
 
-    // 등기이전원인별 분포 (등기목적_분류 컬럼 사용)
+    // 등기이전원인별 분포 (등기목적_분류 컬럼 사용) - 세대 단위로 계산
     const transferReasons = {};
-    data.forEach(row => {
+    uniqueHouseholdData.forEach(row => {
       const reason = row['등기목적_분류'];
       if (reason) {
         transferReasons[reason] = (transferReasons[reason] || 0) + 1;
       }
     });
 
-    // 연도별 소유권 변동 (등기원인_년월일 컬럼 사용)
+    // 연도별 소유권 변동 (등기원인_년월일 컬럼 사용) - 세대 단위로 계산
     const yearlyOwnership = {};
-    data.forEach(row => {
+    uniqueHouseholdData.forEach(row => {
       const date = row['등기원인_년월일'];
       if (date) {
         // "2016-07-27" 형태에서 연도 추출
@@ -358,19 +374,38 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     
 
     // 대출 여부 비율 (근저당금액 컬럼 사용) - 동호수 기준으로 고유 세대만 카운트
-    const loanHouseholdSet = new Set();
+    // 같은 동호수의 모든 행을 확인하여 대출 여부 결정
+    const loanHouseholdMap = new Map(); // 동호수 -> 대출 여부 (true/false)
     
     data.forEach(row => {
-      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      const dongho = getDongho(row);
       if (!dongho) return;
       
       const loanAmount = row['근저당금액'];
-      // 대출이 있는 세대만 카운트 (금액이 0보다 큰 경우)
+      // 대출이 있는지 확인 (금액이 0보다 큰 경우)
+      let hasLoan = false;
       if (loanAmount !== undefined && loanAmount !== null && loanAmount !== '') {
-        const amount = parseFloat(loanAmount);
+        // 숫자로 변환 시도
+        const amount = typeof loanAmount === 'number' ? loanAmount : parseFloat(String(loanAmount).replace(/,/g, ''));
         if (!isNaN(amount) && amount > 0) {
-          loanHouseholdSet.add(dongho);
+          hasLoan = true;
         }
+      }
+      
+      // 이미 해당 동호수가 있으면, 대출이 있으면 true로 설정 (OR 연산)
+      if (!loanHouseholdMap.has(dongho)) {
+        loanHouseholdMap.set(dongho, hasLoan);
+      } else if (hasLoan) {
+        // 대출이 있으면 true로 설정
+        loanHouseholdMap.set(dongho, true);
+      }
+    });
+    
+    // 대출이 있는 세대만 Set에 추가
+    const loanHouseholdSet = new Set();
+    loanHouseholdMap.forEach((hasLoan, dongho) => {
+      if (hasLoan) {
+        loanHouseholdSet.add(dongho);
       }
     });
     
@@ -381,10 +416,36 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // 전체 세대 수를 total로 사용
     const loanTotal = total;
     
-    // console.log('💰 대출 여부 분석:');
-    // console.log('💰 대출 있는 건수:', loanCount);
-    // console.log('💰 대출 없는 건수:', noLoanCount);
-    // console.log('💰 대출 비율:', ((loanCount / total) * 100).toFixed(1) + '%');
+    // 디버깅: 청화아파트 데이터 확인
+    if (data.length > 0 && data[0]['아파트_소재지'] && data[0]['아파트_소재지'].includes('청화아파트')) {
+      console.log('🔍 청화아파트 대출 여부 분석:');
+      console.log('  - 총 세대 수 (total):', total);
+      console.log('  - 대출 있는 세대 수 (loanCount):', loanCount);
+      console.log('  - 무대출 세대 수 (noLoanCount):', noLoanCount);
+      console.log('  - loanHouseholdMap 전체:', Array.from(loanHouseholdMap.entries()));
+      // 무대출 세대 찾기
+      const noLoanHouseholds = Array.from(loanHouseholdMap.entries()).filter(([dongho, hasLoan]) => !hasLoan).map(([dongho]) => dongho);
+      console.log('  - 무대출 세대 동호수:', noLoanHouseholds);
+      // 무대출 세대의 실제 데이터 확인
+      if (noLoanHouseholds.length > 0) {
+        noLoanHouseholds.slice(0, 3).forEach(dongho => {
+          const rows = data.filter(r => getDongho(r) === dongho);
+          console.log(`  - ${dongho} 행들:`, rows.map(r => ({ loanAmount: r['근저당금액'], loanSetting: r['근저당설정여부'] })));
+        });
+      } else {
+        // 모든 세대가 대출이 있다고 나오는 경우, 샘플 확인
+        const sampleDongho = Array.from(loanHouseholdMap.keys())[0];
+        const sampleRows = data.filter(r => getDongho(r) === sampleDongho);
+        console.log(`  - 샘플 세대 ${sampleDongho}의 모든 행:`, sampleRows.map(r => ({ 
+          loanAmount: r['근저당금액'], 
+          loanSetting: r['근저당설정여부'],
+          hasLoan: (() => {
+            const amount = typeof r['근저당금액'] === 'number' ? r['근저당금액'] : parseFloat(String(r['근저당금액']).replace(/,/g, ''));
+            return !isNaN(amount) && amount > 0;
+          })()
+        })));
+      }
+    }
 
     // 총 근저당액과 평균 근저당액 계산 (근저당금액 컬럼 사용)
     let totalLoanAmount = 0;
@@ -410,13 +471,17 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     const seizureHouseholdSet = new Set();
     
     data.forEach(row => {
-      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      const dongho = getDongho(row);
       if (!dongho) return;
       
       const seizure = row['압류가압류'];
-      // 압류/가압류가 있는 세대만 카운트
-      if (seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음') {
-        seizureHouseholdSet.add(dongho);
+      // 압류/가압류가 있는 세대만 카운트 (문자열 변환 후 비교)
+      if (seizure) {
+        const seizureStr = String(seizure).trim();
+        if (seizureStr === 'Y' || seizureStr === '1' || seizureStr === 'true' || seizureStr === '있음' || 
+            seizureStr.toLowerCase() === 'y' || seizureStr.includes('압류') || seizureStr.includes('가압류')) {
+          seizureHouseholdSet.add(dongho);
+        }
       }
     });
     
@@ -425,6 +490,15 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     const normalCount = total - seizureCount;
     // 전체 세대 수를 total로 사용
     const seizureTotal = total;
+    
+    // 디버깅: 청화아파트 데이터 확인
+    if (data.length > 0 && data[0]['아파트_소재지'] && data[0]['아파트_소재지'].includes('청화아파트')) {
+      console.log('🔍 청화아파트 압류/가압류 현황:');
+      console.log('  - 총 세대 수 (total):', total);
+      console.log('  - 압류/가압류 세대 수 (seizureCount):', seizureCount);
+      console.log('  - 정상 세대 수 (normalCount):', normalCount);
+      console.log('  - 압류/가압류 값 샘플:', data.slice(0, 5).map(r => r['압류가압류']));
+    }
 
     // 연령대별 인사이트 계산
     // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
@@ -436,28 +510,55 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 공유세대/단독세대 분포 계산
     // 공유세대는 동호수 기준으로 고유 세대만 세어야 함 (공유자 개별 행이 아닌)
-    const sharedHouseholdSet = new Set();
-    const singleHouseholdSet = new Set();
+    // 같은 동호수는 하나의 세대유형만 가져야 함 (공유세대 우선)
+    const householdTypeMap = new Map(); // 동호수 -> 세대유형 매핑
     
     data.forEach(row => {
       const householdType = row['세대유형'];
-      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
+      const dongho = getDongho(row);
       
+      if (!dongho) return;
+      
+      // 세대유형이 있는 경우만 처리 (문자열 변환 후 비교)
+      if (householdType) {
+        const householdTypeStr = String(householdType).trim();
+        // 이미 해당 동호수의 세대유형이 있으면, 공유세대가 우선
+        if (!householdTypeMap.has(dongho)) {
+          householdTypeMap.set(dongho, householdTypeStr);
+        } else if (householdTypeStr === '공유세대' && householdTypeMap.get(dongho) === '단독세대') {
+          // 공유세대가 우선
+          householdTypeMap.set(dongho, householdTypeStr);
+        }
+      }
+    });
+    
+    // Map에서 공유세대와 단독세대 분리
+    const sharedHouseholdSet = new Set();
+    const singleHouseholdSet = new Set();
+    
+    householdTypeMap.forEach((householdType, dongho) => {
       if (householdType === '공유세대') {
-        // 공유세대는 동호수 기준으로 고유 세대만 카운트
-        if (dongho) {
-          sharedHouseholdSet.add(dongho);
-        }
+        sharedHouseholdSet.add(dongho);
       } else if (householdType === '단독세대') {
-        // 단독세대도 동호수 기준으로 고유 세대만 카운트
-        if (dongho) {
-          singleHouseholdSet.add(dongho);
-        }
+        singleHouseholdSet.add(dongho);
       }
     });
     
     const sharedHouseholdCount = sharedHouseholdSet.size;
     const singleHouseholdCount = singleHouseholdSet.size;
+    // 세대유형이 있는 실제 세대 수 (공유세대 + 단독세대)
+    // 만약 세대유형이 없는 세대가 있으면 total과 다를 수 있음
+    const householdTypeTotal = sharedHouseholdCount + singleHouseholdCount;
+    
+    // 디버깅: 청화아파트 데이터 확인
+    if (data.length > 0 && data[0]['아파트_소재지'] && data[0]['아파트_소재지'].includes('청화아파트')) {
+      console.log('🔍 청화아파트 세대 유형 분포:');
+      console.log('  - 총 세대 수 (total):', total);
+      console.log('  - 공유세대 수 (sharedHouseholdCount):', sharedHouseholdCount);
+      console.log('  - 단독세대 수 (singleHouseholdCount):', singleHouseholdCount);
+      console.log('  - 세대유형 합계 (householdTypeTotal):', householdTypeTotal);
+      console.log('  - 세대유형 값 샘플:', data.slice(0, 10).map(r => ({ dongho: getDongho(r), type: r['세대유형'] })));
+    }
 
     // 사용 가능한 나이대 목록 생성 (탭에서는 '미분류', '법인' 제외)
     const availableAgeGroups = ['전체', ...Object.keys(ageGroups)
@@ -487,6 +588,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       availableAgeGroups, // 사용 가능한 나이대 목록 추가
       sharedHouseholdCount, // 공유세대 수
       singleHouseholdCount, // 단독세대 수
+      householdTypeTotal, // 세대유형이 있는 실제 세대 수
       loanStatusData: [
         { name: '대출', value: loanCount, color: '#ef4444' },
         { name: '무대출', value: noLoanCount, color: '#10b981' }
@@ -531,82 +633,43 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
   // 나이대별 필터링 함수 (주민번호 기반)
   const filterByAge = (data, ageGroup) => {
-
-    if (ageGroup === '전체') return data;
+    if (ageGroup === '전체') {
+      return data;
+    }
 
     const filtered = data.filter(row => {
-    let birthRaw = row['생년월일'];
-    if (!birthRaw) return false;
+      let birthRaw = row['생년월일'];
+      if (!birthRaw) return false;
 
-    // ✅ 정규식으로 주민번호 앞 6자리 추출
-    const match = birthRaw.match(/(\d{6})/);
-    if (!match) return false;
-    const birthDate = match[1]; // 예: "110111"
+      // ✅ 정규식으로 주민번호 앞 6자리 추출
+      const match = birthRaw.match(/(\d{6})/);
+      if (!match) return false;
+      const birthDate = match[1]; // 예: "110111"
 
-    try {
-      const birthYear = parseInt(birthDate.substring(0, 2));
-      const currentYear = new Date().getFullYear();
-      const fullBirthYear = birthYear <= 30 ? 2000 + birthYear : 1900 + birthYear;
-      const age = currentYear - fullBirthYear;
+      try {
+        const birthYear = parseInt(birthDate.substring(0, 2));
+        const currentYear = new Date().getFullYear();
+        const fullBirthYear = birthYear <= 30 ? 2000 + birthYear : 1900 + birthYear;
+        const age = currentYear - fullBirthYear;
 
-      switch (ageGroup) {
-        case '10대': return age < 20;
-        case '20대': return age >= 20 && age < 30;
-        case '30대': return age >= 30 && age < 40;
-        case '40대': return age >= 40 && age < 50;
-        case '50대': return age >= 50 && age < 60;
-        case '60대': return age >= 60 && age < 70;
-        case '70대': return age >= 70 && age < 80;
-        case '80대': return age >= 80 && age < 90;
-        case '90대': return age >= 90;
-        default: return false;
+        switch (ageGroup) {
+          case '10대': return age < 20;
+          case '20대': return age >= 20 && age < 30;
+          case '30대': return age >= 30 && age < 40;
+          case '40대': return age >= 40 && age < 50;
+          case '50대': return age >= 50 && age < 60;
+          case '60대': return age >= 60 && age < 70;
+          case '70대': return age >= 70 && age < 80;
+          case '80대': return age >= 80 && age < 90;
+          case '90대': return age >= 90;
+          default: return false;
+        }
+      } catch (error) {
+        console.error('나이대 필터링 오류:', error, birthRaw);
+        return false;
       }
-    } catch (error) {
-      console.error('나이대 필터링 오류:', error, birthRaw);
-      return false;
-    }
-  });
+    });
 
-  // console.log(`🧮 나이대 필터링 완료: ${ageGroup}, 원본 ${data.length} → 결과 ${filtered.length}`);
-  
-    // if (ageGroup === '전체') return data;
-    
-    // const filtered = data.filter(row => {
-    //   const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
-    //   if (!residentNumber || residentNumber.length < 7) return false;
-      
-    //   try {
-    //     const birthYear = parseInt(residentNumber.substring(0, 2));
-    //     const currentYear = new Date().getFullYear();
-    //     let fullBirthYear;
-        
-    //     if (birthYear <= 30) {
-    //       fullBirthYear = 2000 + birthYear;
-    //     } else {
-    //       fullBirthYear = 1900 + birthYear;
-    //     }
-        
-    //     const age = currentYear - fullBirthYear;
-        
-    //     switch (ageGroup) {
-    //       case '20대이하': return age >= 0 && age < 20;
-    //       case '20대': return age >= 20 && age < 30;
-    //       case '30대': return age >= 30 && age < 40;
-    //       case '40대': return age >= 40 && age < 50;
-    //       case '50대': return age >= 50 && age < 60;
-    //       case '60대': return age >= 60 && age < 70;
-    //       case '70대': return age >= 70 && age < 80;
-    //       case '80대': return age >= 80 && age < 90;
-    //       case '90대이상': return age >= 90;
-    //       default: return true;
-    //     }
-    //   } catch (error) {
-    //     console.error('나이대 필터링 오류:', error, residentNumber);
-    //     return false;
-    //   }
-    // });
-    
-    // console.log(`나이대 필터링: ${ageGroup}, 원본: ${data.length}, 필터링 후: ${filtered.length}`);
     return filtered;
   };
 
@@ -722,7 +785,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         {/* 세번째 줄: 대출 여부 비율, 대출금액대별, 압류/가압류 현황 */}
         <LoanStatus 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanStatusData}
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanTotal || calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).loanStatusData.reduce((sum, item) => sum + item.value, 0)}
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupLoan)).total}
           selectedAgeGroup={selectedAgeGroupLoan}
           setSelectedAgeGroup={setSelectedAgeGroupLoan}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -738,7 +801,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         
         <SeizureStatus 
           data={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureStatusData}
-          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureTotal || calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).seizureStatusData.reduce((sum, item) => sum + item.value, 0)}
+          total={calculateStats(filterByAge(baseFilteredData, selectedAgeGroupSeizure)).total}
           selectedAgeGroup={selectedAgeGroupSeizure}
           setSelectedAgeGroup={setSelectedAgeGroupSeizure}
           availableAgeGroups={calculateStats(baseFilteredData).availableAgeGroups}
@@ -755,7 +818,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         {/* 네번째 줄: 세대 유형 분포 */}
         <HouseholdType 
           data={calculateStats(baseFilteredData).householdTypeData}
-          total={calculateStats(baseFilteredData).householdTypeData.reduce((sum, item) => sum + item.value, 0)}
+          total={calculateStats(baseFilteredData).total}
         />
       </div>
 

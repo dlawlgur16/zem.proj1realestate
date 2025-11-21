@@ -51,5 +51,6 @@
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.0"
-  }
+  },
+  "proxy": "https://backend-9njiwjrm5-jis-projects-55d8fd7d.vercel.app"
 }

@@ -109,6 +109,19 @@ function preprocessData(data) {
       else if (row['L'] !== undefined && row['L'] !== null && row['L'] !== '') {
         ho = String(row['L']).trim();
       }
+      // 4. 아파트 소재지에서 "제101호", "101호" 형식 추출 (Column6 또는 아파트_소재지)
+      // extractUnitInfo는 extractPropertyLocation보다 먼저 실행되므로 Column6에서 직접 추출
+      if (!ho || ho === '') {
+        // 아파트 소재지 컬럼 확인 (Column6, 인덱스 5)
+        const propertyLocation = row['아파트_소재지'] || columns[5] || row['Column6'] || row['소재지'] || row['물건지'] || '';
+        if (propertyLocation) {
+          // "제101호", "제102-1호" 또는 "101호" 형식 찾기
+          const hoMatch = String(propertyLocation).match(/제?(\d+-\d+호|\d+호)/);
+          if (hoMatch) {
+            ho = hoMatch[1]; // "제" 제거하고 호수만 추출
+          }
+        }
+      }
       
       // 호수가 "101-1호" 형식인지 확인하고, 그렇지 않으면 원본 그대로 사용
       // 만약 호수가 "1"만 있으면, 동과 결합해서 "101-1호" 형식으로 만들기 시도
@@ -128,7 +141,30 @@ function preprocessData(data) {
         ho = `${ho}호`;
       }
       
-      const dongHosu = `${String(dong).trim()} ${String(ho).trim()}`.trim();
+      // 동호수 생성 (주소 정보 제거, 순수 동호수만)
+      // "광진구 구의동 102-1호" 형식에서 "102-1호"만 추출
+      let dongHosu = '';
+      if (ho) {
+        // 호수에 이미 "호"가 포함되어 있으면 그대로 사용
+        if (ho.includes('호')) {
+          dongHosu = ho;
+        } else {
+          dongHosu = `${ho}호`;
+        }
+      } else if (dong && ho) {
+        // 동과 호수가 모두 있으면 결합
+        dongHosu = `${String(dong).trim()} ${String(ho).trim()}`.trim();
+      }
+      
+      // 동호수에서 주소 정보 제거 (정규화)
+      // "광진구 구의동 102-1호" -> "102-1호"
+      if (dongHosu) {
+        // 숫자로 시작하는 호수 부분만 추출
+        const hoMatch = dongHosu.match(/(\d+-\d+호|\d+호)/);
+        if (hoMatch) {
+          dongHosu = hoMatch[1];
+        }
+      }
       
       return {
         ...row,
@@ -426,17 +462,29 @@ function preprocessData(data) {
       if (row['연번'] !== undefined && row['연번'] !== null && row['연번'] !== '') {
         연번 = row['연번'];
       }
-      // 2. __EMPTY (빈 셀 키)
+      // 2. "구분소유자명부 표준양식 " 키로 접근 (헤더가 있을 때)
+      else if (row['구분소유자명부 표준양식 '] !== undefined && row['구분소유자명부 표준양식 '] !== null && row['구분소유자명부 표준양식 '] !== '') {
+        const value = String(row['구분소유자명부 표준양식 ']).trim();
+        // 숫자만 있으면 연번으로 인식
+        if (value && /^\d+$/.test(value)) {
+          연번 = value;
+        }
+      }
+      // 3. __EMPTY (빈 셀 키)
       else if (row.__EMPTY !== undefined && row.__EMPTY !== null && row.__EMPTY !== '') {
         연번 = row.__EMPTY;
       }
-      // 3. A열로 접근 (헤더 없을 때)
+      // 4. A열로 접근 (헤더 없을 때)
       else if (row['A'] !== undefined && row['A'] !== null && row['A'] !== '') {
         연번 = row['A'];
       }
-      // 4. 첫 번째 컬럼 (인덱스 0)
+      // 5. 첫 번째 컬럼 (인덱스 0)
       else if (columns[0] !== undefined && columns[0] !== null && columns[0] !== '') {
-        연번 = columns[0];
+        const value = String(columns[0]).trim();
+        // 숫자만 있으면 연번으로 인식
+        if (value && /^\d+$/.test(value)) {
+          연번 = value;
+        }
       }
       
       // 소유자명 추출 (여러 방법 시도)
@@ -465,10 +513,30 @@ function preprocessData(data) {
         }
       }
       
+      // C열(공유자 순서) 추출 - 1번이 주 소유자, 2번 이상이 공유자
+      let 공유자순서 = null;
+      // 1. 헤더 이름으로 접근
+      if (row['공유자순서'] !== undefined && row['공유자순서'] !== null && row['공유자순서'] !== '') {
+        공유자순서 = String(row['공유자순서']).trim();
+      }
+      // 2. C열로 접근 (헤더 없을 때, C=2번째 컬럼, 0-based)
+      else if (row['C'] !== undefined && row['C'] !== null && row['C'] !== '') {
+        공유자순서 = String(row['C']).trim();
+      }
+      // 3. 인덱스로 접근 (C열 = 2번째 컬럼, 0-based)
+      else if (columns[2] !== undefined && columns[2] !== null && columns[2] !== '') {
+        공유자순서 = String(columns[2]).trim();
+      }
+      // 4. Column3로 접근
+      else if (row['Column3'] !== undefined && row['Column3'] !== null && row['Column3'] !== '') {
+        공유자순서 = String(row['Column3']).trim();
+      }
+      
       return {
         ...row,
         소유자명: 소유자명 ? String(소유자명).trim() : null,
         연번_원본: 연번,
+        공유자순서: 공유자순서,
         행번호: index
       };
     });
@@ -484,11 +552,17 @@ function preprocessData(data) {
       // 연번이 있거나, 다른 중요한 데이터가 있는 행만 포함
       // 공유자 행의 경우 연번이 없을 수 있으므로 소유자명이나 동호수만 있어도 포함
       // 헤더가 있는 경우와 없는 경우 모두 고려
-      const hasData = 
+      // 헤더 행 제외 (소유자명이 헤더 텍스트인 경우)
+      const 헤더텍스트 = ['구분', '성 명', '연번', '공유', '등기구분', '소재지', '토지/건축물 정보', '소 유 자', '소유자', '성명'];
+      const 소유자명 = row.소유자명 ? String(row.소유자명).trim() : '';
+      const is헤더행 = 헤더텍스트.includes(소유자명) || 
+                      (소유자명 === '' && row.연번_원본 === null && !row.동호수 && !row.동 && !row.호수);
+      
+      const hasData = !is헤더행 && (
         // 연번이 있으면 무조건 포함
         (row.연번_원본 !== null && row.연번_원본 !== undefined && row.연번_원본 !== '') ||
-        // 소유자명이 있으면 포함
-        (row.소유자명 !== null && row.소유자명 !== undefined && row.소유자명 !== '' && row.소유자명.trim() !== '') ||
+        // 소유자명이 있으면 포함 (헤더가 아닌 경우)
+        (소유자명 !== '' && !헤더텍스트.includes(소유자명)) ||
         // 동호수가 있으면 포함
         (row.동호수 && row.동호수 !== '' && row.동호수.trim() !== '') ||
         // 동이나 호수가 있으면 포함 (헤더가 있을 때)
@@ -500,12 +574,15 @@ function preprocessData(data) {
         (row['동호수'] && String(row['동호수']).trim() !== '') ||
         // 인덱스로 접근 (헤더가 없을 때, 동=8, 호수=11)
         (Object.values(row)[8] && String(Object.values(row)[8]).trim() !== '') ||
-        (Object.values(row)[11] && String(Object.values(row)[11]).trim() !== '');
+        (Object.values(row)[11] && String(Object.values(row)[11]).trim() !== '')
+      );
       
       if (hasData) {
         validRows.push({ ...row, originalIndex: index });
       } else {
         // 제외된 행 로깅 (디버깅용)
+        const column6 = Object.values(row)[5] || row['Column6'] || '';
+        const has101 = String(column6).includes('101호');
         excludedRows.push({
           index,
           연번: row.연번_원본,
@@ -513,6 +590,7 @@ function preprocessData(data) {
           동호수: row.동호수,
           동: row.동,
           호수: row.호수,
+          Column6: has101 ? String(column6).substring(0, 50) : '',
           원본키: Object.keys(row).slice(0, 10).join(', ')
         });
       }
@@ -521,6 +599,13 @@ function preprocessData(data) {
     console.log(`   유효한 행: ${dataWithInfo.length}행 → ${validRows.length}행`);
     if (excludedRows.length > 0) {
       console.log(`   ⚠️ 제외된 행 ${excludedRows.length}개:`);
+      const excluded101 = excludedRows.filter(e => e.Column6 && e.Column6.includes('101호'));
+      if (excluded101.length > 0) {
+        console.log(`   ❌ 101호가 포함된 제외된 행 ${excluded101.length}개:`);
+        excluded101.forEach((excluded) => {
+          console.log(`      [행 ${excluded.index}] 연번:${excluded.연번}, 소유자명:${excluded.소유자명}, 동호수:${excluded.동호수}, 동:${excluded.동}, 호수:${excluded.호수}, Column6:${excluded.Column6}`);
+        });
+      }
       excludedRows.forEach((excluded, i) => {
         if (i < 10) { // 처음 10개만 출력
           console.log(`      [행 ${excluded.index}] 연번:${excluded.연번}, 소유자명:${excluded.소유자명}, 동호수:${excluded.동호수}, 동:${excluded.동}, 호수:${excluded.호수}`);
@@ -590,13 +675,26 @@ function preprocessData(data) {
       }
       
       if (has공유자) {
-        // 공유세대: 첫 번째 행(대표 소유자)만 저장 (세대 단위로 1행)
-        const representative = { ...group[0] };
-        representative.총인원수 = group.length;
-        representative.공유자수 = group.length;
-        representative.세대유형 = '공유세대';
-        representative.거주형태 = common거주형태 || representative.거주형태;
-        groupedRows.push(representative);
+        // 공유세대: C열이 "1"인 행(주 소유자)만 저장
+        // C열이 "1"인 행 찾기
+        const 주소유자 = group.find(r => {
+          const 순서 = r.공유자순서;
+          if (!순서) return false;
+          const 순서값 = String(순서).trim();
+          return 순서값 === '1' || 순서값 === '1번' || 순서 === 1;
+        });
+        
+        // C열이 "1"인 행이 없으면 첫 번째 행 사용
+        const representative = 주소유자 || group[0];
+        const finalRow = { ...representative };
+        // 공유자수는 그룹 내 실제 행 수 (연번 1개 세대에 속한 모든 행 = 인원수)
+        // 예: 연번 1번 그룹에 2행이 있으면 공유자수 2명 (주 소유자 1명 + 공유자 1명)
+        const 실제공유자수 = group.length;
+        finalRow.총인원수 = 실제공유자수;
+        finalRow.공유자수 = 실제공유자수;
+        finalRow.세대유형 = '공유세대';
+        finalRow.거주형태 = common거주형태 || finalRow.거주형태;
+        groupedRows.push(finalRow);
       } else {
         // 단독세대: 첫 번째 행만 저장
         const representative = { ...group[0] };
