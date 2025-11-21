@@ -78,9 +78,37 @@ function preprocessData(data) {
   function extractUnitInfo(data) {
     return data.map(row => {
       const columns = Object.values(row);
-      // 인덱스 8: 동, 인덱스 11: 호수
-      const dong = columns[8] || '';
-      let ho = columns[11] || '';
+      const keys = Object.keys(row);
+      
+      // 동 추출 (여러 방법 시도)
+      let dong = '';
+      // 1. 헤더 이름으로 접근
+      if (row['동'] !== undefined && row['동'] !== null && row['동'] !== '') {
+        dong = String(row['동']).trim();
+      }
+      // 2. 인덱스로 접근 (8번째 컬럼, 0-based)
+      else if (columns[8] !== undefined && columns[8] !== null && columns[8] !== '') {
+        dong = String(columns[8]).trim();
+      }
+      // 3. I열로 접근 (헤더 없을 때, I=8번째)
+      else if (row['I'] !== undefined && row['I'] !== null && row['I'] !== '') {
+        dong = String(row['I']).trim();
+      }
+      
+      // 호수 추출 (여러 방법 시도)
+      let ho = '';
+      // 1. 헤더 이름으로 접근
+      if (row['호수'] !== undefined && row['호수'] !== null && row['호수'] !== '') {
+        ho = String(row['호수']).trim();
+      }
+      // 2. 인덱스로 접근 (11번째 컬럼, 0-based)
+      else if (columns[11] !== undefined && columns[11] !== null && columns[11] !== '') {
+        ho = String(columns[11]).trim();
+      }
+      // 3. L열로 접근 (헤더 없을 때, L=11번째)
+      else if (row['L'] !== undefined && row['L'] !== null && row['L'] !== '') {
+        ho = String(row['L']).trim();
+      }
       
       // 호수가 "101-1호" 형식인지 확인하고, 그렇지 않으면 원본 그대로 사용
       // 만약 호수가 "1"만 있으면, 동과 결합해서 "101-1호" 형식으로 만들기 시도
@@ -386,31 +414,55 @@ function preprocessData(data) {
       const columns = Object.values(row);
       const keys = Object.keys(row);
       
-      // A열(연번) 추출
+      // 디버깅: 첫 몇 행의 키 구조 확인
+      if (index < 3) {
+        console.log(`   [행 ${index}] 키 목록:`, keys.slice(0, 10).join(', '), '...');
+        console.log(`   [행 ${index}] 샘플 데이터:`, JSON.stringify(Object.fromEntries(Object.entries(row).slice(0, 5))));
+      }
+      
+      // A열(연번) 추출 - 여러 방법 시도
       let 연번 = null;
-      if (row.__EMPTY !== undefined && row.__EMPTY !== null && row.__EMPTY !== '') {
-        연번 = row.__EMPTY;
-      } else if (columns[0] !== undefined && columns[0] !== null && columns[0] !== '') {
-        연번 = columns[0];
-      } else if (row['A'] !== undefined && row['A'] !== null && row['A'] !== '') {
-        연번 = row['A'];
-      } else if (row['연번'] !== undefined && row['연번'] !== null && row['연번'] !== '') {
+      // 1. 헤더 이름으로 접근
+      if (row['연번'] !== undefined && row['연번'] !== null && row['연번'] !== '') {
         연번 = row['연번'];
+      }
+      // 2. __EMPTY (빈 셀 키)
+      else if (row.__EMPTY !== undefined && row.__EMPTY !== null && row.__EMPTY !== '') {
+        연번 = row.__EMPTY;
+      }
+      // 3. A열로 접근 (헤더 없을 때)
+      else if (row['A'] !== undefined && row['A'] !== null && row['A'] !== '') {
+        연번 = row['A'];
+      }
+      // 4. 첫 번째 컬럼 (인덱스 0)
+      else if (columns[0] !== undefined && columns[0] !== null && columns[0] !== '') {
+        연번 = columns[0];
       }
       
       // 소유자명 추출 (여러 방법 시도)
       let 소유자명 = null;
-      // 1. 헤더 이름으로 접근 시도
-      if (row['소유자명'] || row['성명'] || row['소유자']) {
-        소유자명 = row['소유자명'] || row['성명'] || row['소유자'];
+      // 1. 헤더 이름으로 접근 시도 (가장 우선)
+      if (row['소유자명'] || row['성명'] || row['소유자'] || row['성명(소유자)']) {
+        소유자명 = row['소유자명'] || row['성명'] || row['소유자'] || row['성명(소유자)'];
       }
-      // 2. 인덱스로 접근 (X열 = 23번째 컬럼, 0-based)
+      // 2. X열로 접근 (헤더 없을 때, X=23번째 컬럼)
+      else if (row['X'] !== undefined && row['X'] !== null && row['X'] !== '') {
+        소유자명 = row['X'];
+      }
+      // 3. 인덱스로 접근 (X열 = 23번째 컬럼, 0-based)
       else if (columns[23] !== undefined && columns[23] !== null && columns[23] !== '') {
         소유자명 = columns[23];
       }
-      // 3. X열로 접근
-      else if (row['X'] !== undefined && row['X'] !== null && row['X'] !== '') {
-        소유자명 = row['X'];
+      // 4. 모든 키를 순회하며 소유자명 관련 키 찾기
+      else {
+        for (const key of keys) {
+          const keyLower = String(key).toLowerCase();
+          if ((keyLower.includes('성명') || keyLower.includes('소유자') || keyLower.includes('이름')) && 
+              row[key] && String(row[key]).trim() !== '') {
+            소유자명 = row[key];
+            break;
+          }
+        }
       }
       
       return {
@@ -431,11 +483,24 @@ function preprocessData(data) {
     dataWithInfo.forEach((row, index) => {
       // 연번이 있거나, 다른 중요한 데이터가 있는 행만 포함
       // 공유자 행의 경우 연번이 없을 수 있으므로 소유자명이나 동호수만 있어도 포함
-      const hasData = (row.연번_원본 !== null && row.연번_원본 !== undefined && row.연번_원본 !== '') ||
-                     (row.소유자명 !== null && row.소유자명 !== undefined && row.소유자명 !== '' && row.소유자명.trim() !== '') ||
-                     (row.동호수 && row.동호수 !== '' && row.동호수.trim() !== '') ||
-                     (row.동 && row.동 !== '' && row.동.trim() !== '') ||
-                     (row.호수 && row.호수 !== '' && row.호수.trim() !== '');
+      // 헤더가 있는 경우와 없는 경우 모두 고려
+      const hasData = 
+        // 연번이 있으면 무조건 포함
+        (row.연번_원본 !== null && row.연번_원본 !== undefined && row.연번_원본 !== '') ||
+        // 소유자명이 있으면 포함
+        (row.소유자명 !== null && row.소유자명 !== undefined && row.소유자명 !== '' && row.소유자명.trim() !== '') ||
+        // 동호수가 있으면 포함
+        (row.동호수 && row.동호수 !== '' && row.동호수.trim() !== '') ||
+        // 동이나 호수가 있으면 포함 (헤더가 있을 때)
+        (row.동 && row.동 !== '' && row.동.trim() !== '') ||
+        (row.호수 && row.호수 !== '' && row.호수.trim() !== '') ||
+        // 원본 데이터에서 직접 확인 (헤더 키로 접근)
+        (row['동'] && String(row['동']).trim() !== '') ||
+        (row['호수'] && String(row['호수']).trim() !== '') ||
+        (row['동호수'] && String(row['동호수']).trim() !== '') ||
+        // 인덱스로 접근 (헤더가 없을 때, 동=8, 호수=11)
+        (Object.values(row)[8] && String(Object.values(row)[8]).trim() !== '') ||
+        (Object.values(row)[11] && String(Object.values(row)[11]).trim() !== '');
       
       if (hasData) {
         validRows.push({ ...row, originalIndex: index });
@@ -447,14 +512,20 @@ function preprocessData(data) {
           소유자명: row.소유자명,
           동호수: row.동호수,
           동: row.동,
-          호수: row.호수
+          호수: row.호수,
+          원본키: Object.keys(row).slice(0, 10).join(', ')
         });
       }
     });
     
     console.log(`   유효한 행: ${dataWithInfo.length}행 → ${validRows.length}행`);
     if (excludedRows.length > 0) {
-      console.log(`   ⚠️ 제외된 행 ${excludedRows.length}개 (샘플 5개):`, excludedRows.slice(0, 5));
+      console.log(`   ⚠️ 제외된 행 ${excludedRows.length}개:`);
+      excludedRows.forEach((excluded, i) => {
+        if (i < 10) { // 처음 10개만 출력
+          console.log(`      [행 ${excluded.index}] 연번:${excluded.연번}, 소유자명:${excluded.소유자명}, 동호수:${excluded.동호수}, 동:${excluded.동}, 호수:${excluded.호수}`);
+        }
+      });
     }
     
     validRows.forEach((row, index) => {
