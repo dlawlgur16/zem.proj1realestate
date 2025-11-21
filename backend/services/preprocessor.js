@@ -392,14 +392,30 @@ function preprocessData(data) {
         연번 = row.__EMPTY;
       } else if (columns[0] !== undefined && columns[0] !== null && columns[0] !== '') {
         연번 = columns[0];
+      } else if (row['A'] !== undefined && row['A'] !== null && row['A'] !== '') {
+        연번 = row['A'];
+      } else if (row['연번'] !== undefined && row['연번'] !== null && row['연번'] !== '') {
+        연번 = row['연번'];
       }
       
-      // X열(소유자명) 추출
-      let 소유자명 = columns[23] || null;
+      // 소유자명 추출 (여러 방법 시도)
+      let 소유자명 = null;
+      // 1. 헤더 이름으로 접근 시도
+      if (row['소유자명'] || row['성명'] || row['소유자']) {
+        소유자명 = row['소유자명'] || row['성명'] || row['소유자'];
+      }
+      // 2. 인덱스로 접근 (X열 = 23번째 컬럼, 0-based)
+      else if (columns[23] !== undefined && columns[23] !== null && columns[23] !== '') {
+        소유자명 = columns[23];
+      }
+      // 3. X열로 접근
+      else if (row['X'] !== undefined && row['X'] !== null && row['X'] !== '') {
+        소유자명 = row['X'];
+      }
       
       return {
         ...row,
-        소유자명: 소유자명,
+        소유자명: 소유자명 ? String(소유자명).trim() : null,
         연번_원본: 연번,
         행번호: index
       };
@@ -411,18 +427,35 @@ function preprocessData(data) {
     
     // 빈 행 필터링 (연번이 없고 다른 데이터도 없는 행 제거)
     const validRows = [];
+    const excludedRows = [];
     dataWithInfo.forEach((row, index) => {
       // 연번이 있거나, 다른 중요한 데이터가 있는 행만 포함
-      const hasData = row.연번_원본 !== null && row.연번_원본 !== undefined && row.연번_원본 !== '' ||
-                     row.소유자명 !== null && row.소유자명 !== undefined && row.소유자명 !== '' ||
-                     (row.동호수 && row.동호수 !== '');
+      // 공유자 행의 경우 연번이 없을 수 있으므로 소유자명이나 동호수만 있어도 포함
+      const hasData = (row.연번_원본 !== null && row.연번_원본 !== undefined && row.연번_원본 !== '') ||
+                     (row.소유자명 !== null && row.소유자명 !== undefined && row.소유자명 !== '' && row.소유자명.trim() !== '') ||
+                     (row.동호수 && row.동호수 !== '' && row.동호수.trim() !== '') ||
+                     (row.동 && row.동 !== '' && row.동.trim() !== '') ||
+                     (row.호수 && row.호수 !== '' && row.호수.trim() !== '');
       
       if (hasData) {
         validRows.push({ ...row, originalIndex: index });
+      } else {
+        // 제외된 행 로깅 (디버깅용)
+        excludedRows.push({
+          index,
+          연번: row.연번_원본,
+          소유자명: row.소유자명,
+          동호수: row.동호수,
+          동: row.동,
+          호수: row.호수
+        });
       }
     });
     
     console.log(`   유효한 행: ${dataWithInfo.length}행 → ${validRows.length}행`);
+    if (excludedRows.length > 0) {
+      console.log(`   ⚠️ 제외된 행 ${excludedRows.length}개 (샘플 5개):`, excludedRows.slice(0, 5));
+    }
     
     validRows.forEach((row, index) => {
       // 연번이 있으면 새로운 세대 시작
