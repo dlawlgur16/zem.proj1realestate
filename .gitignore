@@ -49,3 +49,6 @@ Thumbs.db
 # Other projects
 estate-registry-et1/
 .vercel
+
+# Backup folders
+src_backup_old_project/
