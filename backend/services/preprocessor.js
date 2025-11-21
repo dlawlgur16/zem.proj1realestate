@@ -486,15 +486,13 @@ function preprocessData(data) {
       }
       
       if (has공유자) {
-        // 공유세대: 모든 공유자를 별도 행으로 저장
-        group.forEach((row, index) => {
-          const rowCopy = { ...row };
-          rowCopy.총인원수 = group.length;
-          rowCopy.공유자수 = group.length;
-          rowCopy.세대유형 = '공유세대';
-          rowCopy.거주형태 = row.거주형태 || common거주형태;
-          groupedRows.push(rowCopy);
-        });
+        // 공유세대: 첫 번째 행(대표 소유자)만 저장 (세대 단위로 1행)
+        const representative = { ...group[0] };
+        representative.총인원수 = group.length;
+        representative.공유자수 = group.length;
+        representative.세대유형 = '공유세대';
+        representative.거주형태 = common거주형태 || representative.거주형태;
+        groupedRows.push(representative);
       } else {
         // 단독세대: 첫 번째 행만 저장
         const representative = { ...group[0] };
@@ -509,9 +507,10 @@ function preprocessData(data) {
     const 공유세대수 = groupedRows.filter(r => r.세대유형 === '공유세대').length;
     const 단독세대수 = groupedRows.filter(r => r.세대유형 === '단독세대').length;
     const 공유세대그룹수 = Object.keys(grouped).filter(k => grouped[k].some(r => r.공유여부 === '-')).length;
+    const 총인원수 = groupedRows.reduce((sum, r) => sum + (r.총인원수 || 1), 0);
     console.log(`✅ 그룹화 완료: ${dataWithGroups.length}행 → ${groupedRows.length}행`);
-    console.log(`   공유세대 그룹: ${공유세대그룹수}개 (총 ${공유세대수}명의 공유자 저장)`);
-    console.log(`   단독세대: ${단독세대수}개`);
+    console.log(`   공유세대: ${공유세대수}개, 단독세대: ${단독세대수}개`);
+    console.log(`   총 세대 수: ${groupedRows.length}개, 총 인원 수: ${총인원수}명`);
     
     return groupedRows;
   }
