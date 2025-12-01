@@ -190,14 +190,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         }
       }
     });
-    
-    // 성별 분석 결과 디버깅
-    // console.log('성별 분석 결과:', genderGroups);
-    // console.log('총 데이터 수:', data.length);
-    // console.log('주민번호가 있는 데이터 수:', data.filter(row => {
-    //   const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
-    //   return residentNumber && residentNumber.length >= 7;
-    // }).length);
 
     // 거주/투자 비율 (거주형태 컬럼 사용) - 세대 단위로 계산
     const residenceCount = uniqueHouseholdData.filter(row => {
@@ -208,13 +200,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       const residenceType = row['거주형태'];
       return residenceType === '투자';
     }).length;
-    
-    // console.log('🔍 DataAnalysis 실거주 비율:', {
-    //   total,
-    //   residenceCount,
-    //   investmentCount,
-    //   residenceRate: ((residenceCount / total) * 100).toFixed(1) + '%'
-    // });
 
     // 면적별 분포 (건축물_연면적 컬럼 사용) - 세대 단위로 계산
     const areaGroups = {};
@@ -415,37 +400,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     const noLoanCount = total - loanCount;
     // 전체 세대 수를 total로 사용
     const loanTotal = total;
-    
-    // 디버깅: 청화아파트 데이터 확인
-    if (data.length > 0 && data[0]['아파트_소재지'] && data[0]['아파트_소재지'].includes('청화아파트')) {
-      console.log('🔍 청화아파트 대출 여부 분석:');
-      console.log('  - 총 세대 수 (total):', total);
-      console.log('  - 대출 있는 세대 수 (loanCount):', loanCount);
-      console.log('  - 무대출 세대 수 (noLoanCount):', noLoanCount);
-      console.log('  - loanHouseholdMap 전체:', Array.from(loanHouseholdMap.entries()));
-      // 무대출 세대 찾기
-      const noLoanHouseholds = Array.from(loanHouseholdMap.entries()).filter(([dongho, hasLoan]) => !hasLoan).map(([dongho]) => dongho);
-      console.log('  - 무대출 세대 동호수:', noLoanHouseholds);
-      // 무대출 세대의 실제 데이터 확인
-      if (noLoanHouseholds.length > 0) {
-        noLoanHouseholds.slice(0, 3).forEach(dongho => {
-          const rows = data.filter(r => getDongho(r) === dongho);
-          console.log(`  - ${dongho} 행들:`, rows.map(r => ({ loanAmount: r['근저당금액'], loanSetting: r['근저당설정여부'] })));
-        });
-      } else {
-        // 모든 세대가 대출이 있다고 나오는 경우, 샘플 확인
-        const sampleDongho = Array.from(loanHouseholdMap.keys())[0];
-        const sampleRows = data.filter(r => getDongho(r) === sampleDongho);
-        console.log(`  - 샘플 세대 ${sampleDongho}의 모든 행:`, sampleRows.map(r => ({ 
-          loanAmount: r['근저당금액'], 
-          loanSetting: r['근저당설정여부'],
-          hasLoan: (() => {
-            const amount = typeof r['근저당금액'] === 'number' ? r['근저당금액'] : parseFloat(String(r['근저당금액']).replace(/,/g, ''));
-            return !isNaN(amount) && amount > 0;
-          })()
-        })));
-      }
-    }
 
     // 총 근저당액과 평균 근저당액 계산 (근저당금액 컬럼 사용)
     let totalLoanAmount = 0;
@@ -461,11 +415,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         }
       }
     });
-    
+
     const averageLoanAmount = validLoanCount > 0 ? totalLoanAmount / validLoanCount : 0;
-    
-    // console.log('💰 총 근저당액:', totalLoanAmount);
-    // console.log('💰 평균 근저당액:', averageLoanAmount);
 
     // 압류/가압류 현황 (압류가압류 컬럼 사용) - 동호수 기준으로 고유 세대만 카운트
     const seizureHouseholdSet = new Set();
@@ -490,23 +441,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     const normalCount = total - seizureCount;
     // 전체 세대 수를 total로 사용
     const seizureTotal = total;
-    
-    // 디버깅: 청화아파트 데이터 확인
-    if (data.length > 0 && data[0]['아파트_소재지'] && data[0]['아파트_소재지'].includes('청화아파트')) {
-      console.log('🔍 청화아파트 압류/가압류 현황:');
-      console.log('  - 총 세대 수 (total):', total);
-      console.log('  - 압류/가압류 세대 수 (seizureCount):', seizureCount);
-      console.log('  - 정상 세대 수 (normalCount):', normalCount);
-      console.log('  - 압류/가압류 값 샘플:', data.slice(0, 5).map(r => r['압류가압류']));
-    }
 
     // 연령대별 인사이트 계산
-    // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
-    // console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', data[0]);
-    // console.log('🔍 생년월일 값 확인:', data.map(d => d['생년월일']).filter(v => v).slice(0, 5));
     const ageInsights = calculateAgeInsights(data);
-    // console.log('📊 연령대별 인사이트:', ageInsights);
-    // console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
     // 공유세대/단독세대 분포 계산
     // 공유세대는 동호수 기준으로 고유 세대만 세어야 함 (공유자 개별 행이 아닌)
@@ -549,16 +486,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // 세대유형이 있는 실제 세대 수 (공유세대 + 단독세대)
     // 만약 세대유형이 없는 세대가 있으면 total과 다를 수 있음
     const householdTypeTotal = sharedHouseholdCount + singleHouseholdCount;
-    
-    // 디버깅: 청화아파트 데이터 확인
-    if (data.length > 0 && data[0]['아파트_소재지'] && data[0]['아파트_소재지'].includes('청화아파트')) {
-      console.log('🔍 청화아파트 세대 유형 분포:');
-      console.log('  - 총 세대 수 (total):', total);
-      console.log('  - 공유세대 수 (sharedHouseholdCount):', sharedHouseholdCount);
-      console.log('  - 단독세대 수 (singleHouseholdCount):', singleHouseholdCount);
-      console.log('  - 세대유형 합계 (householdTypeTotal):', householdTypeTotal);
-      console.log('  - 세대유형 값 샘플:', data.slice(0, 10).map(r => ({ dongho: getDongho(r), type: r['세대유형'] })));
-    }
 
     // 사용 가능한 나이대 목록 생성 (탭에서는 '미분류', '법인' 제외)
     const availableAgeGroups = ['전체', ...Object.keys(ageGroups)
@@ -682,24 +609,9 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   // 통계 데이터가 업데이트될 때마다 부모 컴포넌트에 전달
   useEffect(() => {
     if (onStatsUpdate && currentStats) {
-    // console.log('📊 DataAnalysis에서 통계 데이터 전달:', currentStats);
-    // console.log('📊 ageGroups:', currentStats.ageGroups);
-    // console.log('📊 transferReasons:', currentStats.transferReasons);
-    // console.log('📊 areaGroups:', currentStats.areaGroups);
-    // console.log('📊 holdingGroups:', currentStats.holdingGroups);
-    // console.log('📊 loanStatusData:', currentStats.loanStatusData);
-    // console.log('📊 totalLoanAmount:', currentStats.totalLoanAmount);
-    // console.log('📊 averageLoanAmount:', currentStats.averageLoanAmount);
-    // console.log('📊 activeTab:', activeTab);
-    // console.log('📊 onStatsUpdate 함수 존재:', !!onStatsUpdate);
-      
       onStatsUpdate({
         [activeTab]: currentStats
       });
-    } else {
-      // console.log('❌ DataAnalysis에서 통계 데이터 전달 실패');
-      // console.log('❌ onStatsUpdate 존재:', !!onStatsUpdate);
-      // console.log('❌ currentStats 존재:', !!currentStats);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStats, activeTab]); // onStatsUpdate는 의도적으로 제외
