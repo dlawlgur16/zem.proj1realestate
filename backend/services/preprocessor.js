@@ -9,11 +9,26 @@
 function preprocessData(data) {
     console.log('🔄 전처리 시작:', data.length, '행');
     
+    // 디버깅: 원시 데이터 첫 3행의 키 구조 확인
+    if (data.length > 0) {
+      console.log('📋 원시 데이터 키 목록:', Object.keys(data[0]).join(', '));
+      console.log('📋 원시 데이터 샘플 (첫 3행):');
+      data.slice(0, 3).forEach((row, i) => {
+        console.log(`   [${i}]`, JSON.stringify(row).substring(0, 300));
+      });
+    }
+    
     // 1. 생년월일 추출
     data = extractBirthDate(data);
     
     // 2. 동호수 추출
     data = extractUnitInfo(data);
+    
+    // 디버깅: 동호수 추출 후 샘플 확인
+    console.log('📋 동호수 추출 후 샘플 (처음 5행):');
+    data.slice(0, 5).forEach((row, i) => {
+      console.log(`   [${i}] 동: "${row.동}", 호수: "${row.호수}", 동호수: "${row.동호수}"`);
+    });
     
     // 3. 소유자 주소 추출
     data = extractOwnerAddress(data);
@@ -45,8 +60,20 @@ function preprocessData(data) {
     // 12. 세대별 그룹화 (연번 기준 - 핵심!)
     data = groupByHouseholdNumber(data);
     
+    // 디버깅: 그룹화 후 샘플 확인
+    console.log('📋 그룹화 후 샘플 (처음 5행):');
+    data.slice(0, 5).forEach((row, i) => {
+      console.log(`   [${i}] 동: "${row.동}", 호수: "${row.호수}", 동호수: "${row.동호수}", 세대유형: "${row.세대유형}"`);
+    });
+    
     // 최종 데이터셋 생성
     const finalData = createFinalDataset(data);
+    
+    // 디버깅: 최종 데이터 샘플 확인
+    console.log('📋 최종 데이터 샘플 (처음 5행):');
+    finalData.slice(0, 5).forEach((row, i) => {
+      console.log(`   [${i}] 동: "${row['동']}", 호수: "${row['호수']}", 동호수: "${row['동호수']}"`);
+    });
     
     console.log('✅ 전처리 완료:', finalData.length, '행');
     return finalData;

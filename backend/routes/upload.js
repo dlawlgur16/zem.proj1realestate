@@ -84,7 +84,7 @@ function extractDong(row) {
 
 /**
  * 동호수에서 호 추출
- * "101-1호", "101-2호" 형식도 처리
+ * "101-1호", "101-2호", "1동6602" 형식도 처리
  */
 function extractHo(row) {
   // 먼저 호수 필드를 직접 확인
@@ -111,6 +111,10 @@ function extractHo(row) {
   // 일반 "101호" 형식 처리
   const match = dongho.match(/(\d+)호/);
   if (match) return `${match[1]}호`;
+  
+  // "1동6602" 형식 처리 (동 뒤에 바로 호수가 붙은 형식)
+  const dongHoMatch = dongho.match(/\d+동(\d+)/);
+  if (dongHoMatch) return `${dongHoMatch[1]}호`;
   
   // "1 101" 형식 처리
   const spaceMatch = dongho.match(/\s(\d+)$/);
