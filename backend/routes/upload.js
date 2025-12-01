@@ -58,6 +58,21 @@ function extractDistrict(address) {
  * 동호수에서 동 추출
  */
 function extractDong(row) {
+  // 먼저 동 필드를 직접 확인
+  if (row['동'] && String(row['동']).trim() !== '') {
+    const dong = String(row['동']).trim();
+    // 이미 "1동" 형식이면 그대로 반환
+    if (dong.includes('동')) {
+      return dong;
+    }
+    // 숫자만 있으면 "동" 추가
+    if (/^\d+$/.test(dong)) {
+      return `${dong}동`;
+    }
+    return dong;
+  }
+  
+  // 동호수에서 추출 시도
   const dongho = row['동호수'] || row['건물명'] || '';
   const match = dongho.match(/(\d+)동/);
   if (match) return `${match[1]}동`;
@@ -72,6 +87,21 @@ function extractDong(row) {
  * "101-1호", "101-2호" 형식도 처리
  */
 function extractHo(row) {
+  // 먼저 호수 필드를 직접 확인
+  if (row['호수'] && String(row['호수']).trim() !== '') {
+    const ho = String(row['호수']).trim();
+    // 이미 "101호" 형식이면 그대로 반환
+    if (ho.includes('호')) {
+      return ho;
+    }
+    // 숫자만 있거나 "101-1" 형식이면 "호" 추가
+    if (/^\d+(-\d+)?$/.test(ho)) {
+      return `${ho}호`;
+    }
+    return ho;
+  }
+  
+  // 동호수에서 추출 시도
   const dongho = row['동호수'] || row['건물명'] || '';
   
   // "101-1호" 형식 처리 (예: "101-1호", "1205-1호")
@@ -249,37 +279,28 @@ async function saveToDatabase(dbData, res) {
     console.log(`   🗑️ 기존 세대 데이터 삭제 완료 (삭제된 행: ${deletedCount.rowCount}개)`);
     console.log(`   📊 저장할 세대 데이터: ${dbData.units.length}개`);
 
-    // Units Bulk 삽입 (성능 최적화)
+    // Units 배치 삽입 (성능 최적화)
+    const BATCH_SIZE = 100; // 한 번에 100개씩 삽입
     let inserted = 0;
     let failed = 0;
-
-    if (dbData.units.length === 0) {
-      console.log(`   ⚠️ 저장할 세대 데이터가 없습니다.`);
-    } else {
-      const BATCH_SIZE = 500; // 한 번에 500개씩 처리 (22개 컬럼 * 500 = 11,000 파라미터)
-      const batches = [];
-
-      // 배치 단위로 나누기
-      for (let i = 0; i < dbData.units.length; i += BATCH_SIZE) {
-        batches.push(dbData.units.slice(i, i + BATCH_SIZE));
-      }
-
-      console.log(`   📦 ${batches.length}개 배치로 나눠서 처리 (배치당 최대 ${BATCH_SIZE}개)`);
-
-      // 각 배치별로 Bulk INSERT 실행
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-
-        try {
-          // VALUES 절 생성: ($1, $2, ..., $22), ($23, $24, ..., $44), ...
-          const valuesPlaceholders = batch.map((_, index) => {
-            const offset = index * 22;
-            const placeholders = Array.from({ length: 22 }, (_, i) => `$${offset + i + 1}`).join(', ');
-            return `(${placeholders})`;
-          }).join(', ');
-
-          // 파라미터 배열 생성
-          const params = batch.flatMap(unit => [
+    
+    for (let i = 0; i < dbData.units.length; i += BATCH_SIZE) {
+      const batch = dbData.units.slice(i, i + BATCH_SIZE);
+      
+      try {
+        // 배치 INSERT 쿼리 생성
+        const values = [];
+        const params = [];
+        let paramIndex = 1;
+        
+        batch.forEach((unit, batchIndex) => {
+          const valuePlaceholders = [];
+          for (let j = 0; j < 22; j++) {
+            valuePlaceholders.push(`$${paramIndex++}`);
+          }
+          values.push(`(${valuePlaceholders.join(', ')})`);
+          
+          params.push(
             buildingId,
             unit.dong,
             unit.ho,
@@ -302,86 +323,77 @@ async function saveToDatabase(dbData, res) {
             unit.연령대,
             unit.공유자수 || 1,
             unit.세대유형 || (unit.공유자수 > 1 ? '공유세대' : '단독세대')
-          ]);
-
-          // Bulk INSERT 실행
-          await query(
-            `INSERT INTO units (
-              building_id, dong, ho, area_m2,
-              소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
-              거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
-              등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
-              주민번호, 연령대, 공유자수, 세대유형
-            ) VALUES ${valuesPlaceholders}`,
-            params
           );
-
-          inserted += batch.length;
-          console.log(`   ✅ 배치 ${batchIndex + 1}/${batches.length} 완료 (${batch.length}개 저장)`);
-
-        } catch (batchError) {
-          failed += batch.length;
-          console.error(`   ❌ 배치 ${batchIndex + 1} 삽입 실패:`, batchError.message);
-          console.error(`      에러 코드:`, batchError.code);
-          console.error(`      에러 상세:`, batchError.detail);
-
-          // 배치 실패 시 개별 INSERT로 재시도 (어떤 행이 문제인지 파악)
-          console.log(`   🔄 개별 INSERT로 재시도...`);
-          let batchInserted = 0;
-          for (const unit of batch) {
-            try {
-              await query(
-                `INSERT INTO units (
-                  building_id, dong, ho, area_m2,
-                  소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
-                  거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
-                  등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
-                  주민번호, 연령대, 공유자수, 세대유형
-                ) VALUES (
-                  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
-                )`,
-                [
-                  buildingId,
-                  unit.dong,
-                  unit.ho,
-                  unit.area_m2,
-                  unit.소유자명,
-                  unit.생년월일,
-                  unit.소유자_주소,
-                  unit.아파트_소재지,
-                  unit.건물명,
-                  unit.거주형태,
-                  unit.등기목적_분류,
-                  unit.근저당금액,
-                  unit.보유기간,
-                  unit.압류가압류,
-                  unit.등기원인_년월일,
-                  unit.전용면적_제곱미터,
-                  unit.유효근저당총액,
-                  unit.압류가압류유무,
-                  unit.주민번호,
-                  unit.연령대,
-                  unit.공유자수 || 1,
-                  unit.세대유형 || (unit.공유자수 > 1 ? '공유세대' : '단독세대')
-                ]
-              );
-              batchInserted++;
-            } catch (unitError) {
-              console.error(`      ❌ 개별 행 삽입 실패:`, unitError.message);
-              if (failed <= 5) {
-                console.error(`         데이터: ${JSON.stringify({
-                  dong: unit.dong,
-                  ho: unit.ho,
-                  소유자명: unit.소유자명
-                })}`);
-              }
+        });
+        
+        const insertQuery = `
+          INSERT INTO units (
+            building_id, dong, ho, area_m2,
+            소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
+            거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
+            등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
+            주민번호, 연령대, 공유자수, 세대유형
+          ) VALUES ${values.join(', ')}
+        `;
+        
+        await query(insertQuery, params);
+        inserted += batch.length;
+        
+        if ((i + BATCH_SIZE) % 500 === 0 || i + BATCH_SIZE >= dbData.units.length) {
+          console.log(`   📊 진행 중: ${Math.min(i + BATCH_SIZE, dbData.units.length)}/${dbData.units.length}개 저장됨`);
+        }
+      } catch (batchError) {
+        // 배치 실패 시 개별 삽입으로 폴백
+        console.warn(`   ⚠️ 배치 삽입 실패 (${i}~${i + batch.length - 1}), 개별 삽입으로 시도...`);
+        for (const unit of batch) {
+          try {
+            await query(
+              `INSERT INTO units (
+                building_id, dong, ho, area_m2,
+                소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
+                거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
+                등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
+                주민번호, 연령대, 공유자수, 세대유형
+              ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+              )`,
+              [
+                buildingId,
+                unit.dong,
+                unit.ho,
+                unit.area_m2,
+                unit.소유자명,
+                unit.생년월일,
+                unit.소유자_주소,
+                unit.아파트_소재지,
+                unit.건물명,
+                unit.거주형태,
+                unit.등기목적_분류,
+                unit.근저당금액,
+                unit.보유기간,
+                unit.압류가압류,
+                unit.등기원인_년월일,
+                unit.전용면적_제곱미터,
+                unit.유효근저당총액,
+                unit.압류가압류유무,
+                unit.주민번호,
+                unit.연령대,
+                unit.공유자수 || 1,
+                unit.세대유형 || (unit.공유자수 > 1 ? '공유세대' : '단독세대')
+              ]
+            );
+            inserted++;
+          } catch (unitError) {
+            failed++;
+            if (failed <= 5) {
+              console.error(`   ❌ 세대 데이터 삽입 실패 (${failed}번째 실패):`, unitError.message);
+              console.error(`      데이터 샘플:`, JSON.stringify({
+                dong: unit.dong,
+                ho: unit.ho,
+                소유자명: unit.소유자명
+              }));
             }
           }
-
-          // 개별 재시도 결과 반영
-          inserted += batchInserted;
-          failed -= batchInserted; // 성공한 만큼 실패 카운트 감소
-          console.log(`   ✅ 재시도 완료: ${batchInserted}/${batch.length}개 성공`);
         }
       }
     }
@@ -400,14 +412,39 @@ async function saveToDatabase(dbData, res) {
     // 공유세대는 여러 행으로 저장되므로 동호수로 그룹화하여 실제 세대 수 계산
     const uniqueHouseholds = new Set();
     dbData.units.forEach(unit => {
-      const dong = unit.dong || '';
-      const ho = unit.ho || '';
-      const householdKey = `${dong}-${ho}`;
-      if (dong || ho) {
+      // dong과 ho를 정규화하여 비교
+      const dong = (unit.dong || '').toString().trim().replace(/동$/, '');
+      const ho = (unit.ho || '').toString().trim().replace(/호$/, '');
+      
+      // 동호수 필드도 확인 (dong/ho가 없을 때)
+      let householdKey = '';
+      if (dong && ho) {
+        householdKey = `${dong}-${ho}`;
+      } else if (unit.동호수) {
+        // 동호수에서 추출 시도
+        const dongho = unit.동호수.toString().trim();
+        const hoMatch = dongho.match(/(\d+-\d+호|\d+호)/);
+        if (hoMatch) {
+          householdKey = hoMatch[1].replace(/호$/, '');
+        } else {
+          householdKey = dongho;
+        }
+      }
+      
+      if (householdKey) {
         uniqueHouseholds.add(householdKey);
       }
     });
     const actualHouseholdCount = uniqueHouseholds.size || dbData.units.length;
+    
+    // 디버깅: 샘플 데이터 확인
+    if (actualHouseholdCount === 1 && dbData.units.length > 1) {
+      console.log(`   ⚠️ 경고: 모든 세대가 같은 동호수를 가지고 있습니다!`);
+      console.log(`   📊 샘플 데이터 (처음 5개):`);
+      dbData.units.slice(0, 5).forEach((unit, i) => {
+        console.log(`      [${i}] dong: "${unit.dong}", ho: "${unit.ho}", 동호수: "${unit.동호수}"`);
+      });
+    }
 
     console.log(`   📊 실제 세대 그룹 수: ${actualHouseholdCount}개 (저장된 행: ${inserted}개)`);
 

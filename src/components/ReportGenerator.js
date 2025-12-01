@@ -10,10 +10,6 @@ import {
 } from '../utils/geminiReportGenerator';
 import ReportPreview from './ReportPreview';
 
-//디버깅
-// console.log("🧩 process.env keys:", Object.keys(process.env));
-// console.log("🔑 GEMINI:", process.env.REACT_APP_GEMINI_API_KEY);
-// .env 파일에서 API 키 불러오기
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 
 
@@ -21,39 +17,6 @@ export default function ReportGenerator({ statsData, activeTab, csvData }) {
   const [showReport, setShowReport] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-
-  // 디버깅 로그
-  // console.log('📊 ReportGenerator props:', { statsData, activeTab, csvData });
-  // console.log('📊 statsData keys:', statsData ? Object.keys(statsData) : '없음');
-  if (statsData && statsData[activeTab]) {
-    // console.log('📊 activeTab 데이터:', statsData[activeTab]);
-    // console.log('📊 ageGroups:', statsData[activeTab].ageGroups);
-    // console.log('📊 transferReasons:', statsData[activeTab].transferReasons);
-    // console.log('📊 areaGroups:', statsData[activeTab].areaGroups);
-    // console.log('📊 holdingGroups:', statsData[activeTab].holdingGroups);
-    // console.log('📊 totalLoanAmount:', statsData[activeTab].totalLoanAmount);
-    // console.log('📊 averageLoanAmount:', statsData[activeTab].averageLoanAmount);
-    // console.log('📊 ageInsights:', statsData[activeTab].ageInsights);
-    
-    // ageInsights 상세 디버깅
-    if (statsData[activeTab].ageInsights) {
-      // console.log('📊 ReportGenerator ageInsights 상세 분석:');
-      Object.entries(statsData[activeTab].ageInsights).forEach(([age, insight]) => {
-        // console.log(`📊 ${age}:`, {
-        //   loanRate: insight.loanRate,
-        //   avgLoan: insight.avgLoan,
-        //   residenceRate: insight.residenceRate,
-        //   seizureRate: insight.seizureRate
-        // });
-      });
-    } else {
-      // console.log('❌ ReportGenerator에서 ageInsights 데이터가 없습니다!');
-    }
-  } else {
-    // console.log('❌ ReportGenerator에서 activeTab 데이터 없음');
-    // console.log('❌ statsData:', statsData);
-    // console.log('❌ activeTab:', activeTab);
-  }
 
   // 보고서 생성
   const handleGenerateReport = async () => {

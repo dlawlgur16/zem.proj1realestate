@@ -723,6 +723,8 @@ function preprocessData(data) {
       return {
         '소유자명': row.소유자명 || null,
         '생년월일': row.생년월일 || null,
+        '동': row.동 || null,  // 동 필드 추가
+        '호수': row.호수 || null,  // 호수 필드 추가
         '동호수': row.동호수 || null,
         '소유자_주소': row.소유자_주소 || null,
         '아파트_소재지': row.아파트_소재지 || row.도로명주소 || null,

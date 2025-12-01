@@ -183,8 +183,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           const gender = genderCode % 2 === 0 ? '여' : '남';
           genderGroups[gender] = (genderGroups[gender] || 0) + 1;
           
-          // 디버깅을 위한 로그
-               // console.log(`주민번호: ${residentNumber}, 성별코드: ${genderCode}, 성별: ${gender}`);
         } catch (error) {
           console.error('성별 분석 오류:', error, residentNumber);
         }

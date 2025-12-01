@@ -1,15 +1,15 @@
 [
   {
     "id": "processed-0",
-    "name": "4. 집합건물 등기부등본을 이용한  구분소유자명부 작성사례(샘플)",
-    "address": "서울특별시 광진구 천호대로 666",
+    "name": "미도아파트(샘플)",
+    "address": "서울특별시 서초구 서초중앙로29길 28",
     "type": "processed",
-    "dataFile": "/processed-data/4. 집합건물 등기부등본을 이용한  구분소유자명부 작성사례(샘플)_전처리_2025-10-28T02-36-20-621Z.csv",
+    "dataFile": "/processed-data/미도아파트.csv",
     "image": "/image/img_chart-02.jpg"
   },
   {
     "id": "processed-1",
-    "name": "그랜드파크오피스텔",
+    "name": "그랜드파크오피스텔(샘플)",
     "address": "서울특별시 광진구 천호대로 666",
     "type": "processed",
     "dataFile": "/processed-data/그랜드파크오피스텔_전처리_2025-10-29T01-28-43-184Z.csv",
