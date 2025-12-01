@@ -55,9 +55,6 @@ const MainApp = () => {
   //   return <Navigate to="/login" replace />;
   // }
 
-  // 디버깅 로그 (필요시에만)
-  // console.log('MainApp statsData:', statsData);
-
   const handleReportGenerated = (report) => {
     setCurrentStep('report');
   };
@@ -130,65 +127,21 @@ const MainApp = () => {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             onStatsUpdate={(newStats) => {
-              console.log('📊 MainApp에서 통계 데이터 받음:', newStats);
-              console.log('📊 newStats keys:', Object.keys(newStats));
-              console.log('📊 activeTab:', activeTab);
-              if (newStats[activeTab]) {
-                console.log('📊 activeTab 데이터:', newStats[activeTab]);
-                console.log('📊 ageGroups:', newStats[activeTab].ageGroups);
-                console.log('📊 transferReasons:', newStats[activeTab].transferReasons);
-                console.log('📊 areaGroups:', newStats[activeTab].areaGroups);
-                console.log('📊 holdingGroups:', newStats[activeTab].holdingGroups);
-                console.log('📊 totalLoanAmount:', newStats[activeTab].totalLoanAmount);
-                console.log('📊 averageLoanAmount:', newStats[activeTab].averageLoanAmount);
-                console.log('📊 ageInsights:', newStats[activeTab].ageInsights);
-                
-                // ageInsights 상세 디버깅
-                if (newStats[activeTab].ageInsights) {
-                  console.log('📊 ageInsights 상세 분석:');
-                  Object.entries(newStats[activeTab].ageInsights).forEach(([age, insight]) => {
-                    console.log(`📊 ${age}:`, {
-                      loanRate: insight.loanRate,
-                      avgLoan: insight.avgLoan,
-                      residenceRate: insight.residenceRate
-                    });
-                  });
-                } else {
-                  console.log('❌ ageInsights 데이터가 없습니다!');
-                }
-              } else {
-                console.log('❌ MainApp에서 activeTab 데이터 없음');
-                console.log('❌ newStats:', newStats);
-                console.log('❌ activeTab:', activeTab);
-              }
-              setStatsData(prevStats => {
-                const updatedStats = {
-                  ...(prevStats || {}),
-                  ...newStats
-                };
-                console.log('📊 MainApp statsData 업데이트:', updatedStats);
-                console.log('📊 MainApp statsData keys:', Object.keys(updatedStats));
-                return updatedStats;
-              });
+              setStatsData(prevStats => ({
+                ...(prevStats || {}),
+                ...newStats
+              }));
             }}
           />
         )}
 
         {currentStep === 'report' && csvData && (
-          <>
-            {console.log('📊 ReportGenerator에 전달되는 데이터:', {
-              csvDataLength: csvData?.length,
-              activeTab,
-              statsDataKeys: statsData ? Object.keys(statsData) : '없음',
-              statsDataValue: statsData
-            })}
-            <ReportGenerator
-              csvData={csvData}
-              activeTab={activeTab}
-              statsData={statsData}
-              onReportGenerated={handleReportGenerated}
-            />
-          </>
+          <ReportGenerator
+            csvData={csvData}
+            activeTab={activeTab}
+            statsData={statsData}
+            onReportGenerated={handleReportGenerated}
+          />
         )}
 
         {error && (
