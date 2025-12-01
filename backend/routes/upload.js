@@ -249,22 +249,37 @@ async function saveToDatabase(dbData, res) {
     console.log(`   🗑️ 기존 세대 데이터 삭제 완료 (삭제된 행: ${deletedCount.rowCount}개)`);
     console.log(`   📊 저장할 세대 데이터: ${dbData.units.length}개`);
 
-    // Units 일괄 삽입
+    // Units Bulk 삽입 (성능 최적화)
     let inserted = 0;
     let failed = 0;
-    for (const unit of dbData.units) {
-      try {
-        await query(
-          `INSERT INTO units (
-            building_id, dong, ho, area_m2,
-            소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
-            거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
-            등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
-            주민번호, 연령대, 공유자수, 세대유형
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
-          )`,
-          [
+
+    if (dbData.units.length === 0) {
+      console.log(`   ⚠️ 저장할 세대 데이터가 없습니다.`);
+    } else {
+      const BATCH_SIZE = 500; // 한 번에 500개씩 처리 (22개 컬럼 * 500 = 11,000 파라미터)
+      const batches = [];
+
+      // 배치 단위로 나누기
+      for (let i = 0; i < dbData.units.length; i += BATCH_SIZE) {
+        batches.push(dbData.units.slice(i, i + BATCH_SIZE));
+      }
+
+      console.log(`   📦 ${batches.length}개 배치로 나눠서 처리 (배치당 최대 ${BATCH_SIZE}개)`);
+
+      // 각 배치별로 Bulk INSERT 실행
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+
+        try {
+          // VALUES 절 생성: ($1, $2, ..., $22), ($23, $24, ..., $44), ...
+          const valuesPlaceholders = batch.map((_, index) => {
+            const offset = index * 22;
+            const placeholders = Array.from({ length: 22 }, (_, i) => `$${offset + i + 1}`).join(', ');
+            return `(${placeholders})`;
+          }).join(', ');
+
+          // 파라미터 배열 생성
+          const params = batch.flatMap(unit => [
             buildingId,
             unit.dong,
             unit.ho,
@@ -287,23 +302,86 @@ async function saveToDatabase(dbData, res) {
             unit.연령대,
             unit.공유자수 || 1,
             unit.세대유형 || (unit.공유자수 > 1 ? '공유세대' : '단독세대')
-          ]
-        );
-        inserted++;
-      } catch (unitError) {
-        failed++;
-        console.error(`   ❌ 세대 데이터 삽입 실패 (${failed}번째 실패):`, unitError.message);
-        console.error(`      에러 코드:`, unitError.code);
-        console.error(`      에러 상세:`, unitError.detail);
-        if (failed <= 5) {
-          // 처음 5개 실패만 상세 로그
-          console.error(`      데이터 샘플:`, JSON.stringify({
-            dong: unit.dong,
-            ho: unit.ho,
-            소유자명: unit.소유자명,
-            공유자수: unit.공유자수,
-            세대유형: unit.세대유형
-          }));
+          ]);
+
+          // Bulk INSERT 실행
+          await query(
+            `INSERT INTO units (
+              building_id, dong, ho, area_m2,
+              소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
+              거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
+              등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
+              주민번호, 연령대, 공유자수, 세대유형
+            ) VALUES ${valuesPlaceholders}`,
+            params
+          );
+
+          inserted += batch.length;
+          console.log(`   ✅ 배치 ${batchIndex + 1}/${batches.length} 완료 (${batch.length}개 저장)`);
+
+        } catch (batchError) {
+          failed += batch.length;
+          console.error(`   ❌ 배치 ${batchIndex + 1} 삽입 실패:`, batchError.message);
+          console.error(`      에러 코드:`, batchError.code);
+          console.error(`      에러 상세:`, batchError.detail);
+
+          // 배치 실패 시 개별 INSERT로 재시도 (어떤 행이 문제인지 파악)
+          console.log(`   🔄 개별 INSERT로 재시도...`);
+          let batchInserted = 0;
+          for (const unit of batch) {
+            try {
+              await query(
+                `INSERT INTO units (
+                  building_id, dong, ho, area_m2,
+                  소유자명, 생년월일, 소유자_주소, 아파트_소재지, 건물명,
+                  거주형태, 등기목적_분류, 근저당금액, 보유기간, 압류가압류,
+                  등기원인_년월일, 전용면적_제곱미터, 유효근저당총액, 압류가압류유무,
+                  주민번호, 연령대, 공유자수, 세대유형
+                ) VALUES (
+                  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+                )`,
+                [
+                  buildingId,
+                  unit.dong,
+                  unit.ho,
+                  unit.area_m2,
+                  unit.소유자명,
+                  unit.생년월일,
+                  unit.소유자_주소,
+                  unit.아파트_소재지,
+                  unit.건물명,
+                  unit.거주형태,
+                  unit.등기목적_분류,
+                  unit.근저당금액,
+                  unit.보유기간,
+                  unit.압류가압류,
+                  unit.등기원인_년월일,
+                  unit.전용면적_제곱미터,
+                  unit.유효근저당총액,
+                  unit.압류가압류유무,
+                  unit.주민번호,
+                  unit.연령대,
+                  unit.공유자수 || 1,
+                  unit.세대유형 || (unit.공유자수 > 1 ? '공유세대' : '단독세대')
+                ]
+              );
+              batchInserted++;
+            } catch (unitError) {
+              console.error(`      ❌ 개별 행 삽입 실패:`, unitError.message);
+              if (failed <= 5) {
+                console.error(`         데이터: ${JSON.stringify({
+                  dong: unit.dong,
+                  ho: unit.ho,
+                  소유자명: unit.소유자명
+                })}`);
+              }
+            }
+          }
+
+          // 개별 재시도 결과 반영
+          inserted += batchInserted;
+          failed -= batchInserted; // 성공한 만큼 실패 카운트 감소
+          console.log(`   ✅ 재시도 완료: ${batchInserted}/${batch.length}개 성공`);
         }
       }
     }
