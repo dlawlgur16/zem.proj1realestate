@@ -34,7 +34,7 @@ const LoanAmount = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, availa
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="range" tick={{ fontSize: 10 }} />
           <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000000',
               color: '#ffffff',

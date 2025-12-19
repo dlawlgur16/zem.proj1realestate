@@ -23,7 +23,7 @@ const ResidenceInvestment = ({ data, total, selectedAgeGroup, setSelectedAgeGrou
       </div>
 
       <div className="chart-card__content">
-        <ResponsiveContainer width="60%" height={250}>
+        <ResponsiveContainer width="100%" minWidth={300} height={250}>
           <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
             <Pie
               data={data || []}
@@ -40,19 +40,18 @@ const ResidenceInvestment = ({ data, total, selectedAgeGroup, setSelectedAgeGrou
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip 
+            <Tooltip
               allowEscapeViewBox={{ x: true, y: true }}
               wrapperStyle={{ zIndex: 9999 }}
               contentStyle={{
-                backgroundColor: 'rgba(0,0,0,0.85)',
+                backgroundColor: '#000000',
                 color: '#ffffff',
-                border: '1px solid #333',
+                border: 'none',
                 borderRadius: '8px',
                 fontSize: '12px'
               }}
               itemStyle={{ color: '#ffffff' }}
               labelStyle={{ color: '#ffffff' }}
-              formatter={(value, name) => [`${value}`, name]}
             />
           </PieChart>
         </ResponsiveContainer>

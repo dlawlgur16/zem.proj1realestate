@@ -13,8 +13,6 @@ const path = require('path');
 const { query } = require('./config/database');
 
 // 라우트 임포트
-const buildingsRouter = require('./routes/buildings');
-const unitsRouter = require('./routes/units');
 const uploadRouter = require('./routes/upload');
 
 const app = express();
@@ -26,8 +24,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API 라우트
-app.use('/api/buildings', buildingsRouter);
-app.use('/api/units', unitsRouter);
 app.use('/api/upload', uploadRouter);
 
 // 헬스 체크 및 DB 연결 테스트
@@ -57,8 +53,6 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
-      buildings: '/api/buildings',
-      units: '/api/units',
       upload: '/api/upload/csv'
     }
   });

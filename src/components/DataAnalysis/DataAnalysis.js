@@ -93,28 +93,35 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   };
 
   const calculateStats = (data) => {
-    // 동호수 기준으로 고유 세대만 카운트 (공유자 개별 행이 아닌)
-    const uniqueHouseholds = new Set();
+    // 🔥 공유세대 필터링: 세대별 대표자만 남기기 (80세대 기준)
+    // 동호수별로 그룹화하여 첫 번째 사람만 통계에 포함
+    const householdMap = {};
     data.forEach(row => {
       const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
-      if (dongho) {
-        uniqueHouseholds.add(dongho);
+      if (!dongho) return;
+
+      // 이미 해당 동호수가 있으면 스킵 (첫 번째 사람만 유지)
+      if (!householdMap[dongho]) {
+        householdMap[dongho] = row;
       }
     });
-    const total = uniqueHouseholds.size;
+
+    // 대표자만 포함된 데이터로 통계 계산
+    const filteredData = Object.values(householdMap);
+    const total = filteredData.length;
     
     // 나이대별 분포 (연령대 컬럼 또는 생년월일 분석)
     const ageGroups = {};
-    const hasAgeBand = data.some(row => row['연령대']);
+    const hasAgeBand = filteredData.some(row => row['연령대']);
     if (hasAgeBand) {
-      data.forEach(row => {
+      filteredData.forEach(row => {
         const bandRaw = (row['연령대'] || '').trim();
         if (!bandRaw) return;
         const normalized = bandRaw.replace('이상', '').replace('이하', '');
         ageGroups[normalized] = (ageGroups[normalized] || 0) + 1;
       });
     } else {
-      data.forEach(row => {
+      filteredData.forEach(row => {
         const birthRaw = (row['생년월일'] ?? '').toString().trim();
         // 특수 표기 처리: 사업자/법인은 모두 '법인'으로 통일
         if (/사업자/.test(birthRaw)) {
@@ -137,9 +144,23 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           const birth6 = m[1];
           const birthYear = parseInt(birth6.substring(0, 2), 10);
           const currentYear = new Date().getFullYear();
-          // 세기 판별 휴리스틱: YY <= 24 → 2000년대, 그 외 1900년대
-          const fullBirthYear = birthYear <= 24 ? 2000 + birthYear : 1900 + birthYear;
-          const age = currentYear - fullBirthYear;
+
+          // 🔥 방안 1: 나이 기준 로직 (부동산 소유 가능 연령대: 20~100세)
+          let fullBirthYear = birthYear <= 24 ? 2000 + birthYear : 1900 + birthYear;
+          let age = currentYear - fullBirthYear;
+
+          // 2000년대생으로 계산했을 때 20세 미만이면 1900년대생으로 재계산
+          if (fullBirthYear >= 2000 && age < 20) {
+            fullBirthYear = 1900 + birthYear;
+            age = currentYear - fullBirthYear;
+          }
+
+          // 1900년대생으로 계산했을 때 100세 이상이면 2000년대생으로 재계산
+          if (fullBirthYear < 2000 && age > 100) {
+            fullBirthYear = 2000 + birthYear;
+            age = currentYear - fullBirthYear;
+          }
+
           let ageGroup;
           if (age < 20) ageGroup = '10대';
           else if (age < 30) ageGroup = '20대';
@@ -159,7 +180,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 성별 분포 (주민번호 분석)
     const genderGroups = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const residentNumber = getColumnValue(row, ['주민번호', '주민등록번호', 'resident_number', '주민등록번호']);
       if (residentNumber && residentNumber.length >= 7) {
         try {
@@ -184,11 +205,11 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // }).length);
 
     // 거주/투자 비율 (거주형태 컬럼 사용)
-    const residenceCount = data.filter(row => {
+    const residenceCount = filteredData.filter(row => {
       const residenceType = row['거주형태'];
       return residenceType === '실거주';
     }).length;
-    const investmentCount = data.filter(row => {
+    const investmentCount = filteredData.filter(row => {
       const residenceType = row['거주형태'];
       return residenceType === '투자';
     }).length;
@@ -202,7 +223,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 면적별 분포 (건축물_연면적 컬럼 사용)
     const areaGroups = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const area = row['건축물_연면적'];
       if (area) {
         const areaNum = parseFloat(area);
@@ -216,7 +237,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 보유기간별 분포 (보유기간 컬럼 사용)
     const holdingGroups = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const holdingPeriod = row['보유기간'];
       if (holdingPeriod) {
         // "4년 11개월" 형태의 문자열에서 년수 추출
@@ -238,7 +259,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 등기이전원인별 분포 (등기목적_분류 컬럼 사용)
     const transferReasons = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const reason = row['등기목적_분류'];
       if (reason) {
         transferReasons[reason] = (transferReasons[reason] || 0) + 1;
@@ -247,7 +268,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
 
     // 연도별 소유권 변동 (등기원인_년월일 컬럼 사용)
     const yearlyOwnership = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const date = row['등기원인_년월일'];
       if (date) {
         // "2016-07-27" 형태에서 연도 추출
@@ -298,7 +319,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
       return null;
     };
 
-    data.forEach(row => {
+    filteredData.forEach(row => {
       if (row['거주형태'] === '투자') {
         investorCount++;
         const regionSource = row['소유자_주소'] || row['투자자거주지역'] || '';
@@ -330,7 +351,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // 대출금액대별 분포
     const loanAmountGroups = {};
     
-    data.forEach(row => {
+    filteredData.forEach(row => {
       // 근저당금액 컬럼 사용
       const loanAmount = row['근저당금액'];
       
@@ -358,7 +379,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     
 
     // 대출 여부 비율 (근저당금액 컬럼 사용)
-    const loanCount = data.filter(row => {
+    const loanCount = filteredData.filter(row => {
       const loanAmount = row['근저당금액'];
       if (!loanAmount) return false;
       const amount = parseFloat(loanAmount);
@@ -375,7 +396,7 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     let totalLoanAmount = 0;
     let validLoanCount = 0;
     
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const loanAmount = row['근저당금액'];
       if (loanAmount) {
         const amount = parseFloat(loanAmount);
@@ -392,44 +413,24 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
     // console.log('💰 평균 근저당액:', averageLoanAmount);
 
     // 압류/가압류 현황 (압류가압류 컬럼 사용)
-    const seizureCount = data.filter(row => {
+    const seizureCount = filteredData.filter(row => {
       const seizure = row['압류가압류'];
       return seizure === 'Y' || seizure === '1' || seizure === 'true' || seizure === '있음';
     }).length;
     const normalCount = total - seizureCount;
 
     // 연령대별 인사이트 계산
-    // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', data.length);
-    // console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', data[0]);
-    // console.log('🔍 생년월일 값 확인:', data.map(d => d['생년월일']).filter(v => v).slice(0, 5));
-    const ageInsights = calculateAgeInsights(data);
+    // console.log('📊 ageInsights 계산 시작 - 데이터 길이:', filteredData.length);
+    // console.log('📊 ageInsights 계산 시작 - 첫 번째 행:', filteredData[0]);
+    // console.log('🔍 생년월일 값 확인:', filteredData.map(d => d['생년월일']).filter(v => v).slice(0, 5));
+    const ageInsights = calculateAgeInsights(filteredData);
     // console.log('📊 연령대별 인사이트:', ageInsights);
     // console.log('📊 ageInsights 키들:', Object.keys(ageInsights));
 
     // 공유세대/단독세대 분포 계산
-    // 공유세대는 동호수 기준으로 고유 세대만 세어야 함 (공유자 개별 행이 아닌)
-    const sharedHouseholdSet = new Set();
-    const singleHouseholdSet = new Set();
-    
-    data.forEach(row => {
-      const householdType = row['세대유형'];
-      const dongho = row['동호수'] || `${row['동'] || ''} ${row['호수'] || ''}`.trim();
-      
-      if (householdType === '공유세대') {
-        // 공유세대는 동호수 기준으로 고유 세대만 카운트
-        if (dongho) {
-          sharedHouseholdSet.add(dongho);
-        }
-      } else if (householdType === '단독세대') {
-        // 단독세대도 동호수 기준으로 고유 세대만 카운트
-        if (dongho) {
-          singleHouseholdSet.add(dongho);
-        }
-      }
-    });
-    
-    const sharedHouseholdCount = sharedHouseholdSet.size;
-    const singleHouseholdCount = singleHouseholdSet.size;
+    // filteredData는 이미 세대별 대표자만 포함되어 있으므로 직접 카운트
+    const sharedHouseholdCount = filteredData.filter(row => row['세대유형'] === '공유세대').length;
+    const singleHouseholdCount = filteredData.filter(row => row['세대유형'] === '단독세대').length;
 
     // 사용 가능한 나이대 목록 생성 (탭에서는 '미분류', '법인' 제외)
     const availableAgeGroups = ['전체', ...Object.keys(ageGroups)

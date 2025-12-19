@@ -26,7 +26,7 @@ const HouseholdType = ({ data, total }) => {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000000',
               color: '#ffffff',
@@ -34,6 +34,8 @@ const HouseholdType = ({ data, total }) => {
               borderRadius: '8px',
               fontSize: '12px'
             }}
+            itemStyle={{ color: '#ffffff' }}
+            labelStyle={{ color: '#ffffff' }}
           />
           <Legend />
         </PieChart>

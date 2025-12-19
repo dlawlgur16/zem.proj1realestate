@@ -51,7 +51,7 @@ const HoldingPeriod = ({ data, total, selectedAgeGroup, setSelectedAgeGroup, ava
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="period" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000000',
               color: '#ffffff',
