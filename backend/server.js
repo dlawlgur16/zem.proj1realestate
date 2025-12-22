@@ -14,6 +14,7 @@ const { query } = require('./config/database');
 
 // 라우트 임포트
 const uploadRouter = require('./routes/upload');
+const buildingsRouter = require('./routes/buildings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API 라우트
 app.use('/api/upload', uploadRouter);
+app.use('/api/buildings', buildingsRouter);
 
 // 헬스 체크 및 DB 연결 테스트
 app.get('/api/health', async (req, res) => {
