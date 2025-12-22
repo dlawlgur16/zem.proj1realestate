@@ -34,10 +34,10 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
               }]
             }],
             generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 32000,
-              topP: 0.9,
-              topK: 1
+              temperature: 0.3,
+              maxOutputTokens: 8192,
+              topP: 0.95,
+              topK: 40
             }
           })
         }
