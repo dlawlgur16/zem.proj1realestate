@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/zem.proj1realestate/static/css/main.d917626a.css",
+    "main.js": "/zem.proj1realestate/static/js/main.f83c73ba.js",
+    "index.html": "/zem.proj1realestate/index.html",
+    "main.d917626a.css.map": "/zem.proj1realestate/static/css/main.d917626a.css.map",
+    "main.f83c73ba.js.map": "/zem.proj1realestate/static/js/main.f83c73ba.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d917626a.css",
+    "static/js/main.f83c73ba.js"
+  ]
+}
