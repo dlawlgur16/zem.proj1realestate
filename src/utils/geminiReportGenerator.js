@@ -35,7 +35,7 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
             }],
             generationConfig: {
               temperature: 0.3,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
               topP: 0.95,
               topK: 40
             }
