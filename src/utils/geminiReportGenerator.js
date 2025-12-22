@@ -11,24 +11,10 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
     // 연령대별 인사이트가 없으면 계산
     if (!stats.ageInsights) {
         if (csvData && Array.isArray(csvData)) {
-            console.log('📊 CSV 데이터로 연령대별 인사이트 계산 시작...');
-            console.log('📊 CSV 데이터 길이:', csvData.length);
             stats.ageInsights = calculateAgeInsights(csvData);
-            console.log('📊 CSV 데이터로 연령대별 인사이트 계산됨:', stats.ageInsights);
-            console.log('📊 연령대별 인사이트 키들:', Object.keys(stats.ageInsights));
         } else if (stats.rows && Array.isArray(stats.rows)) {
-            console.log('📊 rows 데이터로 연령대별 인사이트 계산 시작...');
-            console.log('📊 rows 데이터 길이:', stats.rows.length);
             stats.ageInsights = calculateAgeInsights(stats.rows);
-            console.log('📊 rows 데이터로 연령대별 인사이트 계산됨:', stats.ageInsights);
-            console.log('📊 연령대별 인사이트 키들:', Object.keys(stats.ageInsights));
-        } else {
-            console.log('⚠️ 연령대별 인사이트 계산을 위한 데이터가 없습니다.');
-            console.log('⚠️ csvData:', csvData);
-            console.log('⚠️ stats.rows:', stats.rows);
         }
-    } else {
-        console.log('📊 이미 계산된 연령대별 인사이트 사용:', stats.ageInsights);
     }
     
     const prompt = createAnalysisPrompt(stats);
@@ -62,16 +48,14 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
       
       // Response body는 한 번만 읽을 수 있으므로 clone하거나 text로 먼저 읽기
       const responseText = await response.text();
-      
+
       try {
         const errorData = JSON.parse(responseText);
         const apiError = errorData.error?.message || '알 수 없는 오류';
         errorMessage += ` - ${apiError}`;
-        
+
         // 429 에러 (할당량 초과) 특별 처리
         if (response.status === 429) {
-          console.error('❌ API 할당량 초과 - 전체 에러 데이터:', JSON.stringify(errorData, null, 2));
-          console.error('❌ 에러 상세:', errorData.error);
           
           // 에러 데이터에서 할당량 정보 추출
           const quotaViolations = errorData.error?.details?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.QuotaFailure')?.violations || [];
@@ -86,10 +70,8 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
       } catch (jsonError) {
         // JSON 파싱 실패 시
         if (response.status === 429) {
-          console.error('❌ 429 에러 - 텍스트 응답:', responseText.substring(0, 500));
           throw new Error('API 할당량 초과 (429)\n\n무료 티어의 일일 사용량을 초과했습니다.\n\n해결 방법:\n1. Google AI Studio에서 할당량 확인\n2. 유료 플랜으로 업그레이드\n3. 할당량 리셋 대기');
         }
-        console.error('HTML 응답:', responseText.substring(0, 200));
         errorMessage += ` - HTML 응답을 받았습니다. API 키를 확인해주세요.`;
       }
       throw new Error(errorMessage);
@@ -97,39 +79,21 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
 
     // response.ok가 true이므로 여기서는 body를 읽을 수 있음
     const responseText = await response.text();
-    console.log('API 응답:', responseText.substring(0, 200));
     
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('JSON 파싱 오류:', parseError);
-      console.error('응답 내용:', responseText.substring(0, 500));
       throw new Error('API가 유효하지 않은 JSON을 반환했습니다. API 키를 확인해주세요.');
     }
 
     if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
       const generatedText = data.candidates[0].content.parts[0].text;
-      const finishReason = data.candidates[0].finishReason;
-
-      // 응답이 잘렸는지 확인
-      if (finishReason === 'MAX_TOKENS') {
-        console.warn('⚠️ 응답이 최대 토큰 수로 인해 잘렸습니다. maxOutputTokens를 늘려보세요.');
-      } else if (finishReason === 'STOP') {
-        console.log('✅ 응답이 정상적으로 완료되었습니다.');
-      } else {
-        console.warn('⚠️ 예상치 못한 finishReason:', finishReason);
-      }
-
-      console.log('📝 생성된 텍스트 길이:', generatedText.length, '문자');
-
       return generatedText;
     } else {
-      console.error('API 응답 구조 오류:', data);
       throw new Error('API 응답 구조가 올바르지 않습니다.');
     }
     } catch (error) {
-      console.error('Gemini API 오류:', error);
       throw error;
     }
   }
@@ -138,43 +102,19 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
    * 통계 데이터 기반 프롬프트 생성
    */
   function createAnalysisPrompt(stats) {
-  // 디버깅: 통계 데이터 구조 확인
-  console.log('📊 프롬프트 생성 - 통계 데이터:', stats);
-  console.log('📊 ageGroups:', stats.ageGroups);
-  console.log('📊 transferReasons:', stats.transferReasons);
-  console.log('📊 areaGroups:', stats.areaGroups);
-  console.log('📊 holdingGroups:', stats.holdingGroups);
-  console.log('📊 seizureStatusData:', stats.seizureStatusData);
-  console.log('📊 loanStatusData:', stats.loanStatusData);
-  console.log('📊 residenceInvestmentData:', stats.residenceInvestmentData);
-  console.log('📊 ageInsights:', stats.ageInsights);
-  
-  // ageInsights 상세 디버깅
-  if (stats.ageInsights) {
-    console.log('📊 ageInsights 상세 분석:');
-    Object.entries(stats.ageInsights).forEach(([age, insight]) => {
-      console.log(`📊 ${age}:`, {
-        loanRate: insight.loanRate,
-        avgLoan: insight.avgLoan,
-        residenceRate: insight.residenceRate,
-        seizureRate: insight.seizureRate
-      });
-    });
-  } else {
-    console.log('❌ ageInsights 데이터가 없습니다!');
-  }
   
     const residenceRate = ((stats.residenceCount / stats.total) * 100).toFixed(1);
     const investmentRate = ((stats.investmentCount / stats.total) * 100).toFixed(1);
     const avgLoan = stats.averageLoanAmount ? (stats.averageLoanAmount / 100000000).toFixed(1) : '0';
   
-  return `당신은 20년 경력의 부동산 재건축 전문가입니다. 제공된 실제 데이터만을 사용하여 간결하고 실무적인 분석 보고서를 작성하세요.
+  return `당신은 재건축 전문 컨설턴트로서, 시공사 의사결정을 위한 데이터 기반 분석 보고서를 작성합니다.
 
-**중요 규칙:**
-1. 제공된 수치만 사용 (추정/가정 금지)
-2. 각 섹션은 간결하게 (1-2문단)
-3. 보고서 총 길이: 최대 5000단어
-4. 반복 금지 - 각 내용은 한 번만 작성
+**작성 원칙:**
+1. 제공된 실제 수치만 사용 (추정 금지)
+2. 각 지표의 재건축 사업 성공 가능성에 미치는 영향 분석
+3. 구체적인 리스크와 기회 요인 도출
+4. 시공사 실무 활용 가능한 전략 제시
+5. 총 길이: 최대 4000단어
 
 ## 📊 실제 분석 데이터
 **분석 대상:** 전체통계
@@ -348,23 +288,52 @@ ${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups)
 
 ## 🎯 보고서 구조
 
-다음 순서로 작성하세요. 각 섹션은 간결하게 1-2문단으로:
+각 섹션마다 **데이터 → 해석 → 사업 영향도** 순으로 작성:
 
-1. **단지 개요** - 총 세대수, 실거주/투자 비율, 핵심 특징
-2. **거주 현황 분석** - 실거주 vs 투자자 비율, 조합 안정성 평가
-3. **금융 현황** - 근저당 비율, 평균 대출액, 금융 리스크
-4. **소유권 변동** - 이전사유 비율 (매매/증여/상속/경매)
-5. **보유기간 분석** - 장기/단기 보유자 비율, 사업 지속성
-6. **면적별 분포** - 주요 평형대, 투자 성향
-7. **연령대별 특징** - 주요 연령대 (상위 3개만), 각각의 특징
-8. **압류/가압류 현황** - 법적 리스크 수준
-9. **종합 평가** - 핵심 지표 3-5개 요약 (표 형식)
-10. **시공사 전략** - 실행 가능한 제언 3-5개 (불릿 포인트)
-11. **결론** - 긍정 요인 2-3개, 리스크 요인 2-3개
+### 1. 사업성 종합 평가 (1문단)
+- 핵심 지표 3-4개 요약
+- 사업 추진 난이도 평가 (상/중/하)
+- 예상 조합원 동의율
 
-**작성 완료 후 "---END OF REPORT---"를 마지막 줄에 추가하세요.**
+### 2. 조합 구성 분석 (2문단)
+- 실거주 vs 투자자 비율 해석
+- 연령대 구성 (상위 3개) 및 의사결정 성향
+- 조합 안정성 평가 및 리스크
 
-지금 바로 작성을 시작하세요.`;
+### 3. 재무 건전성 분석 (2문단)
+- 근저당 비율 및 평균 대출액
+- 대출금액대별 분포 특징
+- 분담금 납부 능력 평가
+- 금융 리스크 및 대응 방안
+
+### 4. 사업 추진력 분석 (2문단)
+- 보유기간별 분포 (장기 vs 단기)
+- 소유권 변동 패턴 (매매/증여/상속)
+- 조합원 이탈 가능성
+- 사업 지속 가능성 평가
+
+### 5. 물리적 특성 분석 (1-2문단)
+- 면적별 분포 및 주요 평형
+- 신축 시 평형 구성 전략
+- 압류/가압류 현황 및 법적 리스크
+
+### 6. 핵심 리스크 및 기회 요인 (표 형식)
+| 구분 | 요인 | 영향도 | 대응 전략 |
+| 긍정 | ... | 상/중/하 | ... |
+| 리스크 | ... | 상/중/하 | ... |
+
+### 7. 시공사 전략 제언 (5-7개, 우선순위별)
+각 제언마다:
+- 배경: 왜 필요한가
+- 목표: 무엇을 달성하는가
+- 실행: 구체적 방법
+
+### 8. 결론 (1문단)
+- 사업 추진 권고 수준 (적극 권장/조건부 권장/신중 검토)
+- 핵심 성공 요인 2-3개
+- 주의사항 2-3개
+
+**반드시 "---END OF REPORT---"로 마무리하세요.**`;
 }
 
 /**
@@ -373,24 +342,14 @@ ${stats.loanAmountGroups ? Object.entries(stats.loanAmountGroups)
 export async function generateHybridReport(stats, apiKey, csvData = null) {
   // API 키 확인
   if (!apiKey) {
-    console.error('❌ API 키가 없습니다.');
-    console.warn('⚠️ Fallback 보고서로 전환합니다.');
     return generateFallbackReport(stats);
   }
-  
+
   try {
-    console.log('🤖 Gemini API로 보고서 생성 시도...');
-    console.log('🔑 API 키 확인:', apiKey ? `${apiKey.substring(0, 10)}...` : '없음');
     const result = await generateGeminiInsights(stats, apiKey, csvData);
-    console.log('✅ Gemini API 성공!');
     return result;
   } catch (error) {
-    console.error('❌ Gemini API 실패:', error);
-    console.error('❌ 에러 상세:', error.message);
-    console.error('❌ 에러 스택:', error.stack);
-    console.warn('⚠️ Fallback 보고서로 전환합니다.');
-    
-    // Fallback 보고서 반환 (에러 정보는 콘솔에만 출력)
+    // Fallback 보고서 반환
     return generateFallbackReport(stats);
   }
 }
