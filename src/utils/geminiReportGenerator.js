@@ -49,7 +49,7 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
             }],
             generationConfig: {
               temperature: 0.2,
-              maxOutputTokens: 8000,
+              maxOutputTokens: 32000,
               topP: 0.9,
               topK: 1
             }
@@ -109,7 +109,21 @@ export async function generateGeminiInsights(stats, apiKey, csvData = null) {
     }
 
     if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
-      return data.candidates[0].content.parts[0].text;
+      const generatedText = data.candidates[0].content.parts[0].text;
+      const finishReason = data.candidates[0].finishReason;
+
+      // 응답이 잘렸는지 확인
+      if (finishReason === 'MAX_TOKENS') {
+        console.warn('⚠️ 응답이 최대 토큰 수로 인해 잘렸습니다. maxOutputTokens를 늘려보세요.');
+      } else if (finishReason === 'STOP') {
+        console.log('✅ 응답이 정상적으로 완료되었습니다.');
+      } else {
+        console.warn('⚠️ 예상치 못한 finishReason:', finishReason);
+      }
+
+      console.log('📝 생성된 텍스트 길이:', generatedText.length, '문자');
+
+      return generatedText;
     } else {
       console.error('API 응답 구조 오류:', data);
       throw new Error('API 응답 구조가 올바르지 않습니다.');
