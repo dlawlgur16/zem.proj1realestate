@@ -2,6 +2,7 @@
   "name": "reconstruction-analysis",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://dlawlgur16.github.io/zem.proj1realestate",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@testing-library/jest-dom": "^5.16.4",
@@ -13,8 +14,8 @@
     "react-router-dom": "^7.9.4",
     "react-scripts": "5.0.1",
     "recharts": "^2.8.0",
-    "xlsx": "^0.18.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -26,7 +27,9 @@
     "postbuild": "cp build/index.html build/404.html",
     "preprocess": "node scripts/preprocess.js",
     "copy-data": "node scripts/copy-processed-data.js",
-    "prepare-data": "npm run preprocess && npm run copy-data"
+    "prepare-data": "npm run preprocess && npm run copy-data",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -48,6 +51,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
+    "gh-pages": "^6.3.0",
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.0"
   }
