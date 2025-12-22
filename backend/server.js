@@ -82,9 +82,9 @@ app.use((req, res) => {
 });
 
 // 서버 시작
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
-  console.log(`📡 API 엔드포인트: http://localhost:${PORT}/api`);
+  console.log(`📡 API 엔드포인트: http://0.0.0.0:${PORT}/api`);
   
   // DB 연결 테스트
   try {
