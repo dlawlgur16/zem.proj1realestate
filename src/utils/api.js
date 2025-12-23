@@ -137,11 +137,27 @@ export const uploadCSV = async (file) => {
  */
 export const loadBuildingsAsProjects = async () => {
   try {
-    const response = await buildingsAPI.getAll();
-    
-    if (response.success && response.data) {
-      // DB의 buildings를 프로젝트 형식으로 변환
-      return response.data.map(building => ({
+    const buildings = await buildingsAPI.getAll();
+
+    // 백엔드가 배열을 직접 반환하는 경우
+    if (Array.isArray(buildings)) {
+      return buildings.map(building => ({
+        id: building.id, // 이미 "db-28" 형식으로 반환됨
+        name: building.name || '이름 없음',
+        address: building.address || building.city || '',
+        type: building.type || 'db',
+        buildingId: building.id.replace('db-', ''), // "db-28" -> "28"
+        unitCount: parseInt(building.unitCount) || 0,
+        createdAt: building.createdAt,
+        // 기존 프로젝트 형식과 호환성을 위한 필드
+        dataFile: null,
+        image: '/image/img_chart-02.jpg'
+      }));
+    }
+
+    // 구형 형식 (response.success && response.data)도 지원
+    if (buildings && buildings.success && buildings.data) {
+      return buildings.data.map(building => ({
         id: `db-${building.id}`,
         name: building.name || '이름 없음',
         address: building.address || building.city || '',
@@ -150,12 +166,11 @@ export const loadBuildingsAsProjects = async () => {
         unitCount: parseInt(building.unit_count) || 0,
         mortgageCount: parseInt(building.mortgage_count) || 0,
         createdAt: building.created_at,
-        // 기존 프로젝트 형식과 호환성을 위한 필드
         dataFile: null,
         image: '/image/img_chart-02.jpg'
       }));
     }
-    
+
     return [];
   } catch (error) {
     console.error('DB에서 건물 목록 로드 실패:', error);
