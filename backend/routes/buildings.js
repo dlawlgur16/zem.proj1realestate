@@ -93,4 +93,42 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/buildings/:id
+ * 건물 삭제 (세대 데이터도 함께 삭제)
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const buildingId = req.params.id.replace('db-', '');
+
+    // 세대 데이터 먼저 삭제
+    await query('DELETE FROM units WHERE building_id = $1', [buildingId]);
+
+    // 건물 삭제
+    const result = await query(
+      'DELETE FROM buildings WHERE id = $1 RETURNING *',
+      [buildingId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '건물을 찾을 수 없습니다.' });
+    }
+
+    res.json({
+      success: true,
+      message: '건물이 성공적으로 삭제되었습니다.',
+      deleted: {
+        id: `db-${result.rows[0].id}`,
+        name: result.rows[0].name
+      }
+    });
+  } catch (error) {
+    console.error('❌ 건물 삭제 실패:', error);
+    res.status(500).json({
+      error: '건물을 삭제할 수 없습니다.',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

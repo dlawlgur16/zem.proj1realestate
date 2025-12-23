@@ -105,7 +105,7 @@ const ProjectIndex = () => {
     // CSV 또는 XLSX 파일만 허용
     const isCSV = file.name.toLowerCase().endsWith('.csv');
     const isXLSX = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
-    
+
     if (!isCSV && !isXLSX) {
       alert('CSV 또는 XLSX 파일만 업로드 가능합니다.');
       return;
@@ -117,7 +117,7 @@ const ProjectIndex = () => {
     try {
       console.log('📤 CSV 파일 업로드 시작:', file.name);
       const result = await uploadCSV(file);
-      
+
       console.log('✅ 업로드 성공:', result);
       alert(`✅ 파일이 성공적으로 업로드되었습니다!\n\n건물명: ${result.building.name}\n세대 수: ${result.units.inserted}개`);
 
@@ -132,6 +132,31 @@ const ProjectIndex = () => {
       alert(`❌ 업로드 실패: ${error.message}\n\n확인사항:\n1. 백엔드 서버가 실행 중인지 확인\n2. 파일 형식이 올바른지 확인 (CSV 또는 XLSX)\n3. 파일 크기가 10MB 이하인지 확인`);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleProjectDelete = async (projectId) => {
+    try {
+      console.log('🗑️ 프로젝트 삭제 시작:', projectId);
+
+      // DB 프로젝트 삭제
+      if (projectId.startsWith('db-')) {
+        const { buildingsAPI } = await import('../utils/api');
+        await buildingsAPI.delete(projectId);
+        console.log('✅ DB 프로젝트 삭제 완료:', projectId);
+      } else {
+        // 로컬 프로젝트 삭제
+        const { deleteUserProject } = await import('../utils/dataLoader');
+        deleteUserProject(projectId);
+        console.log('✅ 로컬 프로젝트 삭제 완료:', projectId);
+      }
+
+      // 프로젝트 목록 새로고침
+      await loadProjects();
+      alert('✅ 프로젝트가 삭제되었습니다.');
+    } catch (error) {
+      console.error('❌ 프로젝트 삭제 실패:', error);
+      alert(`❌ 삭제 실패: ${error.message}`);
     }
   };
 
@@ -208,6 +233,7 @@ const ProjectIndex = () => {
               key={project.id}
               project={project}
               onSelect={handleProjectSelect}
+              onDelete={handleProjectDelete}
             />
           ))}
         </div>

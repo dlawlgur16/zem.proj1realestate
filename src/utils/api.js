@@ -184,23 +184,24 @@ export const loadBuildingsAsProjects = async () => {
 export const loadBuildingDataFromDB = async (buildingId) => {
   try {
     // 건물 상세 정보 가져오기
-    const building = await buildingsAPI.getById(buildingId);
-    
-    if (!building.success || !building.data) {
+    const response = await buildingsAPI.getById(buildingId);
+
+    // 백엔드가 {building: {...}, units: [...]} 형식으로 반환
+    if (!response || !response.building || !response.units) {
       throw new Error('건물 정보를 찾을 수 없습니다.');
     }
-    
-    // 세대 데이터 가져오기
-    const units = await unitsAPI.getByBuilding(buildingId);
-    
-    if (!units.success || !units.data) {
+
+    const building = response.building;
+    const units = response.units;
+
+    if (!units || units.length === 0) {
       // 세대가 없으면 빈 배열 반환
       return [];
     }
-    
+
     // units 데이터를 CSV 형식(객체 배열)으로 변환
     // 기존 DataAnalysis 컴포넌트가 기대하는 형식으로 변환
-    const csvData = units.data.map(unit => {
+    const csvData = units.map(unit => {
       // 동호수 형식 정규화: dong이 "1동" 형태면 "1"로, ho가 "101호" 형태면 "101"로 변환
       let dongStr = unit.dong ? unit.dong.toString().replace(/동$/, '').trim() : '';
       let hoStr = unit.ho ? unit.ho.toString().replace(/호$/, '').trim() : '';
@@ -254,14 +255,14 @@ export const loadBuildingDataFromDB = async (buildingId) => {
       return {
         // 기존 CSV 컬럼명과 매핑 (DataAnalysis가 기대하는 모든 컬럼)
         '동호수': dongho,
-        '건물명': building.data.name || '',
+        '건물명': building.name || '',
         '건축물_연면적': areaStr,
         '전용면적_제곱미터': area,
         // DB에 저장된 추가 컬럼들 (있는 경우)
         '소유자명': unit.소유자명 || '',
         '생년월일': unit.생년월일 ? unit.생년월일.toString() : '',
         '소유자_주소': unit.소유자_주소 || '',
-        '아파트_소재지': unit.아파트_소재지 || building.data.address || '',
+        '아파트_소재지': unit.아파트_소재지 || building.address || '',
         '거주형태': unit.거주형태 || '',
         '등기목적_분류': unit.등기목적_분류 || '',
         '근저당금액': loanAmount !== null ? loanAmount.toString() : '',

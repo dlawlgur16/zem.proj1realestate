@@ -45,8 +45,8 @@ const ProjectCard = ({ project, onSelect, onDelete }) => {
       <div className="project-card-content">
         <div className="project-card-header">
           <h3 className="project-card-title">{project.name}</h3>
-          {project.type === 'user' && (
-            <button 
+          {(project.type === 'user' || project.type === 'db') && onDelete && (
+            <button
               className="project-card-delete"
               onClick={handleDelete}
               title="프로젝트 삭제"
