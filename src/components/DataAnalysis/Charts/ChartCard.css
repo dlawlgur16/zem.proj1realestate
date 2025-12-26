@@ -91,13 +91,14 @@
 .chart-card__tabs {
   display: flex;
   gap: 0.2rem;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: nowrap;
   margin-bottom: 1rem;
   overflow-x: auto;
   padding: 0.3rem 0;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e0 #f7fafc;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 768px) {
@@ -129,9 +130,9 @@
 }
 
 .chart-card__tab {
-  padding: 0.3rem 0.6rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   background-color: white;
   color: #4a5568;
   cursor: pointer;
@@ -142,6 +143,7 @@
   overflow: hidden;
   white-space: nowrap;
   flex-shrink: 0;
+  min-width: fit-content;
 }
 
 @media (max-width: 1024px) {
@@ -329,12 +331,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   flex: 1;
   min-width: 120px;
+  white-space: nowrap;
 }
 
 .chart-card__stat-label {
   font-size: 0.8rem;
   font-weight: 600;
   color: #4a5568;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chart-card__stat-value {
@@ -345,6 +350,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chart-card__stat-color {
