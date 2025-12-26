@@ -1,13 +1,5 @@
 [
   {
-    "id": "processed-0",
-    "name": "4. 집합건물 등기부등본을 이용한  구분소유자명부 작성사례(샘플)",
-    "address": "서울특별시 광진구 천호대로 666",
-    "type": "processed",
-    "dataFile": "/processed-data/4. 집합건물 등기부등본을 이용한  구분소유자명부 작성사례(샘플)_전처리_2025-10-28T02-36-20-621Z.csv",
-    "image": "/image/img_chart-02.jpg"
-  },
-  {
     "id": "processed-1",
     "name": "그랜드파크오피스텔",
     "address": "서울특별시 광진구 천호대로 666",
@@ -17,7 +9,7 @@
   },
   {
     "id": "processed-3",
-    "name": "청화아파트(샘플)",
+    "name": "청화아파트 (578세대)",
     "address": "서울특별시 용산구 장문로 27",
     "type": "processed",
     "dataFile": "/processed-data/청화아파트_수정.csv",
