@@ -42,7 +42,6 @@ async function apiRequest(endpoint, options = {}) {
     
     return data;
   } catch (error) {
-    console.error('API 요청 실패:', error);
     throw error;
   }
 }
@@ -127,7 +126,6 @@ export const uploadCSV = async (file) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('CSV 업로드 실패:', error);
     throw error;
   }
 };
@@ -173,7 +171,6 @@ export const loadBuildingsAsProjects = async () => {
 
     return [];
   } catch (error) {
-    console.error('DB에서 건물 목록 로드 실패:', error);
     return [];
   }
 };
@@ -283,7 +280,6 @@ export const loadBuildingDataFromDB = async (buildingId) => {
     
     return csvData;
   } catch (error) {
-    console.error('DB에서 건물 데이터 로드 실패:', error);
     throw error;
   }
 };

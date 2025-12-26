@@ -187,11 +187,8 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
           const genderCode = parseInt(residentNumber.substring(7,8));
           const gender = genderCode % 2 === 0 ? '여' : '남';
           genderGroups[gender] = (genderGroups[gender] || 0) + 1;
-          
-          // 디버깅을 위한 로그
-               // console.log(`주민번호: ${residentNumber}, 성별코드: ${genderCode}, 성별: ${gender}`);
         } catch (error) {
-          console.error('성별 분석 오류:', error, residentNumber);
+          // 성별 분석 오류 무시
         }
       }
     });
@@ -533,7 +530,6 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
         default: return false;
       }
     } catch (error) {
-      console.error('나이대 필터링 오류:', error, birthRaw);
       return false;
     }
   });

@@ -29,11 +29,10 @@ const ProjectCard = ({ project, onSelect, onDelete }) => {
   return (
     <div className="project-card" onClick={handleClick}>
       <div className="project-card-image">
-        <img 
-          src={resolveImageSrc(project.image)} 
+        <img
+          src={resolveImageSrc(project.image)}
           alt={project.name}
           onError={(e) => {
-            console.error('이미지 로드 실패:', project.image);
             e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNmI3MjgwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuydtOuvuOyngCDsl7Dsl6w8L3RleHQ+PC9zdmc+';
           }}
         />
