@@ -6,13 +6,5 @@
     "type": "processed",
     "dataFile": "/processed-data/그랜드파크오피스텔_전처리_2025-10-29T01-28-43-184Z.csv",
     "image": "/image/img_chart-02.jpg"
-  },
-  {
-    "id": "processed-3",
-    "name": "청화아파트 (578세대)",
-    "address": "서울특별시 용산구 장문로 27",
-    "type": "processed",
-    "dataFile": "/processed-data/청화아파트_수정.csv",
-    "image": "/image/img_chart-02.jpg"
   }
 ]
