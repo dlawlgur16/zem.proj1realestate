@@ -122,7 +122,7 @@ const InvestorResidence = ({ data, total }) => {
             domain={[0, 'dataMax']}
             allowDecimals={false}
           />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000000',
               color: '#ffffff',

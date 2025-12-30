@@ -1,26 +1,10 @@
 [
   {
-    "id": "processed-0",
-    "name": "미도아파트(샘플)",
-    "address": "서울특별시 서초구 서초중앙로29길 28",
-    "type": "processed",
-    "dataFile": "/processed-data/미도아파트_수정1.csv",
-    "image": "/image/img_chart-02.jpg"
-  },
-  {
     "id": "processed-1",
-    "name": "그랜드파크오피스텔(샘플)",
+    "name": "그랜드파크오피스텔",
     "address": "서울특별시 광진구 천호대로 666",
     "type": "processed",
-    "dataFile": "/processed-data/그랜드파크오피스텔.csv",
-    "image": "/image/img_chart-02.jpg"
-  },
-  {
-    "id": "processed-3",
-    "name": "청화아파트(샘플)",
-    "address": "서울특별시 용산구 장문로 27",
-    "type": "processed",
-    "dataFile": "/processed-data/청화아파트.csv",
+    "dataFile": "/processed-data/그랜드파크오피스텔_전처리_2025-10-29T01-28-43-184Z.csv",
     "image": "/image/img_chart-02.jpg"
   }
 ]

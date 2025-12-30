@@ -24,10 +24,9 @@ const MainApp = () => {
     
     // 프로젝트 데이터가 전달되었는지 확인
     if (location.state?.project && location.state?.projectData) {
-      console.log('📁 프로젝트 데이터 받음:', location.state.project.name);
       setProjectInfo(location.state.project);
       setCsvData(location.state.projectData);
-      setCurrentStep('analysis'); // 바로 분석 단계로
+      setCurrentStep('analysis');
     }
     
     setIsLoading(false);
@@ -55,7 +54,7 @@ const MainApp = () => {
   //   return <Navigate to="/login" replace />;
   // }
 
-  const handleReportGenerated = (report) => {
+  const handleReportGenerated = () => {
     setCurrentStep('report');
   };
 
@@ -136,12 +135,14 @@ const MainApp = () => {
         )}
 
         {currentStep === 'report' && csvData && (
-          <ReportGenerator
-            csvData={csvData}
-            activeTab={activeTab}
-            statsData={statsData}
-            onReportGenerated={handleReportGenerated}
-          />
+          <>
+            <ReportGenerator
+              csvData={csvData}
+              activeTab={activeTab}
+              statsData={statsData}
+              onReportGenerated={handleReportGenerated}
+            />
+          </>
         )}
 
         {error && (

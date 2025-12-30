@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { staticProjects } from '../data/staticProjects';
 import { loadProjectData } from '../utils/dataLoader';
-import { loadBuildingsAsProjects, uploadCSV, buildingsAPI } from '../utils/api';
+import { loadBuildingsAsProjects, uploadCSV } from '../utils/api';
 import ProjectCard from '../components/ProjectCard';
 import './ProjectIndex.css';
 
@@ -35,42 +35,25 @@ const ProjectIndex = () => {
           
           if (processedProjects && processedProjects.length > 0) {
             projects = [...projects, ...processedProjects];
-            console.log('📊 전처리된 프로젝트 추가:', processedProjects.length);
           }
         }
       } catch (error) {
-        console.warn('⚠️ 전처리된 데이터 목록 로드 실패:', error);
+        // 전처리된 데이터 목록 로드 실패 (무시)
       }
       
       // DB에서 건물 목록 가져오기
       try {
-        console.log('🗄️ DB 프로젝트 로드 시도...');
         const dbProjects = await loadBuildingsAsProjects();
-        console.log('🗄️ DB 프로젝트 로드 결과:', {
-          count: dbProjects?.length || 0,
-          projects: dbProjects
-        });
-        
         if (dbProjects && dbProjects.length > 0) {
           projects = [...projects, ...dbProjects];
-          console.log('✅ DB 프로젝트 추가 완료:', dbProjects.length, '개');
-        } else {
-          console.warn('⚠️ DB 프로젝트가 없습니다.');
         }
       } catch (error) {
-        console.error('❌ DB 프로젝트 로드 실패:', error);
-        console.error('❌ 에러 상세:', error.message, error.stack);
+        // DB 프로젝트 로드 실패 (서버가 실행 중이 아닐 수 있음)
       }
       
       setAllProjects(projects);
-      
-      console.log('📁 프로젝트 목록 로드 완료:', {
-        정적: staticProjects.length,
-        DB: projects.filter(p => p.type === 'db').length,
-        전체: projects.length
-      });
     } catch (error) {
-      console.error('❌ 프로젝트 목록 로드 실패:', error);
+      // 프로젝트 목록 로드 실패
     }
   };
 
@@ -78,7 +61,6 @@ const ProjectIndex = () => {
     setIsLoading(true);
     
     try {
-      console.log('🎯 프로젝트 선택:', project.name);
       
       // 프로젝트 데이터 로드
       const projectData = await loadProjectData(project);
@@ -92,7 +74,6 @@ const ProjectIndex = () => {
       });
       
     } catch (error) {
-      console.error('❌ 프로젝트 데이터 로드 실패:', error);
       alert('프로젝트 데이터를 로드할 수 없습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
@@ -107,32 +88,6 @@ const ProjectIndex = () => {
     navigate('/');
   };
 
-  const handleDeleteProject = async (projectId) => {
-    try {
-      // DB 프로젝트인 경우 (buildingId가 있는 경우)
-      if (projectId.startsWith('db-')) {
-        const buildingId = projectId.replace('db-', '');
-        console.log('🗑️ DB 프로젝트 삭제 시도:', buildingId);
-        
-        const result = await buildingsAPI.delete(buildingId);
-        
-        if (result.success) {
-          alert('프로젝트가 삭제되었습니다.');
-          // 프로젝트 목록 새로고침
-          await loadProjects();
-        } else {
-          alert('프로젝트 삭제에 실패했습니다.');
-        }
-      } else {
-        // 정적 프로젝트나 사용자 프로젝트는 삭제 불가
-        alert('이 프로젝트는 삭제할 수 없습니다.');
-      }
-    } catch (error) {
-      console.error('❌ 프로젝트 삭제 실패:', error);
-      alert(`프로젝트 삭제에 실패했습니다: ${error.message}`);
-    }
-  };
-
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -140,7 +95,7 @@ const ProjectIndex = () => {
     // CSV 또는 XLSX 파일만 허용
     const isCSV = file.name.toLowerCase().endsWith('.csv');
     const isXLSX = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
-    
+
     if (!isCSV && !isXLSX) {
       alert('CSV 또는 XLSX 파일만 업로드 가능합니다.');
       return;
@@ -150,15 +105,8 @@ const ProjectIndex = () => {
     setUploadError(null);
 
     try {
-      console.log('📤 CSV 파일 업로드 시작:', file.name);
       const result = await uploadCSV(file);
-      
-      console.log('✅ 업로드 성공:', result);
-      console.log('📊 units 데이터:', result.units);
-      // total은 실제 세대 그룹 수, inserted는 저장된 행 수 (공유세대 포함)
-      // 백엔드가 total을 반환하면 사용, 없으면 inserted 사용 (하위 호환성)
-      const householdCount = result.units?.total ?? result.units?.inserted ?? 0;
-      alert(`✅ 파일이 성공적으로 업로드되었습니다!\n\n건물명: ${result.building.name}\n세대 수: ${householdCount}개`);
+      alert(`파일이 성공적으로 업로드되었습니다!\n\n건물명: ${result.building.name}\n세대 수: ${result.units.inserted}개`);
 
       // 프로젝트 목록 새로고침
       await loadProjects();
@@ -166,11 +114,27 @@ const ProjectIndex = () => {
       // 파일 input 초기화
       event.target.value = '';
     } catch (error) {
-      console.error('❌ 업로드 실패:', error);
       setUploadError(error.message);
-      alert(`❌ 업로드 실패: ${error.message}\n\n확인사항:\n1. 백엔드 서버가 실행 중인지 확인\n2. 파일 형식이 올바른지 확인 (CSV 또는 XLSX)\n3. 파일 크기가 10MB 이하인지 확인`);
+      alert(`업로드 실패: ${error.message}`);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleProjectDelete = async (projectId) => {
+    try {
+      if (projectId.startsWith('db-')) {
+        const { buildingsAPI } = await import('../utils/api');
+        await buildingsAPI.delete(projectId);
+      } else {
+        const { deleteUserProject } = await import('../utils/dataLoader');
+        deleteUserProject(projectId);
+      }
+
+      await loadProjects();
+      alert('프로젝트가 삭제되었습니다.');
+    } catch (error) {
+      alert(`삭제 실패: ${error.message}`);
     }
   };
 
@@ -247,7 +211,7 @@ const ProjectIndex = () => {
               key={project.id}
               project={project}
               onSelect={handleProjectSelect}
-              onDelete={handleDeleteProject}
+              onDelete={handleProjectDelete}
             />
           ))}
         </div>

@@ -3,24 +3,7 @@
  * Supabase PostgreSQL DB와 연동
  */
 
-// 환경 변수에서 API URL 가져오기 (배포 환경), 없으면 로컬 개발 환경 기본값 사용
-// 개발 환경에서는 proxy를 사용하므로 상대 경로 사용
-// 환경 변수에 /api가 없으면 자동으로 추가
-let apiUrl = process.env.REACT_APP_API_URL;
-if (!apiUrl) {
-  // 개발 환경에서는 proxy 사용 (package.json의 proxy 설정)
-  // 프로덕션에서는 환경 변수 필요
-  if (process.env.NODE_ENV === 'development') {
-    apiUrl = '/api';
-  } else {
-    apiUrl = 'http://localhost:5000/api';
-  }
-}
-if (apiUrl && !apiUrl.startsWith('/') && !apiUrl.endsWith('/api')) {
-  // /api로 끝나지 않으면 추가 (단, 이미 /로 끝나면 /api만 추가)
-  apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api` : `${apiUrl}/api`;
-}
-const API_BASE_URL = apiUrl;
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
  * API 요청 헬퍼 함수
@@ -41,16 +24,7 @@ async function apiRequest(endpoint, options = {}) {
   }
 
   try {
-    console.log(`🌐 API 요청: ${url}`, { method: config.method || 'GET', headers: config.headers });
-    
     const response = await fetch(url, config);
-    
-    console.log(`📡 API 응답: ${url}`, {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-      contentType: response.headers.get('content-type')
-    });
     
     // 응답이 비어있을 수 있음
     let data;
@@ -62,21 +36,12 @@ async function apiRequest(endpoint, options = {}) {
       data = text ? JSON.parse(text) : {};
     }
     
-    console.log(`📦 API 응답 데이터: ${url}`, data);
-    
     if (!response.ok) {
-      const errorMsg = data.error?.message || data.error || `HTTP error! status: ${response.status}`;
-      console.error(`❌ API 요청 실패: ${url}`, errorMsg);
-      throw new Error(errorMsg);
+      throw new Error(data.error?.message || data.error || `HTTP error! status: ${response.status}`);
     }
     
     return data;
   } catch (error) {
-    console.error(`❌ API 요청 실패: ${url}`, {
-      message: error.message,
-      name: error.name,
-      stack: error.stack
-    });
     throw error;
   }
 }
@@ -144,6 +109,7 @@ export const uploadCSV = async (file) => {
   const formData = new FormData();
   formData.append('csvFile', file);
 
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   const url = `${API_BASE_URL}/upload/csv`;
 
   try {
@@ -160,7 +126,6 @@ export const uploadCSV = async (file) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('CSV 업로드 실패:', error);
     throw error;
   }
 };
@@ -170,20 +135,27 @@ export const uploadCSV = async (file) => {
  */
 export const loadBuildingsAsProjects = async () => {
   try {
-    console.log('🔍 DB 건물 목록 로드 시작...');
-    console.log('📡 API URL:', API_BASE_URL);
-    
-    const response = await buildingsAPI.getAll();
-    
-    console.log('📦 API 응답:', {
-      success: response?.success,
-      hasData: !!response?.data,
-      dataLength: response?.data?.length,
-      response: response
-    });
-    
-    if (response && response.success && response.data) {
-      const projects = response.data.map(building => ({
+    const buildings = await buildingsAPI.getAll();
+
+    // 백엔드가 배열을 직접 반환하는 경우
+    if (Array.isArray(buildings)) {
+      return buildings.map(building => ({
+        id: building.id, // 이미 "db-28" 형식으로 반환됨
+        name: building.name || '이름 없음',
+        address: building.address || building.city || '',
+        type: building.type || 'db',
+        buildingId: building.id.replace('db-', ''), // "db-28" -> "28"
+        unitCount: parseInt(building.unitCount) || 0,
+        createdAt: building.createdAt,
+        // 기존 프로젝트 형식과 호환성을 위한 필드
+        dataFile: null,
+        image: '/image/img_chart-02.jpg'
+      }));
+    }
+
+    // 구형 형식 (response.success && response.data)도 지원
+    if (buildings && buildings.success && buildings.data) {
+      return buildings.data.map(building => ({
         id: `db-${building.id}`,
         name: building.name || '이름 없음',
         address: building.address || building.city || '',
@@ -192,24 +164,13 @@ export const loadBuildingsAsProjects = async () => {
         unitCount: parseInt(building.unit_count) || 0,
         mortgageCount: parseInt(building.mortgage_count) || 0,
         createdAt: building.created_at,
-        // 기존 프로젝트 형식과 호환성을 위한 필드
         dataFile: null,
         image: '/image/img_chart-02.jpg'
       }));
-      
-      console.log('✅ DB 프로젝트 변환 완료:', projects.length, '개');
-      return projects;
     }
-    
-    console.warn('⚠️ 응답에 데이터가 없습니다:', response);
+
     return [];
   } catch (error) {
-    console.error('❌ DB에서 건물 목록 로드 실패:', error);
-    console.error('❌ 에러 상세:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
     return [];
   }
 };
@@ -220,23 +181,24 @@ export const loadBuildingsAsProjects = async () => {
 export const loadBuildingDataFromDB = async (buildingId) => {
   try {
     // 건물 상세 정보 가져오기
-    const building = await buildingsAPI.getById(buildingId);
-    
-    if (!building.success || !building.data) {
+    const response = await buildingsAPI.getById(buildingId);
+
+    // 백엔드가 {building: {...}, units: [...]} 형식으로 반환
+    if (!response || !response.building || !response.units) {
       throw new Error('건물 정보를 찾을 수 없습니다.');
     }
-    
-    // 세대 데이터 가져오기
-    const units = await unitsAPI.getByBuilding(buildingId);
-    
-    if (!units.success || !units.data) {
+
+    const building = response.building;
+    const units = response.units;
+
+    if (!units || units.length === 0) {
       // 세대가 없으면 빈 배열 반환
       return [];
     }
-    
+
     // units 데이터를 CSV 형식(객체 배열)으로 변환
     // 기존 DataAnalysis 컴포넌트가 기대하는 형식으로 변환
-    const csvData = units.data.map(unit => {
+    const csvData = units.map(unit => {
       // 동호수 형식 정규화: dong이 "1동" 형태면 "1"로, ho가 "101호" 형태면 "101"로 변환
       let dongStr = unit.dong ? unit.dong.toString().replace(/동$/, '').trim() : '';
       let hoStr = unit.ho ? unit.ho.toString().replace(/호$/, '').trim() : '';
@@ -290,14 +252,14 @@ export const loadBuildingDataFromDB = async (buildingId) => {
       return {
         // 기존 CSV 컬럼명과 매핑 (DataAnalysis가 기대하는 모든 컬럼)
         '동호수': dongho,
-        '건물명': building.data.name || '',
+        '건물명': building.name || '',
         '건축물_연면적': areaStr,
         '전용면적_제곱미터': area,
         // DB에 저장된 추가 컬럼들 (있는 경우)
         '소유자명': unit.소유자명 || '',
         '생년월일': unit.생년월일 ? unit.생년월일.toString() : '',
         '소유자_주소': unit.소유자_주소 || '',
-        '아파트_소재지': unit.아파트_소재지 || building.data.address || '',
+        '아파트_소재지': unit.아파트_소재지 || building.address || '',
         '거주형태': unit.거주형태 || '',
         '등기목적_분류': unit.등기목적_분류 || '',
         '근저당금액': loanAmount !== null ? loanAmount.toString() : '',
@@ -318,7 +280,6 @@ export const loadBuildingDataFromDB = async (buildingId) => {
     
     return csvData;
   } catch (error) {
-    console.error('DB에서 건물 데이터 로드 실패:', error);
     throw error;
   }
 };

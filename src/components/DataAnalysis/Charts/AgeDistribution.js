@@ -25,7 +25,7 @@ const AgeDistribution = ({ data, total }) => {
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="range" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000000',
               color: '#ffffff',
