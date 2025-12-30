@@ -68,9 +68,19 @@ CREATE TABLE IF NOT EXISTS raw_documents (
   parse_error_msg TEXT
 );
 
+-- 사용자 정보 (인증용)
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'user',  -- 'admin' 또는 'user'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 인덱스 추가 (성능 최적화)
 CREATE INDEX IF NOT EXISTS idx_units_building_id ON units(building_id);
 CREATE INDEX IF NOT EXISTS idx_units_dong_ho ON units(dong, ho);
 CREATE INDEX IF NOT EXISTS idx_mortgages_unit_id ON mortgages(unit_id);
 CREATE INDEX IF NOT EXISTS idx_raw_documents_building_id ON raw_documents(building_id);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
