@@ -27,9 +27,7 @@
     "postbuild": "cp build/index.html build/404.html",
     "preprocess": "node scripts/preprocess.js",
     "copy-data": "node scripts/copy-processed-data.js",
-    "prepare-data": "npm run preprocess && npm run copy-data",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "prepare-data": "npm run preprocess && npm run copy-data"
   },
   "eslintConfig": {
     "extends": [
@@ -51,7 +49,6 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
-    "gh-pages": "^6.3.0",
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.0"
   },
