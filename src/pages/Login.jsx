@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { getSession, setSession } from '../utils/auth';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 /**
  * 로그인 페이지 컴포넌트
- * 데모용 하드코딩된 계정으로 로그인 처리
  */
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -24,24 +25,34 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    // 데모 계정 체크 (admin/password123)
-    if (username === 'admin' && password === 'password123') {
-      try {
-        setSession({ 
-          username: 'admin', 
-          role: 'admin' 
-        });
-        
-        // 프로젝트 선택 페이지로 리다이렉트
-        navigate('app');
-      } catch (error) {
-        setError('로그인 처리 중 오류가 발생했습니다.');
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '로그인에 실패했습니다.');
       }
-    } else {
-      setError('잘못된 사용자명 또는 비밀번호입니다.');
+
+      // 세션 저장
+      setSession({
+        token: data.token,
+        user: data.user
+      });
+
+      // 프로젝트 선택 페이지로 리다이렉트
+      navigate('/app');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
@@ -70,7 +81,7 @@ const Login = () => {
         }}>
           로그인
         </h2>
-        
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
             <label style={{
@@ -92,14 +103,15 @@ const Login = () => {
                 borderRadius: '8px',
                 fontSize: '1rem',
                 outline: 'none',
-                transition: 'border-color 0.2s'
+                transition: 'border-color 0.2s',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => e.target.style.borderColor = '#667eea'}
               onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               required
             />
           </div>
-          
+
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{
               display: 'block',
@@ -120,14 +132,15 @@ const Login = () => {
                 borderRadius: '8px',
                 fontSize: '1rem',
                 outline: 'none',
-                transition: 'border-color 0.2s'
+                transition: 'border-color 0.2s',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => e.target.style.borderColor = '#667eea'}
               onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               required
             />
           </div>
-          
+
           {error && (
             <div style={{
               color: '#e53e3e',
@@ -138,7 +151,7 @@ const Login = () => {
               {error}
             </div>
           )}
-          
+
           <button
             type="submit"
             disabled={loading}
@@ -160,19 +173,6 @@ const Login = () => {
             {loading ? '로그인 중...' : '로그인'}
           </button>
         </form>
-        
-        <div style={{
-          marginTop: '1rem',
-          padding: '1rem',
-          background: '#f7fafc',
-          borderRadius: '8px',
-          fontSize: '0.875rem',
-          color: '#4a5568'
-        }}>
-          <strong>데모 계정:</strong><br />
-          사용자명: admin<br />
-          비밀번호: password123
-        </div>
       </div>
     </div>
   );

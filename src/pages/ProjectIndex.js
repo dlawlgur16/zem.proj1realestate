@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { staticProjects } from '../data/staticProjects';
 import { loadProjectData } from '../utils/dataLoader';
 import { loadBuildingsAsProjects, uploadCSV } from '../utils/api';
+import { isAdmin, clearSession } from '../utils/auth';
 import ProjectCard from '../components/ProjectCard';
 import './ProjectIndex.css';
 
@@ -83,8 +84,7 @@ const ProjectIndex = () => {
 
 
   const handleLogout = () => {
-    // 로그아웃 처리 (auth.js의 clearSession 사용)
-    localStorage.removeItem('session');
+    clearSession();
     navigate('/');
   };
 
@@ -173,36 +173,38 @@ const ProjectIndex = () => {
           <p>분석할 재건축 아파트 프로젝트를 선택하거나 새 파일(CSV/XLSX)을 업로드하세요.</p>
         </div>
 
-        {/* CSV 파일 업로드 섹션 */}
-        <div className="upload-section">
-          <div className="upload-card">
-            <div className="upload-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 18V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 15L12 12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3>새 파일 업로드</h3>
-            <p>재건축 아파트 데이터 CSV 또는 XLSX 파일을 업로드하여 분석하세요.</p>
-            <label className="upload-button">
-              {isUploading ? '업로드 중...' : '파일 선택 (CSV/XLSX)'}
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFileUpload}
-                disabled={isUploading}
-                style={{ display: 'none' }}
-              />
-            </label>
-            {uploadError && (
-              <div className="upload-error">
-                ❌ {uploadError}
+        {/* CSV 파일 업로드 섹션 (관리자만) */}
+        {isAdmin() && (
+          <div className="upload-section">
+            <div className="upload-card">
+              <div className="upload-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 18V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 15L12 12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
-            )}
+              <h3>새 파일 업로드</h3>
+              <p>재건축 아파트 데이터 CSV 또는 XLSX 파일을 업로드하여 분석하세요.</p>
+              <label className="upload-button">
+                {isUploading ? '업로드 중...' : '파일 선택 (CSV/XLSX)'}
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              {uploadError && (
+                <div className="upload-error">
+                  {uploadError}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 프로젝트 그리드 */}
         <div className="select-container">

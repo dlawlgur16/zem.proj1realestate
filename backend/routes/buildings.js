@@ -5,14 +5,15 @@
 
 const express = require('express');
 const { query } = require('../config/database');
+const { authMiddleware, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
 /**
  * GET /api/buildings
- * 모든 건물 목록 반환
+ * 모든 건물 목록 반환 (인증 필요)
  */
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const result = await query(
       `SELECT
@@ -50,9 +51,9 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/buildings/:id
- * 특정 건물의 상세 정보 및 세대 데이터 반환
+ * 특정 건물의 상세 정보 및 세대 데이터 반환 (인증 필요)
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const buildingId = req.params.id.replace('db-', '');
 
@@ -95,9 +96,9 @@ router.get('/:id', async (req, res) => {
 
 /**
  * DELETE /api/buildings/:id
- * 건물 삭제 (세대 데이터도 함께 삭제)
+ * 건물 삭제 - 관리자만 가능 (세대 데이터도 함께 삭제)
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
     const buildingId = req.params.id.replace('db-', '');
 

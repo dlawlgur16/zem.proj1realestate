@@ -3,6 +3,8 @@
  * Supabase PostgreSQL DB와 연동
  */
 
+import { getToken, clearSession } from './auth';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
@@ -10,9 +12,12 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api
  */
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = getToken();
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers
     },
     ...options
@@ -25,7 +30,14 @@ async function apiRequest(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, config);
-    
+
+    // 401 응답 시 세션 삭제 및 로그인 페이지로 리다이렉트
+    if (response.status === 401) {
+      clearSession();
+      window.location.href = '/';
+      throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+    }
+
     // 응답이 비어있을 수 있음
     let data;
     const contentType = response.headers.get('content-type');
@@ -35,11 +47,11 @@ async function apiRequest(endpoint, options = {}) {
       const text = await response.text();
       data = text ? JSON.parse(text) : {};
     }
-    
+
     if (!response.ok) {
       throw new Error(data.error?.message || data.error || `HTTP error! status: ${response.status}`);
     }
-    
+
     return data;
   } catch (error) {
     throw error;
@@ -103,20 +115,35 @@ export const unitsAPI = {
 export const healthCheck = () => apiRequest('/health');
 
 /**
- * CSV 파일 업로드
+ * CSV 파일 업로드 (관리자만 가능)
  */
 export const uploadCSV = async (file) => {
   const formData = new FormData();
   formData.append('csvFile', file);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const token = getToken();
   const url = `${API_BASE_URL}/upload/csv`;
 
   try {
     const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
       body: formData
     });
+
+    // 401 응답 시 세션 삭제 및 로그인 페이지로 리다이렉트
+    if (response.status === 401) {
+      clearSession();
+      window.location.href = '/';
+      throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+    }
+
+    // 403 응답 시 권한 없음
+    if (response.status === 403) {
+      throw new Error('관리자 권한이 필요합니다.');
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: '업로드 실패' }));

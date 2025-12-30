@@ -11,6 +11,7 @@ const Papa = require('papaparse');
 const XLSX = require('xlsx');
 const { query } = require('../config/database');
 const { preprocessData } = require('../services/preprocessor');
+const { authMiddleware, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -470,7 +471,7 @@ async function saveToDatabase(dbData, res) {
   }
 }
 
-router.post('/csv', upload.single('csvFile'), async (req, res) => {
+router.post('/csv', authMiddleware, adminOnly, upload.single('csvFile'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });

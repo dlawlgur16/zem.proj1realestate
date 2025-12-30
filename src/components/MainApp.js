@@ -94,10 +94,12 @@ const MainApp = () => {
             >
               목록으로
             </button>
-            {session && (
+            {session && session.user && (
               <>
-                <span className="main-app__user-name">{session.username} ({session.role})</span>
-                <button 
+                <span className="main-app__user-name">
+                  {session.user.username} ({session.user.role === 'admin' ? '관리자' : '일반'})
+                </span>
+                <button
                   onClick={handleLogout}
                   className="main-app__logout-btn"
                 >

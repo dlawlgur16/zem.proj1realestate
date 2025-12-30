@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { isAdmin } from '../utils/auth';
 import './ProjectCard.css';
 
 const ProjectCard = ({ project, onSelect, onDelete }) => {
@@ -44,7 +45,7 @@ const ProjectCard = ({ project, onSelect, onDelete }) => {
       <div className="project-card-content">
         <div className="project-card-header">
           <h3 className="project-card-title">{project.name}</h3>
-          {(project.type === 'user' || project.type === 'db') && onDelete && (
+          {isAdmin() && (project.type === 'user' || project.type === 'db') && onDelete && (
             <button
               className="project-card-delete"
               onClick={handleDelete}
