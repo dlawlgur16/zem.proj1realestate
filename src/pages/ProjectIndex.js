@@ -27,21 +27,7 @@ const ProjectIndex = () => {
     try {
       // 정적 프로젝트들 로드
       let projects = [...staticProjects];
-      
-      // 전처리된 데이터 목록 가져오기 (정적 파일에서)
-      try {
-        const response = await fetch(`${process.env.PUBLIC_URL}/processed-projects.json`);
-        if (response.ok) {
-          const processedProjects = await response.json();
-          
-          if (processedProjects && processedProjects.length > 0) {
-            projects = [...projects, ...processedProjects];
-          }
-        }
-      } catch (error) {
-        // 전처리된 데이터 목록 로드 실패 (무시)
-      }
-      
+
       // DB에서 건물 목록 가져오기
       try {
         const dbProjects = await loadBuildingsAsProjects();
@@ -51,7 +37,7 @@ const ProjectIndex = () => {
       } catch (error) {
         // DB 프로젝트 로드 실패 (서버가 실행 중이 아닐 수 있음)
       }
-      
+
       setAllProjects(projects);
     } catch (error) {
       // 프로젝트 목록 로드 실패
