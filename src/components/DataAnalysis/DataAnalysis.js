@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import AgeDistribution from './Charts/AgeDistribution';
 import LoanStatus from './Charts/LoanStatus';
 import SeizureStatus from './Charts/SeizureStatus';
@@ -75,22 +75,22 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   };
 
   // 동별 필터링 함수
-  const filterByDong = (data, selectedDong) => {
+  const filterByDong = useCallback((data, selectedDong) => {
     if (selectedDong === '전체통계') {
       return data;
     }
-    
+
     // 선택된 동 번호 추출 (예: "1동" -> "1")
     const selectedDongNum = selectedDong.match(/\d+/)?.[0];
     if (!selectedDongNum) {
       return data;
     }
-    
+
     return data.filter(row => {
       const dongNum = extractDongNumber(row.동호수);
       return dongNum === selectedDongNum;
     });
-  };
+  }, []);
 
   const calculateStats = (data) => {
     // 🔥 공유세대 필터링: 세대별 대표자만 남기기 (80세대 기준)
