@@ -481,12 +481,11 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   };
 
   // 기본 필터링 (동별)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const baseFilteredData = useMemo(() => {
     if (!csvData || csvData.length === 0) return [];
 
     return filterByDong(csvData, activeTab);
-  }, [csvData, activeTab]);
+  }, [csvData, activeTab, filterByDong]);
 
   // CSV 컬럼명 매핑 함수 (전역 사용)
   const getColumnValue = (row, possibleNames) => {
