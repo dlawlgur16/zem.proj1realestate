@@ -481,9 +481,10 @@ const DataAnalysis = ({ csvData, activeTab, setActiveTab, onStatsUpdate }) => {
   };
 
   // 기본 필터링 (동별)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const baseFilteredData = useMemo(() => {
     if (!csvData || csvData.length === 0) return [];
-    
+
     return filterByDong(csvData, activeTab);
   }, [csvData, activeTab]);
 

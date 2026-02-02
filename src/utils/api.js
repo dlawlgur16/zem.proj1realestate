@@ -266,7 +266,7 @@ export const loadBuildingDataFromDB = async (buildingId) => {
         const dateStr = registrationDate.toString();
         if (!/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
           // 다른 형식의 날짜를 YYYY-MM-DD로 변환 시도
-          const dateMatch = dateStr.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+          const dateMatch = dateStr.match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
           if (dateMatch) {
             const year = dateMatch[1];
             const month = dateMatch[2].padStart(2, '0');
@@ -311,11 +311,13 @@ export const loadBuildingDataFromDB = async (buildingId) => {
   }
 };
 
-export default {
+const api = {
   buildings: buildingsAPI,
   units: unitsAPI,
   healthCheck,
   loadBuildingsAsProjects,
   loadBuildingDataFromDB
 };
+
+export default api;
 
